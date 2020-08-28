@@ -70,6 +70,7 @@ struct NewPolicy value_iteration(double *P, nS, nA, V, double gamma, double tol)
     while(true)
     {
         double delta=0;
+        //V_k(x) = min[l(x,u)+\sum P(z|x,u)V_{k+1}(z)]
         for(int i = 0;i < nS;i++)
         {
             for(int j = 0;j < nA;j++)

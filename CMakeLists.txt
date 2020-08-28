@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-project(frozenlake)
+project(backward_induction)
 
-add_executable(frozenlake hello.cpp)
-set_property(TARGET frozenlake PROPERTY CXX_STANDARD 11)
+include_directories(cmake)
+
+add_executable(backward_induction main.cpp model.cpp)
+set_property(TARGET backward_induction PROPERTY CXX_STANDARD 11)
