@@ -11,9 +11,9 @@ float disturb(int k)
     float w = base[k];
     int diverse = k/3 + 1;
     //random number based on time
-    srand(time(NULL));
+    //srand(time(NULL));
     int r = rand();
-    cout << r << endl;
+    //cout << r << endl;
     r = (r % (diverse));// $r\in[0,diverse-1]$
     switch(diverse)
     {
@@ -31,12 +31,16 @@ float disturb(int k)
             // also case 1
             break;
     }
-    cout << "diverse: " << diverse << "; r: " << r << " w:"<< w << endl;
+    // cout << "diverse: " << diverse << "; r: " << r << " w:"<< w << endl;
     return w;
 }
 
-float linear_model(float x, float u, int k)
+float linear_model(int k, float x, float u)
 {
+    if(k<0)
+        k = 0;
+    else if(k>9)
+        k = 9;
     //x\in[-2, 2]
     if(x < -2)
         x = -2;
@@ -57,9 +61,10 @@ float linear_model(float x, float u, int k)
     return x_;
 }
 
+// // For test
 // int main()
 // {
-//     // float x = linear_model(10, 2, 1);
+//     // float x = linear_model(1, 2, 10);
 //     // cout << x << " ";
 //     int k;
 //     while(true)

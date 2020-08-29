@@ -8,7 +8,7 @@ int main()
     while(true)
     {
         cin >> a;
-        float x = linear_model(1, 0.5, a);
+        float x = linear_model(a, 1, 0.5);
         cout << x << endl;
     }
     
