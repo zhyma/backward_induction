@@ -52,11 +52,11 @@ float linear_model(int k, float x, float u)
     else if(u > 1.6)
         u = 1.6;
     //generate disturbance base on given k
-    float wk = disturb(k);
-    float x_ = 0.9*x + u - wk;
+    float w = disturb(k);
+    float x_ = 0.9*x + u - w;
     if(x_<-2)
         x_ = -2;
-    else if(x>2)
+    else if(x_>2)
         x_ = 2;
     return x_;
 }
