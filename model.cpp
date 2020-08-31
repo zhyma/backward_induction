@@ -24,9 +24,11 @@ float disturb(int k)
         case 3:
             // -0.1 or 0 or +0.1
             w += 0.1*r;
+            break;
         case 4:
             // -0.2 or -0.1 or 0 or +0.1 or +0.2
             w += (r > 1.5)? 0.1*(r-1):0.1*(r-2);
+            break;
         default:
             // also case 1
             break;

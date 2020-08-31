@@ -16,7 +16,11 @@ using namespace std;
 // }
 int main()
 {
-    DPModel model;
+    int N = 10;
+    float x_con[2] = {-2.0, 2.0};
+    float u_con[2] = {0.2, 1.6};
+    int gran = 10;
+    DPModel model(N, x_con, u_con, gran);
     model.estimate_model(100);
 
     cout << "done" << endl;
