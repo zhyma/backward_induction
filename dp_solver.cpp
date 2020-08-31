@@ -17,7 +17,7 @@ int find_min(float *u, int cnt, struct Min_index *min)
     float value = u[0];
     for(int i = 0;i < cnt; ++i)
     {
-        if(u[i] > value)
+        if(u[i] < value)
         {
             value = u[i];
             index = i;
@@ -34,16 +34,14 @@ int find_min(float *u, int cnt, struct Min_index *min)
 int solver(DPModel &model)
 {
     float *value_table = new float[(model.N+1)*model.x_cnt]{};
-    int *action_table = new int[model.N*model.x_cnt]{};
+    float *action_table = new float[model.N*model.x_cnt]{};
     // calculate the termianl cost at N=10
     // initial value for V_N is V_N(x)=J_f(x), final cost
     for(int x = 0; x < model.x_cnt; ++x)
     {
         float v = pow(1-model.x_list[x],2);
         value_table[(model.N-1)*model.x_cnt+x] = v;
-        cout << v << ",";
     }
-    cout << endl;
     // calculate the running cost
     // searching backward
     // a temporary buffer to save all the result of executing different u for a given xk
@@ -66,7 +64,7 @@ int solver(DPModel &model)
                     //<k, x_k> --u_k--> <k+1,x_k+1>
                     int idx = model.kxu2index(k, xk, uk);
                     float p_z = model.prob_table[idx*model.x_cnt + x_];
-                    float v_z = model.x_list[x_];
+                    float v_z = value_table[k*model.x_cnt + x_];
                     sum += p_z*v_z;
                 }
                 u_z_temp[uk] = l+sum;
@@ -76,7 +74,7 @@ int solver(DPModel &model)
             Min_index min;
             find_min(u_z_temp, model.u_cnt, &min);
             value_table[k*model.x_cnt + xk] = min.value;
-            action_table[k*model.x_cnt + xk] = min.index;
+            action_table[k*model.x_cnt + xk] = model.u_list[min.index];
         }
     }
     if(true)
@@ -109,5 +107,6 @@ int main()
     DPModel model(N, x_con, u_con, gran);
     model.estimate_model(100);
     solver(model);
+    cout << "done";
     return 0;
 }

@@ -35,6 +35,7 @@ float disturb(int k)
     }
     // cout << "diverse: " << diverse << "; r: " << r << " w:"<< w << endl;
     return w;
+    //return base[k]; // for test
 }
 
 float linear_model(int k, float x, float u)
