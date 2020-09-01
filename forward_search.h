@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
-#include "model.h"
+#include "phy_model.h"
 using namespace std;
 
 class DPModel

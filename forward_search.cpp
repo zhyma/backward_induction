@@ -1,4 +1,4 @@
-#include "model.h"
+//#include "phy_model.h"
 #include "forward_search.h"
 
 //inital function
@@ -101,7 +101,7 @@ int DPModel::estimate_model(int i)
         }
     }
 
-    // now ger the estimated model
+    // now get the estimated model
     for(int k = 0;k < N;k++)
     {
         for(int xk =0; xk < x_cnt; ++xk)

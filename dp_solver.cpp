@@ -1,4 +1,4 @@
-#include "model.h"
+#include "phy_model.h"
 #include "forward_search.h"
 #include <iostream>
 #include <cmath>
