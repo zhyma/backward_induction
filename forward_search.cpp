@@ -76,12 +76,12 @@ int DPModel::forward_search_once(float x0)
     return 0;
 }
 
-int DPModel::estimate_model(int i)
+int DPModel::estimate_model(int iter)
 {
     
     int idx = 0;
     int x_ = 0;
-    for(;i>0;i--)
+    for(int i = 0;i < iter;++i)
     {
         // search once
         forward_search_once(0);
@@ -99,7 +99,12 @@ int DPModel::estimate_model(int i)
                 }
             }
         }
+        if((i*100)/iter%5==0)
+        {
+            cout << (i*100)/iter << "%...";
+        }
     }
+    cout << endl;
 
     // now get the estimated model
     for(int k = 0;k < N;k++)
@@ -122,8 +127,10 @@ int DPModel::estimate_model(int i)
         }
     }
 
+    cout << "Model estimation done." << endl;
+
     // save to csv for test
-    if(true)
+    if(false)
     {
         ofstream out_prob;
         out_prob.open("../prob.csv", ios::out);
@@ -143,6 +150,7 @@ int DPModel::estimate_model(int i)
             }
         }
         out_prob.close();
+        cout << "Save estimated model to file." << endl;
     }
 
     return 0;

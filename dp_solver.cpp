@@ -103,9 +103,10 @@ int main()
     int N = 10;
     float x_con[2] = {-2.0, 2.0};
     float u_con[2] = {0.2, 1.6};
-    int gran = 10;
+    int gran = 100;
     DPModel model(N, x_con, u_con, gran);
     model.estimate_model(100);
+    cout << "move on to solver" << endl;
     solver(model);
     cout << "done";
     return 0;

@@ -8,9 +8,10 @@ from mpl_toolkits.mplot3d import Axes3D
 # reader = csv.reader(csvFile)
 
 mat1 = np.genfromtxt('value.csv', delimiter=',')[:,:-1]
+print(mat1.shape)
 
 # x from -2, 2. N=10
-x,y=np.meshgrid(np.arange(-2, 2.1, 0.1), range(mat1.shape[0]))
+x,y=np.meshgrid(np.arange(-2, 2.01, 0.01), range(mat1.shape[0]))
 fig = plt.figure('eigen_vector')
 ax1 = fig.add_subplot(2, 1, 1, projection='3d')
 ax1.set_xlabel('\n system state x(k)')

@@ -34,7 +34,7 @@ class DPModel
         int kxu2index(int k, int x, int u);
         int x2x_cnt(float x);
         int forward_search_once(float x0);
-        int estimate_model(int i);
+        int estimate_model(int iter);
 
 };
 #endif // FORWARD_SEARCH_H_
