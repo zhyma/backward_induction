@@ -1,9 +1,12 @@
 #include "phy_model.h"
 #include "forward_search.h"
+#include "tinyxml2/tinyxml2.h"
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <sstream>
 using namespace std;
+using namespace tinyxml2;
 
 struct Min_index
 {
@@ -98,16 +101,34 @@ int solver(DPModel &model)
     return 0;
 }
 
+
 int main()
 {
-    int N = 10;
-    float x_con[2] = {-2.0, 2.0};
-    float u_con[2] = {0.2, 1.6};
-    int gran = 100;
-    DPModel model(N, x_con, u_con, gran);
-    model.estimate_model(100);
-    cout << "move on to solver" << endl;
-    solver(model);
-    cout << "done";
-    return 0;
+    tinyxml2::XMLDocument doc_xml;
+    XMLError err_xml = doc_xml.LoadFile("../config.xml");
+    if(XML_SUCCESS==err_xml)
+    {
+        XMLElement* elmt_root = doc_xml.RootElement();
+        const char* gran_char = elmt_root->FirstChildElement("granularity")->GetText();
+        stringstream strValue;
+        int gran;
+        strValue << gran_char;
+        strValue >> gran;
+        cout << "Granularity is set to: " << gran << endl;
+
+        int N = 10;
+        float x_con[2] = {-2.0, 2.0};
+        float u_con[2] = {0.2, 1.6};
+        DPModel model(N, x_con, u_con, gran);
+        model.estimate_model(100);
+        cout << "move on to solver" << endl;
+        solver(model);
+        cout << "done";
+        return 0;
+    }
+    else
+    {
+        cout << "config.xml read error" << endl;
+        return 0;
+    }
 }

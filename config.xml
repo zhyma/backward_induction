@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config>
+    <!--An XML must have a single root-->>
+    <time_step>
+        10
+    </time_step>
+    <granularity>
+        50
+    </granularity>
+</config>
