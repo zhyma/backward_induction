@@ -4,7 +4,11 @@
     <time_step>
         10
     </time_step>
+    <!-- The number of points between each unit of x-->>
     <granularity>
         50
     </granularity>
+    <noise_type>
+        monte_carlo
+    </noise_type>
 </config>

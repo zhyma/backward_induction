@@ -143,7 +143,7 @@ int DPModel::estimate_model(int iter)
                     idx = kxu2index(k, xk, uk);
                     for(int x_=0; x_ < x_cnt; ++x_)
                     {
-                        out_prob << prob_table[idx*x_cnt + x_] << ",";
+                        out_prob << prob_table[idx*x_cnt + x_] << ',';
                     }
                     out_prob << endl;
                 }

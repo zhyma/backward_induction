@@ -36,5 +36,7 @@ class DPModel
         int forward_search_once(float x0);
         int estimate_model(int iter);
 
+        int one_step_foward();
+
 };
 #endif // FORWARD_SEARCH_H_
