@@ -1,29 +1,22 @@
 //#include "phy_model.h"
 #include "forward_search.h"
 
-//inital function
-DPModel::DPModel(int time_step, float * state_con, float * action_con, int sample_rate)
+//initial function
+DPModel::DPModel(PHYModel * ptr_in, int sample_rate)
 {
-    N = time_step;
+    ptr_model = ptr_in;
+    N = ptr_model->N;
     gran = sample_rate;
-    
-    // initial x upper and lower bounds.
-    x_con[0] = state_con[0];
-    x_con[1] = state_con[1];
 
-    x_cnt = (int)(round((x_con[1]-x_con[0])*gran+1));
+    x_cnt = (int)(round((ptr_model->x_bound[1]-ptr_model->x_bound[0])*gran+1));
     x_list = new float[x_cnt];
     for(int i = 0;i < x_cnt; ++i)
-        x_list[i] = x_con[0] + 1.0/sample_rate * i;
+        x_list[i] = ptr_model->x_bound[0] + 1.0/sample_rate * i;
 
-    // initial u upper and lower bounds.
-    u_con[0] = action_con[0];
-    u_con[1] = action_con[1];
-
-    u_cnt = (int)(round((u_con[1]-u_con[0])*gran+1));
+    u_cnt = (int)(round((ptr_model->u_bound[1]-ptr_model->u_bound[0])*gran+1));
     u_list = new float[u_cnt];
     for(int i = 0;i < u_cnt; ++i)
-        u_list[i] = u_con[0] + 1.0/sample_rate *i;
+        u_list[i] = ptr_model->u_bound[0] + 1.0/sample_rate *i;
 
     temp_search = new float[(N * x_cnt) * u_cnt];
     cnter_table = new int[(N * x_cnt) * u_cnt * (x_cnt + 1)] ();
@@ -45,7 +38,7 @@ int DPModel::kxu2index(int k, int x, int u)
 int DPModel::x2x_cnt(float x)
 {
     int idx = 0;
-    idx = round((x - x_con[0])*gran);
+    idx = round((x - ptr_model->x_bound[0])*gran);
     idx < 0 ? idx = 0 : idx;
     idx > x_cnt - 1 ? idx = x_cnt -1 : idx;
     return idx;
@@ -67,7 +60,7 @@ int DPModel::forward_search_once(float x0)
         {
             for(int uk = 0; uk < u_cnt; ++uk)
             {
-                float x = linear_model(k, x_list[xk], u_list[uk]);
+                float x = ptr_model->linear_model(k, x_list[xk], u_list[uk], 0);
                 idx = kxu2index(k, xk, uk);
                 temp_search[idx] = x;
             }

@@ -10,9 +10,8 @@ using namespace std;
 class DPModel
 {
     public:
-        int N;                          // time steps
-        float x_con[2];                 // "x_con[]" is the constraints of x.
-        float u_con[2];                 // "u_con[]" is the constraints of u.
+        PHYModel * ptr_model;
+        int N;                          // time steps, same as the model
         int gran;                       // granularity.
 
         // total number of x and u (after discretized)
@@ -30,7 +29,7 @@ class DPModel
         // The final model you get. The probability of transiting from one state to another.
         float *prob_table;
 
-        DPModel(int time_step, float * state_con, float * action_con, int sample_rate);
+        DPModel(PHYModel * ptr_in, int sample_rate);
         int kxu2index(int k, int x, int u);
         int x2x_cnt(float x);
         int forward_search_once(float x0);

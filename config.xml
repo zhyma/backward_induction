@@ -4,11 +4,14 @@
     <time_step>
         10
     </time_step>
+
     <!-- The number of points between each unit of x-->>
     <granularity>
-        50
+        10
     </granularity>
-    <noise_type>
+
+    <!-- The type of disturbance (no distrubance, fixed or Monte Carlo)-->>
+    <disturb_type>
         monte_carlo
-    </noise_type>
+    </disturb_type>
 </config>

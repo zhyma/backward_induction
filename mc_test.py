@@ -11,7 +11,7 @@ print(mat1.shape)
 # x from -2, 2. N=10
 x,y=np.meshgrid(range(mat1.shape[1]), range(mat1.shape[0]))
 fig = plt.figure('eigen_vector')
-ax = fig.add_subplot(2, 1, 1, projection='3d')
+ax = fig.add_subplot(1, 1, 1, projection='3d')
 ax.set_xlabel('\n system state x(k)')
 ax.set_ylabel('\n No. k step')
 ax.set_zlabel('\n Value (the lower the better)')

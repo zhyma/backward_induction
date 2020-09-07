@@ -101,7 +101,6 @@ int solver(DPModel &model)
     return 0;
 }
 
-
 int main()
 {
     tinyxml2::XMLDocument doc_xml;
@@ -109,6 +108,8 @@ int main()
     if(XML_SUCCESS==err_xml)
     {
         XMLElement* elmt_root = doc_xml.RootElement();
+
+        // Get the granulairty within a unit (discretizing to get states)
         const char* gran_char = elmt_root->FirstChildElement("granularity")->GetText();
         stringstream strValue;
         int gran;
@@ -116,10 +117,10 @@ int main()
         strValue >> gran;
         cout << "Granularity is set to: " << gran << endl;
 
-        int N = 10;
-        float x_con[2] = {-2.0, 2.0};
-        float u_con[2] = {0.2, 1.6};
-        DPModel model(N, x_con, u_con, gran);
+        PHYModel phy_model(MC_NOISE);
+        // float w = phy_model.linear_model(1, 0.5, 0.5, 0.5);
+        // cout << w << endl;
+        DPModel model(&phy_model, gran);
         model.estimate_model(100);
         cout << "move on to solver" << endl;
         solver(model);
