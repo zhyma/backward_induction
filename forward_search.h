@@ -13,6 +13,7 @@ class DPModel
         PHYModel * ptr_model;
         int N;                          // time steps, same as the model
         int gran;                       // granularity.
+        bool save_transition;
 
         // total number of x and u (after discretized)
         int x_cnt;
@@ -29,7 +30,7 @@ class DPModel
         // The final model you get. The probability of transiting from one state to another.
         float *prob_table;
 
-        DPModel(PHYModel * ptr_in, int sample_rate);
+        DPModel(PHYModel * ptr_in, int sample_rate, bool write2file);
         int kxu2index(int k, int x, int u);
         int x2x_cnt(float x);
         int forward_search_once(float x0);

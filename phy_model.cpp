@@ -108,15 +108,15 @@ float PHYModel::linear_model(int k, float x, float u, float last_w)
     else if (k>9)
         k = 9;
     //x\in[-2, 2]
-    if (x < -2)
-        x = -2;
-    else if (x > 2)
-        x = 2;
+    if (x < x_bound[0])
+        x = x_bound[0];
+    else if (x > x_bound[1])
+        x = x_bound[1];
     //u\in[0.2, 1.6]
-    if (u < 0.2)
-        u = 0.2;
-    else if (u > 1.6)
-        u = 1.6;
+    if (u < u_bound[0])
+        u = u_bound[0];
+    else if (u > u_bound[1])
+        u = u_bound[1];
 
     //generate disturbance base by given parameters
     float w = 0;

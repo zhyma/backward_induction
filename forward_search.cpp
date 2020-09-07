@@ -2,11 +2,12 @@
 #include "forward_search.h"
 
 //initial function
-DPModel::DPModel(PHYModel * ptr_in, int sample_rate)
+DPModel::DPModel(PHYModel * ptr_in, int sample_rate, bool write2file)
 {
     ptr_model = ptr_in;
     N = ptr_model->N;
     gran = sample_rate;
+    save_transition = write2file;
 
     x_cnt = (int)(round((ptr_model->x_bound[1]-ptr_model->x_bound[0])*gran+1));
     x_list = new float[x_cnt];
@@ -60,7 +61,7 @@ int DPModel::forward_search_once(float x0)
         {
             for(int uk = 0; uk < u_cnt; ++uk)
             {
-                float x = ptr_model->linear_model(k, x_list[xk], u_list[uk], 0);
+                float x = ptr_model->linear_model(k, x_list[xk], u_list[uk], 0.5);
                 idx = kxu2index(k, xk, uk);
                 temp_search[idx] = x;
             }
@@ -123,7 +124,7 @@ int DPModel::estimate_model(int iter)
     cout << "Model estimation done." << endl;
 
     // save to csv for test
-    if(false)
+    if(save_transition)
     {
         ofstream out_prob;
         out_prob.open("../prob.csv", ios::out);
