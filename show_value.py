@@ -19,6 +19,8 @@ mat1 = np.genfromtxt('value.csv', delimiter=',')[:,:-1]
 print(mat1.shape)
 
 # x from -2, 2. N=10
+# delete element, (mat1, column/row No. 0, axis=0/row-wise)
+mat1 = np.delete(mat1, 0, 0)
 x,y=np.meshgrid(np.arange(-2, 2+1.0/gran, 1.0/gran), range(mat1.shape[0]))
 fig = plt.figure('eigen_vector')
 ax1 = fig.add_subplot(2, 1, 1, projection='3d')
@@ -32,7 +34,8 @@ ax1.plot_surface(x, y, mat1, cmap=cm.coolwarm)
 # ax.plot_wireframe(x,y,mat, alpha=0.5)
 
 mat2 = np.genfromtxt('action.csv', delimiter=',')[:,:-1]
-
+# delete element, (mat1, column/row No. 0, axis=0/row-wise)
+mat2 = np.delete(mat2, 0, 0)
 ax2 = fig.add_subplot(2, 1, 2, projection='3d')
 x,y=np.meshgrid(np.arange(-2, 2+1.0/gran, 1.0/gran), range(mat2.shape[0]))
 ax2.plot_surface(x,y,mat2, cmap=cm.coolwarm)

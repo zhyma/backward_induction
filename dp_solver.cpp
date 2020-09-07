@@ -52,13 +52,10 @@ int solver(DPModel &model)
     float *u_z_temp = new float[model.u_cnt];
     for(int k = model.N-1; k >= 0; k--)
     {
-        cout << "k=" << k << endl;
         for(int xk = 0; xk < model.x_cnt; ++xk)
         {
-            // cout << "xk=" << model.x_list[xk] << endl;
             for(int uk = 0; uk < model.u_cnt; ++uk)
             {
-                // cout << "    uk=" << model.u_list[uk] << endl;
                 // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                 // l(x) = x^2+u^2
                 float x = model.x_list[xk];
@@ -72,16 +69,8 @@ int solver(DPModel &model)
                     int idx = model.kxu2index(k, xk, uk);
                     float p_z = model.prob_table[idx*model.x_cnt + x_];
                     float v_z = value_table[(k+1)*model.x_cnt + x_];
-                    // if (p_z > 0.1)
-                    // {
-                    //     cout << "        x_ =" << model.x_list[x_] << endl;
-                    //     cout << "        p_z=" << model.prob_table[idx*model.x_cnt + x_] << endl;
-                    //     cout << "        v_z=" << value_table[(k+1)*model.x_cnt + x_] << endl;
-                    // }
-                    
                     sum += p_z*v_z;
                 }
-                // cout << "    " << l+sum <<"=" << l << "+" <<sum << endl;
                 u_z_temp[uk] = l+sum;
             }
             // v = min[l(x,u)+\sum P(z|x,u)V(z)]
@@ -90,17 +79,18 @@ int solver(DPModel &model)
             find_min(u_z_temp, model.u_cnt, &min);
             value_table[k*model.x_cnt + xk] = min.value;
             action_table[k*model.x_cnt + xk] = model.u_list[min.index];
-            // break;
         }
-        // break;
     }
     if(true)
     {
         ofstream out_value;
         out_value.open("../value.csv", ios::out);
-        for(int k = 0; k < model.N+1; k++)
+        for (int i = 0; i < model.x_cnt; ++i)
+            out_value << model.x_list[i] << ",";
+        out_value << endl;
+        for (int k = 0; k < model.N+1; k++)
         {
-            for(int xk = 0; xk < model.x_cnt; xk++)
+            for (int xk = 0; xk < model.x_cnt; ++xk)
             {
                 out_value << value_table[k*model.x_cnt + xk] << ",";
             }
@@ -110,9 +100,12 @@ int solver(DPModel &model)
 
         ofstream out_action;
         out_action.open("../action.csv", ios::out);
-        for(int k = 0; k < model.N; k++)
+        for (int i = 0; i < model.x_cnt; ++i)
+            out_action << model.x_list[i] << ",";
+        out_action << endl;
+        for (int k = 0; k < model.N; k++)
         {
-            for(int xk = 0; xk < model.x_cnt; xk++)
+            for (int xk = 0; xk < model.x_cnt; ++xk)
             {
                 out_action << action_table[k*model.x_cnt + xk] << ",";
             }
