@@ -51,7 +51,7 @@ int DPModel::x2x_cnt(float x)
 // 1) from a given x_0, provide one input, get one output, move to the next time step and that the output as the new state
 // 2) from all possible x_0, try all input, save all output/next state, then move on to the next step (applying this method here)
 // x_k is a combination (tuple) of <k, x>
-int DPModel::forward_search_once(float x0)
+int DPModel::global_forward_once(float x0)
 {
     float delta = 1.0/gran;
     int idx = 0;
@@ -78,7 +78,7 @@ int DPModel::estimate_model(int iter)
     for(int i = 0;i < iter;++i)
     {
         // search once
-        forward_search_once(0);
+        global_forward_once(0);
         // count the state transition for each <x_k, u> pair
         for(int k = 0; k < N; k++)
         {
@@ -116,7 +116,6 @@ int DPModel::estimate_model(int iter)
                     float prob = state_cnt/all_cnt;
                     prob_table[idx*x_cnt + x_] = prob;
                 }
-                //outFile << all_cnt;
             }
         }
     }
@@ -124,6 +123,7 @@ int DPModel::estimate_model(int iter)
     cout << "Model estimation done." << endl;
 
     // save to csv for test
+    // Don't do that for large state-action space (will hang forever)
     if(save_transition)
     {
         ofstream out_prob;
@@ -149,13 +149,3 @@ int DPModel::estimate_model(int iter)
 
     return 0;
 }
-
-// int main()
-// {
-//     DPModel model;
-//     model.estimate_model(100);
-
-//     cout << "done" << endl;
-
-//     return 0;
-// }

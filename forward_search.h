@@ -33,10 +33,10 @@ class DPModel
         DPModel(PHYModel * ptr_in, int sample_rate, bool write2file);
         int kxu2index(int k, int x, int u);
         int x2x_cnt(float x);
-        int forward_search_once(float x0);
+        int global_forward_once(float x0);
         int estimate_model(int iter);
 
-        int one_step_foward();
+        int one_step_backward(int step);
 
 };
 #endif // FORWARD_SEARCH_H_

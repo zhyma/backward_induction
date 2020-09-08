@@ -41,9 +41,7 @@ float PHYModel::fix_disturb(int k)
             // also case 1
             break;
     }
-    // cout << "diverse: " << diverse << "; r: " << r << " w:"<< w << endl;
     return w;
-    //return base[k]; // for test
 }
 
 // The input is the current disturbance state

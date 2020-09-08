@@ -5,6 +5,8 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <time.h>
+
 using namespace std;
 using namespace tinyxml2;
 
@@ -25,9 +27,7 @@ int find_min(float *u, int cnt, struct Min_index *min)
             value = u[i];
             index = i;
         }
-        // cout << u[i] << ",";
     }
-    // cout << endl;
     min->index = index;
     min->value = value;
     return 0;
@@ -83,6 +83,7 @@ int solver(DPModel &model)
     }
     if(true)
     {
+        // Save value table and optimal action table to files
         ofstream out_value;
         out_value.open("../value.csv", ios::out);
         for (int i = 0; i < model.x_cnt; ++i)
@@ -121,6 +122,7 @@ int main()
 {
     tinyxml2::XMLDocument doc_xml;
     XMLError err_xml = doc_xml.LoadFile("../config.xml");
+    clock_t start,end;
     if(XML_SUCCESS==err_xml)
     {
         XMLElement* elmt_root = doc_xml.RootElement();
@@ -133,12 +135,38 @@ int main()
         strValue >> gran;
         cout << "Granularity is set to: " << gran << endl;
 
-        //PHYModel phy_model(MC_NOISE);
-        PHYModel phy_model(NO_NOISE);
+        // Get the noise type
+        const char* disturb_char = elmt_root->FirstChildElement("disturb_type")->GetText();
+        string disturb_str(disturb_char);
+        // remove '\r', '\n', ' ' from the string
+        disturb_str.erase(0, disturb_str.find_first_not_of(" \r\n"));
+        disturb_str.erase(disturb_str.find_first_of(" \r\n"));
+        cout << disturb_str << endl;
+        int noise_type = NO_NOISE;
+        if (disturb_str.compare("markov") == 0)
+        {
+            noise_type = MC_NOISE;
+            cout << "config to Markov Chain disturbance\n";
+        }
+        else if (disturb_str.compare("fix") == 0)
+        {
+            noise_type = FIX_NOISE;
+            cout << "config to fixed disturbance\n";
+        }       
+        else
+        {
+            noise_type = NO_NOISE;
+            cout << "config to no disturbance\n";
+        }
+
+        PHYModel phy_model(noise_type);
         DPModel model(&phy_model, gran, false);
         model.estimate_model(100);
         cout << "move on to solver" << endl;
+        start = clock();
         solver(model);
+        end = clock();
+        cout << (double) (end-start)/CLOCKS_PER_SEC << endl;
         cout << "done";
         return 0;
     }

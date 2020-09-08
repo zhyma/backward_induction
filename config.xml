@@ -11,8 +11,8 @@
     </granularity>
 
     <!-- The type of disturbance (no distrubance, fixed or Monte Carlo)-->>
-    <!-- valid value can be: "monte_carlo", "fix", "none"-->>
+    <!-- valid value can be: "markov", "fix", "none"-->>
     <disturb_type>
-        monte_carlo
+        fix
     </disturb_type>
 </config>
