@@ -22,6 +22,7 @@ class PHYModel
         //constraint for w is {0, 2}
 
         PHYModel(int disturb_selector);
+        float gaussian(float in);
         float fix_disturb(int k);
         float mc_disturb(float w);
         float linear_model(int k, float x, float u, float last_w);

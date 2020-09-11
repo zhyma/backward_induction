@@ -8,7 +8,7 @@ enable_testing()
 set(XML_FILE "./tinyxml2/tinyxml2.cpp" "./tinyxml2/tinyxml2.h")
 
 #add_executable(backward_induction dp_solver.cpp phy_model.cpp ${XML_FILE})
-add_executable(backward_induction dp_solver.cpp forward_search.cpp phy_model.cpp ${XML_FILE})
+add_executable(backward_induction main.cpp dp_solver.cpp forward_search.cpp phy_model.cpp ${XML_FILE})
 set_property(TARGET backward_induction PROPERTY CXX_STANDARD 11)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

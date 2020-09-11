@@ -9,6 +9,7 @@ DPModel::DPModel(PHYModel * ptr_in, int sample_rate, bool write2file)
     gran = sample_rate;
     save_transition = write2file;
 
+    // discretizing x, u, and w
     x_cnt = (int)(round((ptr_model->x_bound[1]-ptr_model->x_bound[0])*gran+1));
     x_list = new float[x_cnt];
     for(int i = 0;i < x_cnt; ++i)
