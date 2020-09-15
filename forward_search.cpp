@@ -21,6 +21,7 @@ DPModel::DPModel(PHYModel * ptr_in, int sample_rate, bool write2file)
         u_list[i] = ptr_model->u_bound[0] + 1.0/sample_rate *i;
 
     temp_search = new float[(N * x_cnt) * u_cnt];
+    // initializing all counter as 0
     cnter_table = new int[(N * x_cnt) * u_cnt * (x_cnt + 1)] ();
     prob_table = new float[(N * x_cnt) * u_cnt * x_cnt];
     
@@ -56,11 +57,11 @@ int DPModel::global_forward_once(float x0)
 {
     float delta = 1.0/gran;
     int idx = 0;
-    for(int k = 0; k < N; ++k)
+    for (int k = 0; k < N; ++k)
     {
-        for(int xk = 0;xk < x_cnt; ++xk)
+        for (int xk = 0;xk < x_cnt; ++xk)
         {
-            for(int uk = 0; uk < u_cnt; ++uk)
+            for (int uk = 0; uk < u_cnt; ++uk)
             {
                 float x = ptr_model->linear_model(k, x_list[xk], u_list[uk], 0.5);
                 idx = kxu2index(k, xk, uk);

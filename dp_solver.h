@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <math.h>
+#include <time.h>
 using namespace std;
 
 struct Min_index
@@ -29,11 +30,19 @@ class DPSolver
         float *action_table;
 
         DPSolver(DPModel * ptr_in);
-        int solve_one_step(int k);
+        float solve_one_step(int k);
         int solve_whole_model();
+        int write_to_file();
+
 
     private:
+        float *temp_search;
+        int *cnter_table;
+        float *prob_table;
+
         int find_min(float *u, int cnt, struct Min_index *min);
+        int xu2index(int xk, int uk, int x_);
+        int search_one_step(int k, int iter);
 };
 
 

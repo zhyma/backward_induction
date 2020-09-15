@@ -19,6 +19,6 @@
     <!-- The type of solver -->>
     <!-- valid value can be: "whole_model", "one_step", "math_base" -->>
     <solver_type>
-        whole_model
+        one_step
     </solver_type>
 </config>
