@@ -1,5 +1,4 @@
 #include "phy_model.h"
-#include "forward_search.h"
 #include "dp_solver.h"
 
 #include "tinyxml2/tinyxml2.h"
@@ -61,8 +60,7 @@ int main()
 
         //Initializing the model
         PHYModel phy_model(noise_type);
-        DPModel dp_model(&phy_model, gran, false);
-        DPSolver solver(&dp_model);
+        DPSolver solver(&phy_model, gran);
         float total_time = 0;
 
         string solver_type = get_param(elmt_root, "solver_type");
@@ -70,7 +68,7 @@ int main()
         if (solver_type.compare("whole_model")==0)
         {
             cout << "estimate the whole model first" << endl;
-            dp_model.estimate_model(100);
+            solver.estimate_model(100);
             cout << "move on to solver" << endl;
             start = clock();
             solver.solve_whole_model();
