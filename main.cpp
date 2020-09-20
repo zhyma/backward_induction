@@ -60,16 +60,13 @@ int main()
 
         //Initializing the model
         PHYModel phy_model(noise_type);
-        DPSolver solver(&phy_model, gran);
+        DPSolver solver(&phy_model, gran, 1000);
         float total_time = 0;
 
         string solver_type = get_param(elmt_root, "solver_type");
         //solving method: get the whole model, save to memory, then use DP to search backward at once.
         if (solver_type.compare("whole_model")==0)
         {
-            cout << "estimate the whole model first" << endl;
-            solver.estimate_model(100);
-            cout << "move on to solver" << endl;
             start = clock();
             solver.solve_whole_model();
             end = clock();

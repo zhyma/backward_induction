@@ -2,11 +2,12 @@
 #include "dp_solver.h"
 
 //initial function
-DPSolver::DPSolver(PHYModel * ptr_in, int sample_rate)
+DPSolver::DPSolver(PHYModel * ptr_in, int sample_rate, int number_of_trials)
 {
     ptr_model = ptr_in;
     N = ptr_model->N;
     gran = sample_rate;
+    iter = number_of_trials;
 
     // discretizing x, u, and w
     x_cnt = (int)(round((ptr_model->x_bound[1]-ptr_model->x_bound[0])*gran+1));
@@ -19,8 +20,8 @@ DPSolver::DPSolver(PHYModel * ptr_in, int sample_rate)
     for(int i = 0;i < u_cnt; ++i)
         u_list[i] = ptr_model->u_bound[0] + 1.0/sample_rate *i;
 
-    value_table = new float[(N+1)*x_cnt]{};
-    action_table = new float[N*x_cnt]{};
+    value_table = new float[(N+1)*x_cnt]();
+    action_table = new float[N*x_cnt]();
     
     return;
 }
@@ -70,14 +71,8 @@ int DPSolver::x2x_cnt(float x)
     return idx;
 }
 
-int DPSolver::search_one_step(int k, int iter)
+int DPSolver::search_one_step(int k)
 {
-    temp_search = new float[x_cnt * u_cnt];
-    // (s, a, s')
-    // initializing all counter as 0
-    cnter_table = new int[x_cnt * u_cnt * x_cnt] ();
-    // P(s, a, s')
-    prob_table = new float[x_cnt * u_cnt * x_cnt];
     float x_ = 0;
     int xk_ = 0;
     int idx = 0;
@@ -132,7 +127,7 @@ float DPSolver::solve_one_step(int k)
         }
         end = clock();
     }
-    else if((k >= 0) and (k < ptr_model -> N))
+    else if((k >= 0) and (k < N))
     {
         // calculate the running cost
         // searching backward, search for the transition probability one step before, then calculate the min
@@ -140,7 +135,14 @@ float DPSolver::solve_one_step(int k)
 
         // from step k to k+1
         cout << "searching for step " << k << endl;
-        search_one_step(k, 1000);
+        temp_search = new float[x_cnt * u_cnt]();
+        // (s, a, s')
+        // initializing all counter as 0
+        cnter_table = new int[x_cnt * u_cnt * x_cnt]();
+        // P(s, a, s')
+        prob_table = new float[x_cnt * u_cnt * x_cnt]();
+
+        search_one_step(k);
 
         start = clock();
         // a temporary buffer to save all the result of executing different u for a given xk
@@ -175,6 +177,10 @@ float DPSolver::solve_one_step(int k)
             action_table[k * x_cnt + xk] = u_list[min.index];
         }
         end = clock();
+
+        delete [] temp_search;
+        delete [] cnter_table;
+        delete [] prob_table;
     }
     else
     {
@@ -194,11 +200,6 @@ float DPSolver::solve_one_step(int k)
 // x_k is a combination (tuple) of <k, x>
 int DPSolver::global_forward_once(float x0)
 {
-    temp_search = new float[(N * x_cnt) * u_cnt];
-    // initializing all counter as 0
-    cnter_table = new int[(N * x_cnt) * u_cnt * (x_cnt + 1)] ();
-    prob_table = new float[(N * x_cnt) * u_cnt * x_cnt];
-
     float delta = 1.0/gran;
     int idx = 0;
     for (int k = 0; k < N; ++k)
@@ -217,14 +218,15 @@ int DPSolver::global_forward_once(float x0)
 }
 
 // For a FULL SEARCH
-int DPSolver::estimate_model(int iter)
+int DPSolver::estimate_model()
 {
-    
     int idx = 0;
     int x_ = 0;
+
     for(int i = 0;i < iter;++i)
     {
         // search once
+        temp_search = new float[(N * x_cnt) * u_cnt]();
         global_forward_once(0);
         // count the state transition for each <x_k, u> pair
         for(int k = 0; k < N; k++)
@@ -244,6 +246,7 @@ int DPSolver::estimate_model(int iter)
         {
             cout << (i*100)/iter << "%...";
         }
+        delete [] temp_search;
     }
     cout << endl;
 
@@ -275,6 +278,12 @@ int DPSolver::estimate_model(int iter)
 // all possible x and u
 int DPSolver::solve_whole_model()
 {
+    // initializing all counter as 0
+    cnter_table = new int[(N * x_cnt) * u_cnt * (x_cnt + 1)]();
+    prob_table = new float[(N * x_cnt) * u_cnt * x_cnt]();
+    cout << "estimate the whole model first" << endl;
+    estimate_model();
+    cout << "move on to solver" << endl;
     // calculate the termianl cost at N=10
     // initial value for V_N is V_N(x)=J_f(x), final cost
     // J_f(x) = (1-x_N)^2
@@ -287,7 +296,7 @@ int DPSolver::solve_whole_model()
     // searching backward
     // a temporary buffer to save all the result of executing different u for a given xk
     float *u_z_temp = new float[u_cnt];
-    for(int k = ptr_model->N-1; k >= 0; k--)
+    for(int k = N-1; k >= 0; k--)
     {
         for(int xk = 0; xk < x_cnt; ++xk)
         {
@@ -318,6 +327,9 @@ int DPSolver::solve_whole_model()
             action_table[k * x_cnt + xk] = u_list[min.index];
         }
     }
+
+    delete [] cnter_table;
+    delete [] prob_table;
     
     return 0;
 }

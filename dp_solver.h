@@ -27,6 +27,7 @@ class DPSolver
         int N;                          // time steps, same as the model
         int gran;                       // granularity.
         bool save_transition;
+        int iter;
 
         // total number of x and u (after discretized)
         int x_cnt;
@@ -39,13 +40,12 @@ class DPSolver
         float *value_table;
         float *action_table;
 
-        DPSolver(PHYModel * ptr_in, int sample_rate);
-
+        DPSolver(PHYModel * ptr_in, int sample_rate, int number_of_trials);
 
         int kxu2index(int k, int x, int u);
         int x2x_cnt(float x);
         int global_forward_once(float x0);
-        int estimate_model(int iter);
+        int estimate_model();
         int solve_whole_model();
 
         int one_step_backward(int step);
@@ -64,7 +64,7 @@ class DPSolver
         //
         int find_min(float *u, int cnt, struct Min_index *min);
         int xu2index(int xk, int uk, int x_);
-        int search_one_step(int k, int iter);
+        int search_one_step(int k);
 
 };
 #endif // DP_SOLVER_H_

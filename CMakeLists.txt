@@ -14,5 +14,5 @@ set_property(TARGET backward_induction PROPERTY CXX_STANDARD 11)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
-# Solve the "program cannot find an entry for __cxa_throw_bad_array_new_length ... error"
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -static-libstdc++")
+## Solve the "program cannot find an entry for __cxa_throw_bad_array_new_length ... error"
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -static-libstdc++")
