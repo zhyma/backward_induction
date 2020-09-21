@@ -1,11 +1,13 @@
 # include "phy_model.h"
 
 //initial function
-PHYModel::PHYModel(int disturb_selector)
+PHYModel::PHYModel(int disturb_selector, float s)
 {
     //random number based on time
     srand(time(NULL));
     disturb_type = disturb_selector;
+    sigma = s;
+    gen.seed(rd());
     return;
 }
 
@@ -47,59 +49,26 @@ float PHYModel::fix_disturb(int k)
 // The input is the current disturbance state
 // The disturbance follows a Markov chain
 // The output (next disturbance) only depends on the current one.
-float PHYModel::mc_disturb(float w)
+float PHYModel::mc_disturb(float prev_w)
 {
-    //random number based on time
-    int r = rand();
-    r = (r % 100);// $r\in[0,diverse-1]$
-    float w_ = w;
-    if(r < 12)
-    {
-        //w_ = w-0.2, 12% chance
-        if(abs(w-0) < 0.001)
-            w_ = 0;
-        else if(abs(w-0.1) < 0.001)
-            w_ = 0;
-        else
-            w_ = w-0.2;
-    }
-    else if(r < 12+25)
-    {
-        // w_ = w-0.1, 25% chance
-        if(abs(w-0) < 0.001)
-            w_ = 0;
-        else
-            w_ = w-0.1;
-    }
-    else if(r < 12+25+26)
-    {
-        // w_ = w, 26% chance
-        w_ = w;
-    }
-    else if(r < 12+25+26+25)
-    {
-        //w_ = w+0.1, 25% chance
-        if(abs(w-2) < 0.001)
-            w_ = 2.0;
-        else
-            w_ = w + 0.1;
-    }
-    else
-    {
-        //w_ = w+0.2
-        if(abs(w-2) < 0.001)
-            w_ = 2.0;
-        else if(abs(w-1.9) < 0.001)
-            w_ = 2.0;
-        else
-            w_ = w + 0.2;
-    }
-    // cout << "diverse: " << diverse << "; r: " << r << " w:"<< w << endl;
-    return w_;
+    // f(x)=\frac{1}{\sigma\sqrt{2\pi}}e^{-\frac{(x-\mu)^2}{2\sigma}}
+    // center is determined by \mu=w
+    // \sigma is defined by the environment
+
+    // instance of class std::normal_distribution with specific mean and stddev
+    std::normal_distribution<float> d(prev_w, sigma);
+
+    // get random number with normal distribution using gen as random source
+    float w = d(gen);
+    w > w_bound[1] ? w = w_bound[1] : w = w ;
+    w < w_bound[0] ? w = w_bound[0] : w = w ;
+    prev_w = w;
+
+    return w;
     //return base[k]; // for test
 }
 
-float PHYModel::linear_model(int k, float x, float u, float last_w)
+float PHYModel::linear_model(int k, float x, float u, float prev_w)
 {
     if (k<0)
         k = 0;
@@ -118,11 +87,11 @@ float PHYModel::linear_model(int k, float x, float u, float last_w)
 
     //generate disturbance base by given parameters
     float w = 0;
-    if (disturb_type == NO_NOISE)
+    if (disturb_type == NO_DISTURB)
         w = 0;
-    else if (disturb_type == MC_NOISE)
-        w = mc_disturb(last_w);
-    else if (disturb_type == FIX_NOISE)
+    else if (disturb_type == MC_DISTURB)
+        w = mc_disturb(prev_w);
+    else if (disturb_type == FIX_DISTURB)
         w = fix_disturb(k);
 
     float x_ = 0.9*x + u - w;
@@ -132,41 +101,3 @@ float PHYModel::linear_model(int k, float x, float u, float last_w)
         x_ = 2;
     return x_;
 }
-
-// // Markov chain disturbance test
-// int mc_test()
-// {
-//     float w_ = 0;
-//     ofstream out_prob;
-//     out_prob.open("../mc_test.csv", ios::out);
-//     for(int w = 0;w <=20; w += 1)
-//     {
-//         float in = (float) w/10.0;
-//         cout << in << endl;
-//         int box[21]={};
-//         for(int i = 0;i < 1000; ++i)
-//         {
-            
-//             w_ = mc_disturb(in);
-//             int idx = round(w_*10);
-//             box[idx] += 1;
-//         }
-//         for(int i = 0;i<=20; ++i)
-//             out_prob << box[i] << ',';
-//         out_prob << '\n';
-//     }
-//     out_prob.close();
-//     cout << "Test saved to file." << endl;
-//     return 0;
-// }
-
-// // For test
-// int main()
-// {
-//     // float x = linear_model(1, 2, 10);
-//     // cout << x << " ";
-    
-//     mc_test();
-    
-//     return 0;
-// }

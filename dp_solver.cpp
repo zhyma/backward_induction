@@ -20,6 +20,11 @@ DPSolver::DPSolver(PHYModel * ptr_in, int sample_rate, int number_of_trials)
     for(int i = 0;i < u_cnt; ++i)
         u_list[i] = ptr_model->u_bound[0] + 1.0/sample_rate *i;
 
+    w_cnt = (int)(round((ptr_model->w_bound[1]-ptr_model->w_bound[0])*gran+1));
+    w_list = new float[w_cnt];
+    for(int i = 0;i < w_cnt; ++i)
+        w_list[i] = ptr_model->w_bound[0] + 1.0/sample_rate *i;
+
     value_table = new float[(N+1)*x_cnt]();
     action_table = new float[N*x_cnt]();
     

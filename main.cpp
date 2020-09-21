@@ -59,7 +59,7 @@ int main()
         }
 
         //Initializing the model
-        PHYModel phy_model(noise_type);
+        PHYModel phy_model(noise_type, 2.0/6.0);
         DPSolver solver(&phy_model, gran, 1000);
         float total_time = 0;
 

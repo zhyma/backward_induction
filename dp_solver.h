@@ -32,10 +32,12 @@ class DPSolver
         // total number of x and u (after discretized)
         int x_cnt;
         int u_cnt;
+        int w_cnt;
 
         // all possible x and u
         float *x_list;
         float *u_list;
+        float *w_list;
 
         float *value_table;
         float *action_table;
