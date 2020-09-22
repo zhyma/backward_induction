@@ -20,6 +20,13 @@ struct Min_index
     float value;
 };
 
+typedef struct Set
+{
+    int count;
+    float *list;
+    float bound[2];
+} Set;
+
 class DPSolver
 {
     public:
@@ -29,26 +36,17 @@ class DPSolver
         bool save_transition;
         int iter;
 
-        // total number of x and u (after discretized)
-        int x_cnt;
-        int u_cnt;
-        int w_cnt;
+        Set x_set;
+        Set u_set;
+        Set w_set; 
 
-        // all possible x and u
-        float *x_list;
-        float *u_list;
-        float *w_list;
-
+        int xw_cnt;
+        int states_cnt;
+        
         float *value_table;
         float *action_table;
 
         DPSolver(PHYModel * ptr_in, int sample_rate, int number_of_trials);
-
-        int kxu2index(int k, int x, int u);
-        int x2x_cnt(float x);
-        int global_forward_once(float x0);
-        int estimate_model();
-        int solve_whole_model();
 
         int one_step_backward(int step);
         float solve_one_step(int k);
@@ -65,7 +63,13 @@ class DPSolver
 
         //
         int find_min(float *u, int cnt, struct Min_index *min);
-        int xu2index(int xk, int uk, int x_);
+        int discretize(Set *in);
+
+        int val_to_idx(float val, Set *ref);
+        int xw_idx(int xk, int wk);
+        int state_idx(int k, int xk, int wk);
+        int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
+
         int search_one_step(int k);
 
 };

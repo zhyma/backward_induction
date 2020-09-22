@@ -24,16 +24,15 @@ class PHYModel
         //constraint for w is {0, 2}
         float w_bound[2] = {0.0, 2.0};
         
+        //should be the distribution model of w_0
         float w_0;
 
         PHYModel(int disturb_selector, float s);
-        float linear_model(int k, float x, float u, float prev_w);
+        int linear_model(int k, float x, float u, float w, float * next);
 
     private:
         std::random_device rd;
         std::mt19937 gen;
-        float gaussian(float in);
-        float fix_disturb(int k);
         float mc_disturb(float last_w);
 };
 

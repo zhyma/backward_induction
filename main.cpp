@@ -25,7 +25,8 @@ string get_param(XMLElement* elmt_root, const char* tag)
 int main()
 {
     tinyxml2::XMLDocument doc_xml;
-    XMLError err_xml = doc_xml.LoadFile("../config.xml");
+    //XMLError err_xml = doc_xml.LoadFile("../config.xml");
+    XMLError err_xml = doc_xml.LoadFile("config.xml");
     clock_t start,end;
     if(XML_SUCCESS==err_xml)
     {
@@ -60,18 +61,17 @@ int main()
 
         //Initializing the model
         PHYModel phy_model(noise_type, 2.0/6.0);
+        cout << "model ready" << endl;
         DPSolver solver(&phy_model, gran, 1000);
         float total_time = 0;
+
+        
 
         string solver_type = get_param(elmt_root, "solver_type");
         //solving method: get the whole model, save to memory, then use DP to search backward at once.
         if (solver_type.compare("whole_model")==0)
         {
-            start = clock();
-            solver.solve_whole_model();
-            end = clock();
-            solver.write_to_file();
-            total_time = (float) (end-start)/CLOCKS_PER_SEC;
+            cout << "function no longer exist" << endl;
         }
         else if (solver_type.compare("one_step")==0)
         {
