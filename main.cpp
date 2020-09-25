@@ -41,31 +41,38 @@ int main()
         cout << "Granularity is set to: " << gran << endl;
 
         // Get the noise type
-        string disturb_type = get_param(elmt_root, "disturb_type");
-        int noise_type = NO_NOISE;
-        if (disturb_type.compare("markov") == 0)
+        string disturb_str = get_param(elmt_root, "disturb_type");
+        int disturb_type = NO_NOISE;
+        if (disturb_str.compare("markov") == 0)
         {
-            noise_type = MC_NOISE;
+            disturb_type = MC_NOISE;
             cout << "config to Markov Chain disturbance\n";
         }
-        else if (disturb_type.compare("fix") == 0)
+        else if (disturb_str.compare("fix") == 0)
         {
-            noise_type = FIX_NOISE;
+            disturb_type = FIX_NOISE;
             cout << "config to fixed disturbance\n";
         }       
         else
         {
-            noise_type = NO_NOISE;
+            disturb_type = NO_NOISE;
             cout << "config to no disturbance\n";
         }
 
         //Initializing the model
-        PHYModel phy_model(noise_type, 2.0/6.0);
+        PHYModel phy_model(disturb_type, 2.0/6.0);
         cout << "model ready" << endl;
-        DPSolver solver(&phy_model, gran, 1000);
-        float total_time = 0;
 
-        
+        string prob_str = get_param(elmt_root, "probability_method");
+        int prob_type = MONTECARLO;
+        if (prob_str.compare("algebraic")==0)
+        {
+            int prob_type = ALGEBRAIC;
+            cout << "TODO" << endl;
+        }
+
+        DPSolver solver(&phy_model, prob_type, gran, 1000);
+        float total_time = 0;
 
         string solver_type = get_param(elmt_root, "solver_type");
         //solving method: get the whole model, save to memory, then use DP to search backward at once.

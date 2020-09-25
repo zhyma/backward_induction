@@ -2,9 +2,11 @@
 #include "dp_solver.h"
 
 //initial function
-DPSolver::DPSolver(PHYModel * ptr_in, int sample_rate, int number_of_trials)
+DPSolver::DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_trials)
 {
     ptr_model = ptr_in;
+    prob_type = prob;
+
     N = ptr_model->N;
     gran = sample_rate;
     iter = number_of_trials;
@@ -85,20 +87,6 @@ int DPSolver::state_idx(int k, int xk, int wk)
     return 0;
 }
 
-
-// For a ONE-STEP-SEARCH
-// This is not exactly state-action-state
-int DPSolver::sas2idx(int xk, int wk, int uk, int xk_, int wk_)
-{
-    // state s
-    int xw0_idx = xw_idx(xk, wk);
-    // state s'
-    int xw1_idx = xw_idx(xk_, wk_);
-    //int idx = xk*(u_set.count * x_set.count) + uk * x_set.count + xk_;
-    int idx = xw0_idx * xw_cnt + uk * xw_cnt + xw1_idx;
-    return idx;
-}
-
 // By given a value x, find the index of 
 int DPSolver::val_to_idx(float val, struct Set *ref)
 {
@@ -110,7 +98,53 @@ int DPSolver::val_to_idx(float val, struct Set *ref)
     return idx;
 }
 
-int DPSolver::search_one_step(int k)
+// Use Monte Carlo method, run the physical model several times, then estimate the probability of states transitions.
+int DPSolver::mc_one_stateaction(int k, int xk, int wk, int uk)
+{
+    float x_ = 0;
+    float w_ = 0;
+    int  xk_ = 0;
+    int  wk_ = 0;
+    int  idx = 0;
+    float next[2];
+
+    // (s, a, s')
+    // initializing all counter as 0
+    cnter_table = new int[xw_cnt]();
+    // P(s, a, s')
+    
+    // try iter times, to check the probability
+    for (int i = 0;i < iter; ++i)
+    {
+        ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
+        x_ = next[0];
+        w_ = next[1];
+        xk_ = val_to_idx(x_, &x_set);
+        wk_ = val_to_idx(w_, &w_set);
+        idx = xw_idx(xk_, wk_);
+        cnter_table[idx] += 1;
+    }
+
+    // <x, w> --u--> <x', w'>
+    for(int xk_= 0; xk_ < x_set.count; ++xk_)
+    {
+        for (int wk_=0; wk_ < w_set.count; ++wk_)
+        {
+            // the number of transit to a certain state divided by the number of all transition
+            idx = xw_idx(xk_, wk_);
+            float state_cnt = (float) cnter_table[idx];
+            float prob = state_cnt/(float) iter;
+            prob_table[idx] = prob;
+        }
+    }
+    delete [] cnter_table;
+
+    return 0;
+}
+
+// TODO
+// Use mathmatical equation to calculate the transition probability
+int DPSolver::calc_one_step(int k)
 {
     float x_ = 0;
     float w_ = 0;
@@ -128,16 +162,13 @@ int DPSolver::search_one_step(int k)
             for (int uk = 0; uk < u_set.count; ++uk)
             {
                 // try iter times, to check the probability
-                for (int i = 0;i < iter; ++i)
-                {
-                    ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
-                    x_ = next[0];
-                    w_ = next[1];
-                    xk_ = val_to_idx(x_, &x_set);
-                    xk_ = val_to_idx(w_, &w_set);
-                    idx = sas2idx(xk, wk, uk, xk_, wk_);
-                    cnter_table[idx] += 1;
-                }
+                ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
+                x_ = next[0];
+                w_ = next[1];
+                xk_ = val_to_idx(x_, &x_set);
+                wk_ = val_to_idx(w_, &w_set);
+                idx = sas2idx(xk, wk, uk, xk_, wk_);
+                cnter_table[idx] += 1;
             }
         }
     }
@@ -196,17 +227,9 @@ float DPSolver::solve_one_step(int k)
 
         // from step k to k+1
         cout << "searching for step " << k << endl;
-        //temp_search = new float[x_set.count * u_set.count]();
-        // (s, a, s')
-        // initializing all counter as 0
-        cnter_table = new int[xw_cnt * u_set.count * xw_cnt]();
-        // P(s, a, s')
-        prob_table = new float[xw_cnt * u_set.count * xw_cnt]();
-
-        search_one_step(k);
 
         start = clock();
-        // a temporary buffer to save all the result of executing different u for a given xk
+        // a temporary buffer to save all the result of executing different u for a given xk, wk
         float *u_z_temp = new float[u_set.count]{};
 
         for (int xk = 0; xk < x_set.count; ++xk)
@@ -216,25 +239,39 @@ float DPSolver::solve_one_step(int k)
                 // get a <x, w> pair first
                 for (int uk = 0; uk < u_set.count; ++uk)
                 {
+                    prob_table = new float[xw_cnt]();
+
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
                     float x = x_set.list[xk];
                     float u = u_set.list[uk];
                     float l = x*x + u*u;
                     float sum = 0;
+                    //get the transition probability here
+                    if (prob_type == MONTECARLO)
+                    {
+                        mc_one_stateaction(k, xk, wk, uk);
+                    }
+                    else
+                    {
+                        cout << "TODO: algebraic way" << endl;
+                    }
+                    
                     // z, or x_/x'
                     for (int xk_ = 0; xk_ < x_set.count; ++xk_)
                     {
                         for (int wk_ = 0; wk_ < w_set.count; ++wk_)
                         {
                             //<k, x_k> --u_k--> <k+1,x_k+1>
-                            int idx = sas2idx(xk, wk, uk, xk_, wk_);
+                            int idx = xw_idx(xk_, wk_);
                             float p_z = prob_table[idx];
-                            float v_z = value_table[state_idx(k+1, xk, wk)];
+                            float v_z = value_table[state_idx(k+1, xk_, wk_)];
                             sum += p_z*v_z;
                         }
                     }
                     u_z_temp[uk] = l+sum;
+
+                    delete [] prob_table;
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
@@ -245,10 +282,6 @@ float DPSolver::solve_one_step(int k)
             }
         }
         end = clock();
-
-        //delete [] temp_search;
-        delete [] cnter_table;
-        delete [] prob_table;
     }
     else
     {
@@ -265,9 +298,14 @@ int DPSolver::write_to_file()
     ofstream out_value;
     out_value.open("value.csv", ios::out);
     //title needs to be re-assigned
-    // for (int i = 0; i < x_set.count; ++i)
-    //     out_value << x_set.list[i] << ",";
+    for (int i = 0; i < xw_cnt; ++i)
+    {
+        // xw_idx = xk*w_cnt + wk
+        out_value << x_set.list[i/w_set.count] << ";";
+        out_value << x_set.list[i%w_set.count] << ",";
+    }
     out_value << endl;
+
     for (int k = 0; k < N+1; k++)
     {
         for (int xk = 0; xk < x_set.count; ++xk)
@@ -281,8 +319,12 @@ int DPSolver::write_to_file()
 
     ofstream out_action;
     out_action.open("action.csv", ios::out);
-    for (int i = 0; i < x_set.count; ++i)
-        out_action << x_set.list[i] << ",";
+    for (int i = 0; i < xw_cnt; ++i)
+    {
+        // xw_idx = xk*w_cnt + wk
+        out_action << x_set.list[i/w_set.count] << ";";
+        out_action << x_set.list[i%w_set.count] << ",";
+    }
     out_action << endl;
     for (int k = 0; k < N; k++)
     {

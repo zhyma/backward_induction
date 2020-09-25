@@ -27,7 +27,7 @@ float PHYModel::mc_disturb(float w)
     float w_ = d(gen);
     w_ > w_bound[1] ? w_ = w_bound[1] : w_ = w_ ;
     w_ < w_bound[0] ? w_ = w_bound[0] : w_ = w_ ;
-    w_ = w;
+    w_ = w; 
 
     return w_;
 }

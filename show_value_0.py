@@ -5,8 +5,8 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import xml.etree.ElementTree as ET
 
-# csvFile = open("data.csv","r")
-# reader = csv.reader(csvFile)
+# Wasted.
+# only take out w = 0 for test. Realized that it doesn't work
 
 tree = ET.parse('config.xml')
 root = tree.getroot()
@@ -18,9 +18,30 @@ for child in root:
 mat1 = np.genfromtxt('value.csv', delimiter=',')[:,:-1]
 print(mat1.shape)
 
+with open('value.csv','r') as csvfile:
+    reader = csv.reader(csvfile)
+    row0 = next(reader)
+
+marker = []
+title = []
+for idx, val in enumerate(row0[:-1]):
+    w = float(val.split(';')[1])
+    if w == 0:
+        marker.append(idx)
+        title.append(val.split(';')[0])
+
+print(title)
+print(marker)
+
 # x from -2, 2. N=10
 # delete element, (mat1, column/row No. 0, axis=0/row-wise)
-mat1 = np.delete(mat1, 0, 0)
+mat0 = np.delete(mat1, 0, 0)
+mat1 = np.zeros((mat0.shape[0], len(marker)))
+print(mat1.shape)
+for i in range(mat1.shape[0]):
+    for j in range(mat1.shape[1]):
+        mat1[i, j] = mat0[i, marker[j]]
+        
 x,y=np.meshgrid(range(mat1.shape[1]), range(mat1.shape[0]))
 fig = plt.figure('value table and action table')
 ax1 = fig.add_subplot(2, 1, 1, projection='3d')

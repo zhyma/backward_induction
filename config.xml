@@ -1,24 +1,30 @@
 <?xml version="1.0"?>
 <config>
-    <!--An XML must have a single root -->>
+    <!--An XML must have a single root -->
     <time_step>
         10
     </time_step>
 
-    <!-- The number of points between each unit of x -->>
+    <!-- The number of points between each unit of x -->
     <granularity>
         10
     </granularity>
 
-    <!-- The type of disturbance (no distrubance, fixed or Monte Carlo) -->>
-    <!-- valid value can be: "markov", "fix", "none" -->>
+    <!-- The type of disturbance (no distrubance, fixed or Monte Carlo) -->
+    <!-- valid value can be: "markov", "fix", "none" -->
     <disturb_type>
-        markov
+        none
     </disturb_type>
 
     <!-- The type of solver -->>
-    <!-- valid value can be: "whole_model", "one_step", "math_base" -->>
+    <!-- valid value can be: "whole_model", "one_step", "math_base" -->
     <solver_type>
         one_step
     </solver_type>
+
+    <!-- The method used to get the transition probability -->
+    <!-- Valid value can be: "monte_carlo", "algebraic"-->
+    <probability_method>
+        monte_carlo
+    </probability_method>
 </config>

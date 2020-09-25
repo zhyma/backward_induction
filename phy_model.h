@@ -29,11 +29,12 @@ class PHYModel
 
         PHYModel(int disturb_selector, float s);
         int linear_model(int k, float x, float u, float w, float * next);
+        float mc_disturb(float w);
 
     private:
         std::random_device rd;
         std::mt19937 gen;
-        float mc_disturb(float last_w);
+        
 };
 
 
