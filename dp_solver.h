@@ -23,6 +23,7 @@ struct Min_index
     float value;
 };
 
+// move to physical model
 typedef struct Set
 {
     int count;
@@ -43,7 +44,7 @@ class DPSolver
 
         Set x_set;
         Set u_set;
-        Set w_set; 
+        Set w_set;
 
         int xw_cnt;
         int states_cnt;
@@ -54,7 +55,10 @@ class DPSolver
         DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_trials);
 
         int one_step_backward(int step);
-        float solve_one_step(int k);
+        float estimate_one_step(int k);
+
+        int create_distribution();
+        int get_distribution(int wk, float * prob_table);
 
         int write_to_file();
 
@@ -66,7 +70,10 @@ class DPSolver
         // The final model you get. The probability of transiting from one state to another.
         float *prob_table;
 
+        float *center_distribution;
+
         //
+        
         int find_min(float *u, int cnt, struct Min_index *min);
         int discretize(Set *in);
 
@@ -77,5 +84,8 @@ class DPSolver
 
         int mc_one_stateaction(int k, int xk, int wk, int uk);
         int calc_one_step(int k);
+
+        // for test
+        int write_array_to_csv(int k, float * table);
 };
 #endif // DP_SOLVER_H_

@@ -31,6 +31,11 @@ DPSolver::DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_t
 
     value_table = new float[(N+1)*xw_cnt]();
     action_table = new float[states_cnt]();
+
+    if (prob_type == ALGEBRAIC)
+    {
+        create_distribution();
+    }
     
     return;
 }
@@ -53,6 +58,88 @@ int DPSolver::discretize(Set *in)
 
     return 0;
 }
+
+int DPSolver::write_array_to_csv(int k, float * table)
+{
+    ofstream out_prob;
+    out_prob.open("test_result.csv", ios::out);
+    for(int i = 0;i < k; ++i)
+    {
+        out_prob << table[i] << ',';
+    }
+            
+    out_prob << '\n';
+
+    out_prob.close();
+    cout << "Test saved to file." << endl;
+    return 0;
+}
+
+// "fake" a distribution when \mu is at the center
+int DPSolver::create_distribution()
+{
+    int *histo_bin = new int[w_set.count]{};
+    center_distribution = new float[w_set.count]{};
+    //mu in the middle
+    float mu = (w_set.bound[0] + w_set.bound[1])/2.0;
+    float sample = 0;
+
+    // Make sure there is enough sample points
+    for (int i = 0; i < w_set.count * 1000; ++i)
+    {
+        // sample from the model
+        sample = ptr_model->mc_disturb(mu);
+        // place into the bin
+        for (int i = 0; i < w_set.count-1; ++i)
+        {
+            if (sample <= w_set.list[i] + 0.5/gran)
+            {
+                histo_bin[i] += 1;
+                break;
+            }
+        }
+        if (sample > w_set.list[w_set.count-2] + 0.5/gran)
+        {
+            histo_bin[w_set.count-1] += 1;
+        }
+    }
+    // get the distribution assume that 
+    for (int i =0; i < w_set.count; ++i)
+        center_distribution[i] = ((float) histo_bin[i])/((float) w_set.count*1000);
+
+    return 0;
+}
+
+// move the center \mu left and right to generate a new distribution
+int DPSolver::get_distribution(int wk, float * prob_table)
+{
+    int center = val_to_idx((w_set.bound[0] + w_set.bound[1])/2.0, &w_set);
+    int diff = center - wk;
+
+    // make sure the prob_table is initialized.
+    for (int i = 0; i < w_set.count; ++i)
+        prob_table[i] = 0.0;
+
+    for (int i = 0; i < w_set.count; ++i)
+    {
+        if (i-diff <= 0)
+        {
+            prob_table[0] += center_distribution[i];
+        }
+        else if (i-diff >= w_set.count-1)
+        {
+            prob_table[w_set.count-1] += center_distribution[i];
+        }
+        else
+        {
+            prob_table[i-diff] = center_distribution[i];
+        }
+        
+    }
+
+    return 0;
+}
+
 
 int DPSolver::find_min(float *u, int cnt, struct Min_index *min)
 {
@@ -167,7 +254,7 @@ int DPSolver::calc_one_step(int k)
                 w_ = next[1];
                 xk_ = val_to_idx(x_, &x_set);
                 wk_ = val_to_idx(w_, &w_set);
-                idx = sas2idx(xk, wk, uk, xk_, wk_);
+                //idx = sas2idx(xk, wk, uk, xk_, wk_);
                 cnter_table[idx] += 1;
             }
         }
@@ -185,7 +272,7 @@ int DPSolver::calc_one_step(int k)
                     for (int wk_=0; wk_ < w_set.count; ++wk_)
                     {
                         // the number of transit to a certain state divided by the number of all transition
-                        idx = sas2idx(xk, wk, uk, xk_, wk_);
+                        //idx = sas2idx(xk, wk, uk, xk_, wk_);
                         float state_cnt = (float) cnter_table[idx];
                         float prob = state_cnt/(float) iter;
                         prob_table[idx] = prob;
@@ -199,7 +286,7 @@ int DPSolver::calc_one_step(int k)
     return 0;
 }
 
-float DPSolver::solve_one_step(int k)
+float DPSolver::estimate_one_step(int k)
 {
     clock_t start,end;
     if (k==N)

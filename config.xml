@@ -13,7 +13,7 @@
     <!-- The type of disturbance (no distrubance, fixed or Monte Carlo) -->
     <!-- valid value can be: "markov", "fix", "none" -->
     <disturb_type>
-        none
+        markov
     </disturb_type>
 
     <!-- The type of solver -->>
@@ -25,6 +25,6 @@
     <!-- The method used to get the transition probability -->
     <!-- Valid value can be: "monte_carlo", "algebraic"-->
     <probability_method>
-        monte_carlo
+        algebraic
     </probability_method>
 </config>

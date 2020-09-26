@@ -13,7 +13,9 @@ PHYModel::PHYModel(int disturb_selector, float s)
 
 // The input is the current disturbance state
 // The disturbance follows a Markov chain
-// The output (next disturbance) only depends on the current one.
+// The output (next disturbance) only depends on the current one, it includes two values.
+// The first element is the actual value after comparing with the upper and lower boundary
+// The second element is the value before apply the boundary.
 float PHYModel::mc_disturb(float w)
 {
     // f(x)=\frac{1}{\sigma\sqrt{2\pi}}e^{-\frac{(x-\mu)^2}{2\sigma}}
@@ -27,7 +29,6 @@ float PHYModel::mc_disturb(float w)
     float w_ = d(gen);
     w_ > w_bound[1] ? w_ = w_bound[1] : w_ = w_ ;
     w_ < w_bound[0] ? w_ = w_bound[0] : w_ = w_ ;
-    w_ = w; 
 
     return w_;
 }
@@ -50,7 +51,7 @@ int PHYModel::linear_model(int k, float x, float u, float w, float * next)
         u = u_bound[1];
 
     //generate disturbance base by given parameters
-    float w_ = 0;
+    float w_;
     if (disturb_type == NO_DISTURB)
         w_ = 0;
     else if (disturb_type == MC_DISTURB)
