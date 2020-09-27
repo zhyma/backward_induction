@@ -229,61 +229,32 @@ int DPSolver::mc_one_stateaction(int k, int xk, int wk, int uk)
     return 0;
 }
 
-// TODO
-// Use mathmatical equation to calculate the transition probability
-int DPSolver::calc_one_step(int k)
+float DPSolver::calc_q(int k, int xk, int wk, int uk)
 {
     float x_ = 0;
     float w_ = 0;
-    int xk_ = 0;
-    int wk_ = 0;
-    int idx = 0;
-    float next[2];
+    int  xk_ = 0;
+    int  wk_ = 0;
+    int  idx = 0;
+    float next[2] = {};
+    float sum = 0;
 
-    for (int xk = 0;xk < x_set.count; ++xk)
-    {
-        for (int wk = 0; wk < w_set.count; ++wk)
-        {
-            // now get a <x,w> pair
-            // explore with u
-            for (int uk = 0; uk < u_set.count; ++uk)
-            {
-                // try iter times, to check the probability
-                ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
-                x_ = next[0];
-                w_ = next[1];
-                xk_ = val_to_idx(x_, &x_set);
-                wk_ = val_to_idx(w_, &w_set);
-                //idx = sas2idx(xk, wk, uk, xk_, wk_);
-                cnter_table[idx] += 1;
-            }
-        }
-    }
-    for (int xk = 0;xk < x_set.count; ++xk)
-    {
-        for (int wk = 0; wk < w_set.count; ++wk)
-        {
-            // now get a <x,w> pair
-            for (int uk = 0; uk < u_set.count; ++uk)
-            {
-                // <x, w> --u--> <x', w'>
-                for(int xk_= 0; xk_ < x_set.count; ++xk_)
-                {
-                    for (int wk_=0; wk_ < w_set.count; ++wk_)
-                    {
-                        // the number of transit to a certain state divided by the number of all transition
-                        //idx = sas2idx(xk, wk, uk, xk_, wk_);
-                        float state_cnt = (float) cnter_table[idx];
-                        float prob = state_cnt/(float) iter;
-                        prob_table[idx] = prob;
-                    }
-                }
-            }
-        }
-        
-    }
 
-    return 0;
+    ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
+    x_ = next[0];
+    w_ = next[1];
+    xk_ = val_to_idx(x_, &x_set);
+    wk_ = val_to_idx(w_, &w_set);
+
+    float *prob_table = new float[w_set.count]{};
+    get_distribution(wk, prob_table);
+    
+    for (int i = 0; i < w_set.count; ++i)
+    {
+        sum += prob_table[i] * value_table[state_idx(k+1, xk_, wk_)];
+    }
+    delete [] prob_table;
+    return sum;
 }
 
 float DPSolver::estimate_one_step(int k)
@@ -312,9 +283,6 @@ float DPSolver::estimate_one_step(int k)
         // searching backward, search for the transition probability one step before, then calculate the min
         // generate probability estimation for intermediate steps
 
-        // from step k to k+1
-        cout << "searching for step " << k << endl;
-
         start = clock();
         // a temporary buffer to save all the result of executing different u for a given xk, wk
         float *u_z_temp = new float[u_set.count]{};
@@ -326,8 +294,7 @@ float DPSolver::estimate_one_step(int k)
                 // get a <x, w> pair first
                 for (int uk = 0; uk < u_set.count; ++uk)
                 {
-                    prob_table = new float[xw_cnt]();
-
+                    
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
                     float x = x_set.list[xk];
@@ -337,28 +304,34 @@ float DPSolver::estimate_one_step(int k)
                     //get the transition probability here
                     if (prob_type == MONTECARLO)
                     {
+                        prob_table = new float[xw_cnt]();
+
+                        // from step k to k+1
+                        cout << "searching for step " << k << endl;
+                        // TODO: NEED TO RE-WORK ON THIS
                         mc_one_stateaction(k, xk, wk, uk);
+                        for (int xk_ = 0; xk_ < x_set.count; ++xk_)
+                        {
+                            for (int wk_ = 0; wk_ < w_set.count; ++wk_)
+                            {
+                                //<k, x_k> --u_k--> <k+1,x_k+1>
+                                int idx = xw_idx(xk_, wk_);
+                                float p_z = prob_table[idx];
+                                float v_z = value_table[state_idx(k+1, xk_, wk_)];
+                                sum += p_z*v_z;
+                            }
+                        }
+                        delete [] prob_table;
                     }
                     else
                     {
-                        cout << "TODO: algebraic way" << endl;
+                        //cout << "TODO: algebraic way" << endl;
+                        sum = calc_q(k, xk, wk, uk);
                     }
-                    
                     // z, or x_/x'
-                    for (int xk_ = 0; xk_ < x_set.count; ++xk_)
-                    {
-                        for (int wk_ = 0; wk_ < w_set.count; ++wk_)
-                        {
-                            //<k, x_k> --u_k--> <k+1,x_k+1>
-                            int idx = xw_idx(xk_, wk_);
-                            float p_z = prob_table[idx];
-                            float v_z = value_table[state_idx(k+1, xk_, wk_)];
-                            sum += p_z*v_z;
-                        }
-                    }
+                    
                     u_z_temp[uk] = l+sum;
 
-                    delete [] prob_table;
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.

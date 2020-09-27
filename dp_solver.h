@@ -83,7 +83,7 @@ class DPSolver
         int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
 
         int mc_one_stateaction(int k, int xk, int wk, int uk);
-        int calc_one_step(int k);
+        float calc_q(int k, int xk, int wk, int uk);
 
         // for test
         int write_array_to_csv(int k, float * table);

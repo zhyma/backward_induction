@@ -73,27 +73,27 @@ int main()
         DPSolver solver(&phy_model, prob_type, gran, 1000);
         float total_time = 0;
 
-        // string solver_type = get_param(elmt_root, "solver_type");
-        // //solving method: get the whole model, save to memory, then use DP to search backward at once.
-        // if (solver_type.compare("whole_model")==0)
-        // {
-        //     cout << "function no longer exist" << endl;
-        // }
-        // else if (solver_type.compare("one_step")==0)
-        // {
-        //     float cost_time = 0;
-        //     for (int k = phy_model.N; k >=0; k--)
-        //     {
-        //         cost_time = solver.estimate_one_step(k);
-        //         cout << "at k=" << k << ", spend " << cost_time << endl;
-        //         total_time += cost_time;
-        //     }
-        //     solver.write_to_file();
-        // }
+        string solver_type = get_param(elmt_root, "solver_type");
+        //solving method: get the whole model, save to memory, then use DP to search backward at once.
+        if (solver_type.compare("whole_model")==0)
+        {
+            cout << "function no longer exist" << endl;
+        }
+        else if (solver_type.compare("one_step")==0)
+        {
+            float cost_time = 0;
+            for (int k = phy_model.N; k >=0; k--)
+            {
+                cost_time = solver.estimate_one_step(k);
+                cout << "at k=" << k << ", spend " << cost_time << endl;
+                total_time += cost_time;
+            }
+            solver.write_to_file();
+        }
         
-        // cout << "total time cost: " << total_time << endl;
-        // cout << "done";
-        // return 0;
+        cout << "total time cost: " << total_time << endl;
+        cout << "done";
+        return 0;
     }
     else
     {
