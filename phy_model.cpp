@@ -33,7 +33,7 @@ float PHYModel::mc_disturb(float w)
     return w_;
 }
 
-int PHYModel::linear_model(int k, float x, float u, float w, float * next)
+int PHYModel::linear_model(int k, float x, float w, float u, float * next)
 {
     if (k<0)
         k = 0;
@@ -58,10 +58,10 @@ int PHYModel::linear_model(int k, float x, float u, float w, float * next)
         w_ = mc_disturb(w);
 
     float x_ = 0.9*x + u - w;
-    if(x_<-2)
-        x_ = -2;
-    else if(x_>2)
-        x_ = 2;
+    if(x_ < x_bound[0])
+        x_ = x_bound[0];
+    else if(x_>x_bound[1])
+        x_ = x_bound[1];
     next[0] = x_;
     next[1] = w_;
     return 0;

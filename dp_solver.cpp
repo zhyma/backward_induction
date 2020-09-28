@@ -240,7 +240,7 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
     float sum = 0;
 
 
-    ptr_model->linear_model(k, x_set.list[xk], u_set.list[uk], w_set.list[wk], next);
+    ptr_model->linear_model(k, x_set.list[xk], w_set.list[wk], u_set.list[uk], next);
     x_ = next[0];
     w_ = next[1];
     xk_ = val_to_idx(x_, &x_set);
@@ -248,10 +248,10 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
 
     float *prob_table = new float[w_set.count]{};
     get_distribution(wk, prob_table);
-    
     for (int i = 0; i < w_set.count; ++i)
     {
-        sum += prob_table[i] * value_table[state_idx(k+1, xk_, wk_)];
+        // p*V_{k+1}
+        sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
     }
     delete [] prob_table;
     return sum;

@@ -28,7 +28,7 @@ class PHYModel
         float w_0;
 
         PHYModel(int disturb_selector, float s);
-        int linear_model(int k, float x, float u, float w, float * next);
+        int linear_model(int k, float x, float w, float u, float * next);
         float mc_disturb(float w);
 
     private:
