@@ -2,7 +2,7 @@
 <config>
     <!--An XML must have a single root -->
     <processor_type>
-        GPU
+        CPU
     </processor_type>
 
 

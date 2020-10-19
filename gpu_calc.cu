@@ -55,6 +55,7 @@ __global__ void intermediate_kernel(int N, float *p, float *v, float *sum)
   while (tid < N)
   {
     temp += p[tid] * v[tid];
+    //printf("at i=%d, prob is: %f, , value is: %f\n", tid, p[tid], v[tid]);
     tid += blockDim.x * gridDim.x;
   }
   cache[cacheIndex] = temp;
@@ -69,7 +70,10 @@ __global__ void intermediate_kernel(int N, float *p, float *v, float *sum)
     i /= 2;
   }
   if (cacheIndex == 0)
+  {
     sum[0] = cache[0];
+    //printf("sum is %f\n", sum[0]);
+  }
 }
 
 void intermediate_value(Set x_set, Set w_set, float *prob, float *value, float *output)
@@ -94,7 +98,6 @@ void intermediate_value(Set x_set, Set w_set, float *prob, float *value, float *
   cudaDeviceSynchronize();
 
   cudaMemcpy(output, sum, sizeof(float), cudaMemcpyDeviceToHost);
-  printf("\n CUDA part done\n");
   // Free memory
   cudaFree(p);
   cudaFree(v);

@@ -249,6 +249,7 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
 
     float *prob_table = new float[w_set.count]{};
     get_distribution(wk, prob_table);
+
     if (GPU==false){
         for (int i = 0; i < w_set.count; ++i)
         {
@@ -258,8 +259,7 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
     }
     else
     {
-        float output = 0;
-        intermediate_value(x_set, w_set, prob_table, &(value_table[state_idx(k+1, xk_, 0)]), &output);
+        intermediate_value(x_set, w_set, prob_table, &(value_table[state_idx(k+1, xk_, 0)]), &sum);
     }
     
     
