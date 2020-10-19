@@ -15,27 +15,16 @@
 #include <stdlib.h>
 #include <time.h>
 #include "phy_model.h"
+#include "dp_utility.h"
 using namespace std;
 
-struct Min_index
-{
-    int index;
-    float value;
-};
-
-// move to physical model
-typedef struct Set
-{
-    int count;
-    float *list;
-    float bound[2];
-} Set;
 
 class DPSolver
 {
     public:
         PHYModel * ptr_model;
         int prob_type;
+        bool GPU = false;
 
         int N;                          // time steps, same as the model
         int gran;                       // granularity.

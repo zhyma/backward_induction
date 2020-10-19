@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <config>
     <!--An XML must have a single root -->
+    <processor_type>
+        GPU
+    </processor_type>
+
+
     <time_step>
         10
     </time_step>

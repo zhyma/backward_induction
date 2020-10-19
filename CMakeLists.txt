@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-project(backward_induction VERSION 0.1.0)
+project(backward_induction VERSION 0.2.0 LANGUAGES CXX CUDA)
 
 #include_directories(cmake)
 include(CTest)
@@ -8,7 +8,7 @@ enable_testing()
 set(XML_FILE "./tinyxml2/tinyxml2.cpp" "./tinyxml2/tinyxml2.h")
 
 #add_executable(backward_induction dp_solver.cpp phy_model.cpp ${XML_FILE})
-add_executable(backward_induction main.cpp dp_solver.cpp phy_model.cpp ${XML_FILE})
+add_executable(backward_induction main.cpp dp_solver.cpp gpu_calc.cu phy_model.cpp ${XML_FILE})
 set_property(TARGET backward_induction PROPERTY CXX_STANDARD 11)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

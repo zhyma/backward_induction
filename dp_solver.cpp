@@ -1,5 +1,6 @@
 //#include "phy_model.h"
 #include "dp_solver.h"
+#include "gpu_calc.h"
 
 //initial function
 DPSolver::DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_trials)
@@ -248,11 +249,20 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
 
     float *prob_table = new float[w_set.count]{};
     get_distribution(wk, prob_table);
-    for (int i = 0; i < w_set.count; ++i)
-    {
-        // p*V_{k+1}
-        sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
+    if (GPU==false){
+        for (int i = 0; i < w_set.count; ++i)
+        {
+            // p*V_{k+1}
+            sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
+        }
     }
+    else
+    {
+        float output = 0;
+        intermediate_value(x_set, w_set, prob_table, &(value_table[state_idx(k+1, xk_, 0)]), &output);
+    }
+    
+    
     delete [] prob_table;
     return sum;
 }
@@ -262,18 +272,35 @@ float DPSolver::estimate_one_step(int k)
     clock_t start,end;
     if (k==N)
     {
-        start = clock();
         // calculate the termianl cost at N=10
         // initial value for V_N is V_N(x)=J_f(x), final cost
         // J_f(x) = (1-x_N)^2
         // final step, no simulation/data is needed
-        for(int xk = 0; xk < x_set.count; ++xk)
+        start = clock();
+        if (GPU==false)
         {
-            for (int wk = 0; wk < w_set.count; ++wk)
+            for(int xk = 0; xk < x_set.count; ++xk)
             {
-                float v = pow(1-x_set.list[xk],2);
-                value_table[state_idx(N, xk, wk)] = v;
+                for (int wk = 0; wk < w_set.count; ++wk)
+                {
+                    float v = pow(1-x_set.list[xk],2);
+                    value_table[state_idx(N, xk, wk)] = v;
+                }
             }
+        }
+        else
+        {
+            // get states ready
+            float *s = new float[x_set.count*w_set.count];
+            for (int xk = 0; xk < x_set.count; ++xk)
+            {
+                for (int wk = 0; wk < w_set.count; ++wk)
+                {
+                    s[xw_idx(xk, wk)] = x_set.list[xk];
+                }
+            }
+            terminal_value(x_set, w_set, s, &value_table[state_idx(N, 0, 0)]);
+            cout << "CUDA at step N" << endl;
         }
         end = clock();
     }
@@ -286,7 +313,6 @@ float DPSolver::estimate_one_step(int k)
         start = clock();
         // a temporary buffer to save all the result of executing different u for a given xk, wk
         float *u_z_temp = new float[u_set.count]{};
-
         for (int xk = 0; xk < x_set.count; ++xk)
         {
             for (int wk = 0; wk < w_set.count; ++wk)
@@ -294,7 +320,6 @@ float DPSolver::estimate_one_step(int k)
                 // get a <x, w> pair first
                 for (int uk = 0; uk < u_set.count; ++uk)
                 {
-                    
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
                     float x = x_set.list[xk];
