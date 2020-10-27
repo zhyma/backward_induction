@@ -94,14 +94,19 @@ int main()
         else if (solver_type.compare("one_step")==0)
         {
             float cost_time = 0;
-            for (int k = phy_model.N; k >=0; k--)
+            if (solver.GPU == false)
             {
-                cost_time = solver.estimate_one_step(k);
-                cout << "at k=" << k << ", spend " << cost_time << endl;
-                total_time += cost_time;
+                for (int k = phy_model.N; k >=0; k--)
+                {
+                    cost_time = solver.estimate_one_step(k);
+                    cout << "at k=" << k << ", spend " << cost_time << endl;
+                    total_time += cost_time;
+                }
             }
-            // cost_time = solver.estimate_one_step(phy_model.N);
-            // cost_time = solver.estimate_one_step(phy_model.N-1);
+            else
+            {
+                cost_time = solver.estimate_by_gpu();
+            }
             solver.write_to_file();
         }
         

@@ -31,7 +31,7 @@ DPSolver::DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_t
     cout << "total states: " << states_cnt << endl;
 
     value_table = new float[(N+1)*xw_cnt]();
-    action_table = new float[states_cnt]();
+    action_table = new int[states_cnt]();
 
     if (prob_type == ALGEBRAIC)
     {
@@ -250,21 +250,45 @@ float DPSolver::calc_q(int k, int xk, int wk, int uk)
     float *prob_table = new float[w_set.count]{};
     get_distribution(wk, prob_table);
 
-    if (GPU==false){
-        for (int i = 0; i < w_set.count; ++i)
-        {
-            // p*V_{k+1}
-            sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
-        }
-    }
-    else
+    for (int i = 0; i < w_set.count; ++i)
     {
-        intermediate_value(x_set, w_set, prob_table, &(value_table[state_idx(k+1, xk_, 0)]), &sum);
+        // p*V_{k+1}
+        sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
     }
-    
     
     delete [] prob_table;
     return sum;
+}
+
+float DPSolver::estimate_by_gpu()
+{
+    // Prepare transition probability table: <x,w> --u--> <x',w'>
+    Trans *trans_table = new Trans[(N-1) * xw_cnt *u_set.count * xw_cnt];
+    for (int k = 0; k < N; ++k)
+    {
+        for (int xk = 0; xk < x_set.count; ++xk)
+        {
+            for (int wk = 0; wk < w_set.count; ++wk)
+            {
+                // get a <x, w> pair first
+                for (int uk = 0; uk < u_set.count; ++uk)
+                {
+                    float x = x_set.list[xk];
+                    float u = u_set.list[uk];
+                    float next[2] = {};
+                    ptr_model->linear_model(k, x_set.list[xk], w_set.list[wk], u_set.list[uk], next);
+                    int x_ = next[0];
+                    int w_ = next[1];
+                    float xk_ = val_to_idx(x_, &x_set);
+                    float wk_ = val_to_idx(w_, &w_set);
+
+                    float *prob_table = new float[w_set.count]{};
+                    get_distribution(wk, prob_table);
+                }
+            }
+        }
+    }
+    gpu_backward_induction(x_set, w_set, u_set, trans_table, value_table, action_table);
 }
 
 float DPSolver::estimate_one_step(int k)
@@ -277,31 +301,16 @@ float DPSolver::estimate_one_step(int k)
         // J_f(x) = (1-x_N)^2
         // final step, no simulation/data is needed
         start = clock();
-        if (GPU==false)
+
+        for(int xk = 0; xk < x_set.count; ++xk)
         {
-            for(int xk = 0; xk < x_set.count; ++xk)
+            for (int wk = 0; wk < w_set.count; ++wk)
             {
-                for (int wk = 0; wk < w_set.count; ++wk)
-                {
-                    float v = pow(1-x_set.list[xk],2);
-                    value_table[state_idx(N, xk, wk)] = v;
-                }
+                float v = pow(1-x_set.list[xk],2);
+                value_table[state_idx(N, xk, wk)] = v;
             }
         }
-        else
-        {
-            // get states ready
-            float *s = new float[x_set.count*w_set.count];
-            for (int xk = 0; xk < x_set.count; ++xk)
-            {
-                for (int wk = 0; wk < w_set.count; ++wk)
-                {
-                    s[xw_idx(xk, wk)] = x_set.list[xk];
-                }
-            }
-            terminal_value(x_set, w_set, s, &value_table[state_idx(N, 0, 0)]);
-            cout << "CUDA at step N" << endl;
-        }
+
         end = clock();
     }
     else if((k >= 0) and (k < N))

@@ -103,3 +103,8 @@ void intermediate_value(Set x_set, Set w_set, float *prob, float *value, float *
   cudaFree(v);
   return;
 }
+
+void gpu_backward_induction(Set x_set, Set w_set, Set u_set, Trans *trans_table, float *value_table, int *action_table)
+{
+  return;
+}

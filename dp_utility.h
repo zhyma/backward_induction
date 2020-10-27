@@ -15,4 +15,13 @@ typedef struct Set
     float bound[2];
 } Set;
 
+typedef struct Transition
+{
+    int xk;
+    int wk;
+    float p;
+    int xk_;
+    int wk_;
+} Trans;
+
 #endif // DP_UTILITY_H_

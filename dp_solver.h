@@ -39,12 +39,13 @@ class DPSolver
         int states_cnt;
         
         float *value_table;
-        float *action_table;
+        int *action_table;
 
         DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_trials);
 
         int one_step_backward(int step);
         float estimate_one_step(int k);
+        float estimate_by_gpu();
 
         int create_distribution();
         int get_distribution(int wk, float * prob_table);
