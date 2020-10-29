@@ -1,12 +1,5 @@
-#ifndef DP_SOLVER_H_
+#ifndef DP_MODEL_H_
 #define DP_SOLVER_H_
-
-#define NO_NOISE 0
-#define MC_NOISE 1
-#define FIX_NOISE 2
-
-#define MONTECARLO 0
-#define ALGEBRAIC 1
 
 #include <iostream>
 #include <cmath>
@@ -14,20 +7,36 @@
 #include <fstream>
 #include <stdlib.h>
 #include <time.h>
-#include "phy_model.h"
-#include "dp_utility.h"
-using namespace std;
 
+struct Min_index
+{
+    int index;
+    float value;
+};
 
-class DPSolver
+// move to physical model
+typedef struct Set
+{
+    int count;
+    float *list;
+    float bound[2];
+} Set;
+
+typedef struct Transition
+{
+    int xk;
+    int wk;
+    float p;
+    int xk_;
+    int wk_;
+} Trans;
+
+class DPModel
 {
     public:
-        PHYModel * ptr_model;
         int prob_type;
         bool GPU = false;
 
-        int N;                          // time steps, same as the model
-        int gran;                       // granularity.
         bool save_transition;
         int iter;
 
@@ -41,16 +50,7 @@ class DPSolver
         float *value_table;
         int *action_table;
 
-        DPSolver(PHYModel * ptr_in, int prob, int sample_rate, int number_of_trials);
-
-        int one_step_backward(int step);
-        float estimate_one_step(int k);
-        float estimate_by_gpu();
-
-        int create_distribution();
-        int get_distribution(int wk, float * prob_table);
-
-        int write_to_file();
+        DPModel();
 
     private:
         // Running the forward search once, you will get a
@@ -61,10 +61,7 @@ class DPSolver
         float *prob_table;
 
         float *center_distribution;
-
-        //
         
-        int find_min(float *u, int cnt, struct Min_index *min);
         int discretize(Set *in);
 
         int val_to_idx(float val, Set *ref);
@@ -72,10 +69,5 @@ class DPSolver
         int state_idx(int k, int xk, int wk);
         int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
 
-        int mc_one_stateaction(int k, int xk, int wk, int uk);
-        float calc_q(int k, int xk, int wk, int uk);
-
-        // for test
-        int write_array_to_csv(int k, float * table);
 };
 #endif // DP_SOLVER_H_
