@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "phy_model.h"
+
 struct Min_index
 {
     int index;
@@ -34,11 +36,13 @@ typedef struct Transition
 class DPModel
 {
     public:
-        int prob_type;
+        PHYModel * ptr_model;
         bool GPU = false;
 
         bool save_transition;
         int iter;
+        int N = 10;
+        int grain;
 
         Set x_set;
         Set u_set;
@@ -47,22 +51,24 @@ class DPModel
         int xw_cnt;
         int states_cnt;
         
+        // save <x,w> -u-> x'
+        int *s_trans_table;
+        float *prob_table;
         float *value_table;
         int *action_table;
 
-        DPModel();
+        DPModel(PHYModel * ptr_in, int grain);
 
     private:
         // Running the forward search once, you will get a
         float *temp_search;
         // A counter for all next states that appears. The extra one (last one, [x_cnt]) is for the sum of one current state.
         int *cnter_table;
-        // The final model you get. The probability of transiting from one state to another.
-        float *prob_table;
 
         float *center_distribution;
         
         int discretize(Set *in);
+        int state_trans();
 
         int val_to_idx(float val, Set *ref);
         int xw_idx(int xk, int wk);

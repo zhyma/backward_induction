@@ -1,20 +1,23 @@
-#include "phy_constraint.h"
 #include "dp_model.h"
 
 //initial function
-DPModel::DPModel()
+DPModel::DPModel(PHYModel * ptr_in, int grain_in)
 {
+    ptr_model = ptr_in;
+    grain = grain_in;
+
+    N = ptr_model->N;
     // discretizing x, u, and w
-    x_set.bound[0] = x_lower;
-    x_set.bound[1] = x_upper;
+    x_set.bound[0] = ptr_model->x_bound[0];
+    x_set.bound[1] = ptr_model->x_bound[1];
     discretize(&x_set);
 
-    w_set.bound[0] = w_lower;
-    w_set.bound[1] = w_upper;
+    w_set.bound[0] = ptr_model->w_bound[0];
+    w_set.bound[1] = ptr_model->w_bound[1];
     discretize(&w_set);
 
-    u_set.bound[0] = u_lower;
-    u_set.bound[1] = u_upper;
+    u_set.bound[0] = ptr_model->u_bound[0];
+    u_set.bound[1] = ptr_model->u_bound[1];
     discretize(&u_set);
 
     xw_cnt = x_set.count * w_set.count;
@@ -27,6 +30,9 @@ DPModel::DPModel()
 
     // TODO: create your distribution from w -> w_ here!
     //create_distribution();
+
+    // create <x,w> -u-> x' table here
+    state_trans();
     
     return;
 }
@@ -76,4 +82,27 @@ int DPModel::val_to_idx(float val, struct Set *ref)
     idx < ref->bound[0] ? idx = 0 : idx;
     idx > ref->count - 1 ? idx = ref->count -1 : idx;
     return idx;
+}
+
+int DPModel::state_trans()
+{
+    s_trans_table = new int[x_set.count * w_set.count * u_set.count]{};
+    for (int xk = 0; xk < x_set.count; ++xk)
+    {
+        for (int wk = 0; wk < w_set.count; ++wk)
+        {
+            for (int uk = 0; uk < u_set.count; ++uk)
+            {
+                float x = x_set.list[xk];
+                float w = w_set.list[wk];
+                float u = u_set.list[uk];
+
+                float x_ = ptr_model->linear_model(x,w,u);
+                int x2_idx = val_to_idx(x_, &x_set);
+                int state_idx = xk*(w_set.count*u_set.count) + wk*u_set.count + uk;
+                s_trans_table[state_idx] = x2_idx;
+            }
+        }
+    }
+    return 0;
 }
