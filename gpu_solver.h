@@ -1,1 +1,1 @@
-int gpu_main(DPModel * model);
+int gpu_main(DPModel * model, float *v_out, int *a_out);

@@ -48,9 +48,9 @@ int DPModel::discretize(Set *in)
         in->list[i] = in->bound[0] + 1.0/grain * i;
 
     std::cout << "number: " << in->count << std::endl;  
-    std::cout << "list: ";
-    for(int i = 0;i < in->count; ++i)
-        std::cout << in->list[i] << ", ";
+    // std::cout << "list: ";
+    // for(int i = 0;i < in->count; ++i)
+    //     std::cout << in->list[i] << ", ";
     std::cout << std::endl;
 
     return 0;

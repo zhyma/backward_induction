@@ -1,12 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
-#include "phy_model.h"
-#include "dp_model.h"
-#include "gpu_solver.h"
-//#include "utility.h"
-
-#include <iostream>
 #include <fstream>
+#include "dp_model.h"
 
 int write_to_file(DPModel * model, float *v, int * a)
 {
@@ -59,23 +53,5 @@ int write_to_file(DPModel * model, float *v, int * a)
     }
     out_action.close();
     
-    return 0;
-}
-
-int main()
-{
-    PHYModel phy_model;
-    DPModel dp_model(&phy_model, 100);
-    std::cout << "creating a new DP model is done" << std::endl;
-    int N = dp_model.N;
-    int n_x = dp_model.x_set.count;
-    int n_w = dp_model.w_set.count;
-    int n_u = dp_model.u_set.count;
-    float *v = new float[(N+1)*n_x*n_w]{};
-    // You may only need 
-    int *a = new int[N*n_x*n_w]{};
-    gpu_main(&dp_model, v, a);
-    write_to_file(&dp_model, v, a);
-
     return 0;
 }
