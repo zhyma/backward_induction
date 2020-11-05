@@ -1,5 +1,5 @@
 #ifndef DP_MODEL_H_
-#define DP_SOLVER_H_
+#define DP_MODEL_H_
 
 #include <iostream>
 #include <cmath>
@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "phy_model.h"
+#include "prob_tool.h"
 
 struct Min_index
 {
@@ -76,4 +77,4 @@ class DPModel
         int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
 
 };
-#endif // DP_SOLVER_H_
+#endif // DP_MODEL_H_

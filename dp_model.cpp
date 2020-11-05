@@ -1,5 +1,6 @@
 #include "dp_model.h"
 
+
 //initial function
 DPModel::DPModel(PHYModel * ptr_in, int grain_in)
 {
@@ -33,6 +34,11 @@ DPModel::DPModel(PHYModel * ptr_in, int grain_in)
 
     // create <x,w> -u-> x' table here
     state_trans();
+
+    // create transition probability matrix
+    Prob_gen prob((int)10e5, w_set.count, 2.0/6.0, w_set.bound);
+    prob_table = new float[w_set.count*w_set.count]{};
+    memcpy(prob_table, prob.prob_mat, w_set.count*w_set.count*sizeof(float));
     
     return;
 }

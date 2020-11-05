@@ -1,5 +1,3 @@
-#include <iostream>
-#include <fstream>
 #include "dp_model.h"
 
 int write_to_file(DPModel * model, float *v, int * a)

@@ -119,6 +119,7 @@ __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int 
   if (tid == 0)
   {
     int s_idx = k*n_x*n_w + x_idx*n_w + w_idx;
+    v[s_idx] = sdata_q[0].value;
     a[s_idx] = sdata_q[0].index;
   }
 
@@ -185,12 +186,12 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
   // Initialize "index" transition matrix <x,w> -u-> x'
   memcpy(t, model->s_trans_table, n_x*n_w*n_u*sizeof(int));
   // Initialize transition probability matrix w -> w'
-  //memcpy(p, model->prob_table, n_x*n_w**sizeof(float));
-  for (int i = 0; i < n_w; ++i)
-  {
-    for (int j=0; j < n_w; ++j)
-      p[i*n_w + j] = (i==j)?1:0;
-  }
+  memcpy(p, model->prob_table, n_w*n_w*sizeof(float));
+  // for (int i = 0; i < n_w; ++i)
+  // {
+  //   for (int j=0; j < n_w; ++j)
+  //     p[i*n_w + j] = model->prob->prob_mat[i*n_w + j]
+  // }
 
   // Set up parameters for parallel computing
   // For calculating q-value
