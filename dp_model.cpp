@@ -26,8 +26,8 @@ DPModel::DPModel(PHYModel * ptr_in, int grain_in)
     
     std::cout << "total states: " << states_cnt << std::endl;
 
-    value_table = new float[(N+1)*xw_cnt]();
-    action_table = new int[states_cnt]();
+    // value_table = new float[(N+1)*xw_cnt]();
+    // action_table = new int[states_cnt]();
 
     // TODO: create your distribution from w -> w_ here!
     //create_distribution();
@@ -104,9 +104,10 @@ int DPModel::state_trans()
                 float u = u_set.list[uk];
 
                 float x_ = ptr_model->linear_model(x,w,u);
-                int x2_idx = val_to_idx(x_, &x_set);
-                int state_idx = xk*(w_set.count*u_set.count) + wk*u_set.count + uk;
-                s_trans_table[state_idx] = x2_idx;
+                int xk_ = val_to_idx(x_, &x_set);
+                // std::cout << "x=" << x << ", w=" << w << ", u=" << u << ", x_=" << x_set.list[xk_] << " (" << xk_ << ")" << std::endl; 
+                int idx = xk*(w_set.count*u_set.count) + wk*u_set.count + uk;
+                s_trans_table[idx] = xk_;
             }
         }
     }

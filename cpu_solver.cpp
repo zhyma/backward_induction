@@ -3,19 +3,31 @@
 CPUSolver::CPUSolver(DPModel * ptr_in)
 {
     model = ptr_in;
+    N = model->N;
+    n_x = model->x_set.count;
+    n_w = model->w_set.count;
+    n_u = model->u_set.count;
+    value = new float[(N+1)*n_x*n_w];
+    action = new int[N*n_x*n_w];
+    q_table = new float[N*n_x*n_w*n_u];
+
+    for (int k = N; k >= 0; k--)
+    {
+        estimate_one_step(k);
+    }
     return;
 }
 
-int CPUSolver::find_min(float *u, int cnt, struct Min_index *min)
+int CPUSolver::find_min(float *q, int cnt, struct Min_index *min)
 {
     int index = 0;
-    float value = u[0];
+    float value = q[0];
     for(int i = 0;i < cnt; ++i)
     {
-        if(u[i] < value)
+        if(q[i] < value)
         {
-            value = u[i];
             index = i;
+            value = q[i];
         }
     }
     min->index = index;
@@ -28,68 +40,60 @@ int CPUSolver::find_min(float *u, int cnt, struct Min_index *min)
 // the full state contains time step k
 int CPUSolver::xw_idx(int xk, int wk)
 {
-    int idx = xk * model->w_set.count + wk;
+    int idx = xk * n_w + wk;
     return idx;
 }
 
 int CPUSolver::state_idx(int k, int xk, int wk)
 {
-    int idx = k * xw_cnt + xw_idx(xk, wk);
+    int idx = k*n_x*n_w + xk*n_w + wk;
     return idx;
-    return 0;
 }
 
 float CPUSolver::calc_q(int k, int xk, int wk, int uk)
 {
-    float x_ = 0;
-    float w_ = 0;
     int  xk_ = 0;
     int  wk_ = 0;
     int  idx = 0;
-    float next[2] = {};
     float sum = 0;
 
+    xk_ = model->s_trans_table[xk*n_w*n_u + wk*n_u + uk];
 
-    ptr_model->linear_model(k, x_set.list[xk], w_set.list[wk], u_set.list[uk], next);
-    x_ = next[0];
-    w_ = next[1];
-    xk_ = val_to_idx(x_, &x_set);
-    wk_ = val_to_idx(w_, &w_set);
-
-    float *prob_table = new float[w_set.count]{};
-    get_distribution(wk, prob_table);
-
-    for (int i = 0; i < w_set.count; ++i)
+    for (int wk_ = 0; wk_ < n_w; ++wk_)
     {
         // p*V_{k+1}
-        sum += prob_table[i] * value_table[state_idx(k+1, xk_, i)];
+        int p_idx = wk*n_w + wk_;
+        float p = model->prob_table[p_idx];
+        int v_idx = k*(n_x*n_w) + xk_*n_w + wk_;
+        float v = value[v_idx];
+        sum += p*v;
     }
+    float x = model->x_set.list[xk];
+    float u = model->u_set.list[uk];
+    float l = x*x + u*u;
+
+    q_table[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk] = l+sum;
     
-    delete [] prob_table;
-    return sum;
+    return l + sum;
 }
 
-float CPUSolver::estimate_one_step(int k)
+int CPUSolver::estimate_one_step(int k)
 {
-    clock_t start,end;
     if (k==N)
     {
-        // calculate the termianl cost at N=10
+        // calculate the terminal cost at N=10
         // initial value for V_N is V_N(x)=J_f(x), final cost
         // J_f(x) = (1-x_N)^2
         // final step, no simulation/data is needed
-        start = clock();
 
-        for(int xk = 0; xk < x_set.count; ++xk)
+        for(int xk = 0; xk < n_x; ++xk)
         {
-            for (int wk = 0; wk < w_set.count; ++wk)
+            for (int wk = 0; wk < n_w; ++wk)
             {
-                float v = pow(1-x_set.list[xk],2);
-                value_table[state_idx(N, xk, wk)] = v;
+                float v = pow(1 - model->x_set.list[xk],2);
+                value[state_idx(N, xk, wk)] = v;
             }
         }
-
-        end = clock();
     }
     else if((k >= 0) and (k < N))
     {
@@ -97,69 +101,32 @@ float CPUSolver::estimate_one_step(int k)
         // searching backward, search for the transition probability one step before, then calculate the min
         // generate probability estimation for intermediate steps
 
-        start = clock();
         // a temporary buffer to save all the result of executing different u for a given xk, wk
-        float *u_z_temp = new float[u_set.count]{};
-        for (int xk = 0; xk < x_set.count; ++xk)
+        float *q = new float[n_u]{};
+        for (int xk = 0; xk < n_x; ++xk)
         {
-            for (int wk = 0; wk < w_set.count; ++wk)
+            for (int wk = 0; wk < n_w; ++wk)
             {
                 // get a <x, w> pair first
-                for (int uk = 0; uk < u_set.count; ++uk)
+                for (int uk = 0; uk < n_u; ++uk)
                 {
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
-                    float x = x_set.list[xk];
-                    float u = u_set.list[uk];
-                    float l = x*x + u*u;
-                    float sum = 0;
-                    //get the transition probability here
-                    if (prob_type == MONTECARLO)
-                    {
-                        prob_table = new float[xw_cnt]();
-
-                        // from step k to k+1
-                        cout << "searching for step " << k << endl;
-                        // TODO: NEED TO RE-WORK ON THIS
-                        mc_one_stateaction(k, xk, wk, uk);
-                        for (int xk_ = 0; xk_ < x_set.count; ++xk_)
-                        {
-                            for (int wk_ = 0; wk_ < w_set.count; ++wk_)
-                            {
-                                //<k, x_k> --u_k--> <k+1,x_k+1>
-                                int idx = xw_idx(xk_, wk_);
-                                float p_z = prob_table[idx];
-                                float v_z = value_table[state_idx(k+1, xk_, wk_)];
-                                sum += p_z*v_z;
-                            }
-                        }
-                        delete [] prob_table;
-                    }
-                    else
-                    {
-                        //cout << "TODO: algebraic way" << endl;
-                        sum = calc_q(k, xk, wk, uk);
-                    }
-                    // z, or x_/x'
-                    
-                    u_z_temp[uk] = l+sum;
-
+                    q[uk] = calc_q(k, xk, wk, uk);
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
                 Min_index min;
-                find_min(u_z_temp, u_set.count, &min);
-                value_table[state_idx(k, xk, wk)] = min.value;
-                action_table[state_idx(k, xk, wk)] = u_set.list[min.index];
+                find_min(q, n_u, &min);
+                value[state_idx(k, xk, wk)] = min.value;
+                //action[state_idx(k, xk, wk)] = model->u_set.list[min.index];
+                action[state_idx(k, xk, wk)] = min.index;
             }
         }
-        end = clock();
     }
     else
     {
-        cout << "Error! k="<< k <<" is out of the boundary!" << endl;
+        std::cout << "Error! k="<< k <<" is out of the boundary!" << std::endl;
     }
-    
-    // return: time
-    return (float) (end-start)/CLOCKS_PER_SEC;
+    return 0;
 }

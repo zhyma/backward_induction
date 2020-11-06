@@ -55,19 +55,12 @@ class DPModel
         // save <x,w> -u-> x'
         int *s_trans_table;
         float *prob_table;
-        float *value_table;
-        int *action_table;
+        // float *value_table;
+        // int *action_table;
 
         DPModel(PHYModel * ptr_in, int grain);
 
     private:
-        // Running the forward search once, you will get a
-        float *temp_search;
-        // A counter for all next states that appears. The extra one (last one, [x_cnt]) is for the sum of one current state.
-        int *cnter_table;
-
-        float *center_distribution;
-        
         int discretize(Set *in);
         int state_trans();
 
