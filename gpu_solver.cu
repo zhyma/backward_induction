@@ -7,9 +7,26 @@ __device__ struct q_info
     float value;
 };
 
+find_min(float *q, int cnt, struct Min_index *min)
+{
+    int index = 0;
+    float value = q[0];
+    for(int i = 0;i < cnt; ++i)
+    {
+        if(q[i] < value)
+        {
+            index = i;
+            value = q[i];
+        }
+    }
+    min->index = index;
+    min->value = value;
+    return 0;
+}
+
 // TODO: modify this kernel
 // Kernel function to calculate the control/action cost
-__global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, q_info *q, float *q_table)
+__global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, q_info *q, float *test_table)
 {
   //max number of thread possible, some will not be used
   extern __shared__ float sdata_sum[];
@@ -38,14 +55,13 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   // find p(w -> w') 
   int p_idx = wk * n_w + wk_;
   // find v(<x',w'>)
-  int v_idx = k*(n_x*n_w) + xk_*n_w + wk_;
+  int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
 
   int tid = threadIdx.x;
   // STEP 3: do the sum reduction here
   // initialize each element with corresponding pv 
   sdata_sum[tid] = (tid < n_w)?p[p_idx]*v[v_idx]:0;
-	__syncthreads();
-
+  __syncthreads();
 
 	for (unsigned int s = blockDim.x/2; s > 0; s >>=1)
 	{
@@ -57,10 +73,11 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   // STEP 4: calculate q = l(k,x,u) + sum(pv), write q to global memory
   if (tid == 0)
   {
-    int q_idx = k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk;
+    int q_idx = xk*n_w*n_u + wk*n_u + uk;
     q[q_idx].index = uk;
     q[q_idx].value = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
-    q_table[q_idx] = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
+
+    test_table[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk] = sdata_sum[0];
   }
 }
 
@@ -69,10 +86,6 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
 __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int *t, float *p, float *v, q_info *q, int *a)
 {
   extern __shared__ q_info sdata_q[];
-
-  q_info max_q;
-  max_q.index = -1;
-  max_q.value = 10e6;
 
   // <x, w> -u->
   // grid: 2D, <x,w>
@@ -88,7 +101,7 @@ __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int 
   int uk = threadIdx.x;
 
   int tid = threadIdx.x;
-  int q_idx = k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk;
+  int q_idx = xk*n_w*n_u + wk*n_u + uk;
   // STEP 1: 
   // initialize each element with
   if (tid < n_u)
@@ -112,7 +125,7 @@ __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int 
       if (sdata_q[tid].value > sdata_q[tid+s].value)
       {
         sdata_q[tid].index = sdata_q[tid+s].index;
-        sdata_q[tid].value = sdata_q[tid+2].value;
+        sdata_q[tid].value = sdata_q[tid+s].value;
       }
     }
 
@@ -164,7 +177,7 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
   float *p, *v;
   q_info *q;
   int *a;
-  float *q_table;
+  float *test_table;
 
   // Allocate memory
   cudaMalloc(&x, n_x*sizeof(float));
@@ -178,11 +191,11 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
   // The whole value table size will be (N+1)*N_x*N_w
   // Ping-pong buffer type will be 2*N_x*N_w
   cudaMalloc(&v, (N+1)*n_x*n_w*sizeof(float));
-  cudaMalloc(&q, (N+1)*n_x*n_w*n_u*sizeof(q_info));
+  cudaMalloc(&q, n_x*n_w*n_u*sizeof(q_info));
   // You may only need 
   cudaMalloc(&a, N*n_x*n_w*sizeof(int));
 
-  cudaMalloc(&q_table, N*n_x*n_w*n_u*sizeof(float));
+  cudaMalloc(&test_table, N*n_x*n_w*n_u*sizeof(float));
 
   // initialize x, w, and u value to GPU for reference arrays on the host
   cudaMemcpy(x, model->x_set.list, n_x*sizeof(float), cudaMemcpyHostToDevice);
@@ -215,21 +228,21 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
   // Wait for GPU to finish before accessing on host
   cudaDeviceSynchronize();
 
-  
   for (int k = N-1; k >= 0; k--)
   {
     //bi_q_kernel<<<grid, blockSize, pow2>>>(k, x, w, u, t, p, v, a);
     //bi_q_kernel<<<q_grid, q_block, q_block*sizeof(float)>>>(k, x, w, u, t, p, v, q, a);
-    bi_q_kernel<<<q_grid, q_block, q_block*sizeof(float)>>>(k, x, w, u, t, p, v, q, q_table);
+    bi_q_kernel<<<q_grid, q_block, q_block*sizeof(float)>>>(k, x, w, u, t, p, v, q, test_table);
     cudaDeviceSynchronize();
     //bi_min_kernel<<<s_grid, s_block, s_block*sizeof(float)>>>(k, x, w, u, t, p, v, q, a);
     bi_min_kernel<<<s_grid, s_block, s_block*sizeof(q_info)>>>(n_u, k, x, w, u, t, p, v, q, a);
+    cudaDeviceSynchronize();
   }
 
   // Backup data before it's too late
   cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
   cudaMemcpy(a_out, a, N*n_x*n_w*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(q_out, q_table, N*n_x*n_w*n_u*sizeof(float), cudaMemcpyDeviceToHost);
+  cudaMemcpy(q_out, test_table, N*n_x*n_w*n_u*sizeof(float), cudaMemcpyDeviceToHost);
 
   // Free memory
   cudaFree(x);
@@ -240,7 +253,7 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
   cudaFree(v);
   cudaFree(q);
   cudaFree(a);
-  cudaFree(q_table);
+  cudaFree(test_table);
 
   std::cout << "optimal actions found" << std::endl;
 

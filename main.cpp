@@ -14,11 +14,12 @@
 int main()
 {
     std::clock_t start;
+    double cpu_duration = 0;
     double gpu_duration = 0;
     std::string solver_type;
 
     PHYModel phy_model;
-    DPModel dp_model(&phy_model, 3);
+    DPModel dp_model(&phy_model, 5);
     std::cout << "creating a new DP model is done" << std::endl;
     int N = dp_model.N;
     int n_x = dp_model.x_set.count;
@@ -27,21 +28,21 @@ int main()
 
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
-    float *q_table = new float[N*n_x*n_w*n_u]{};
+    float *test_table = new float[N*n_x*n_w*n_u]{};
 
     start = std::clock();
     solver_type = "cpu";
     CPUSolver cpu_solver(&dp_model);
-    gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-    std::cout << "CPU time: " << gpu_duration << " s" << std::endl;
-    write_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action, cpu_solver.q_table);
+    cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    std::cout << "CPU time: " << cpu_duration << " s" << std::endl;
+    write_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action, cpu_solver.test_table);
 
     start = std::clock();
     solver_type = "gpu";
-    gpu_main(&dp_model, value, action, q_table);
+    gpu_main(&dp_model, value, action, test_table);
     gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
-    write_to_file(&dp_model, solver_type, value, action, q_table);
+    write_to_file(&dp_model, solver_type, value, action, test_table);
 
     for (int i = 0; i < (N+1)*n_x*n_w; ++i)
         value[i] = abs(value[i] - cpu_solver.value[i])<0.01 ? 0:(value[i] - cpu_solver.value[i]);
@@ -50,9 +51,9 @@ int main()
         action[i] = action[i] - cpu_solver.action[i];
 
     for (int i = 0; i < N*n_x*n_w*n_u; ++i)
-        q_table[i] = abs(q_table[i] - cpu_solver.q_table[i]) < 0.01?0:(q_table[i] - cpu_solver.q_table[i]);
+        test_table[i] = abs(test_table[i] - cpu_solver.test_table[i]) < 0.01?0:(test_table[i] - cpu_solver.test_table[i]);
     solver_type = "diff";
-    write_to_file(&dp_model, solver_type, value, action, q_table);
+    write_to_file(&dp_model, solver_type, value, action, test_table);
 
     return 0;
 }

@@ -9,7 +9,7 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
     n_u = model->u_set.count;
     value = new float[(N+1)*n_x*n_w];
     action = new int[N*n_x*n_w];
-    test_table = new float[N*n_x*n_w*n_u];
+    q_table = new float[N*n_x*n_w*n_u];
 
     for (int k = N; k >= 0; k--)
     {
@@ -56,7 +56,6 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
     int  wk_ = 0;
     int  idx = 0;
     float sum = 0;
-    float test_sum = 0;
 
     xk_ = model->s_trans_table[xk*n_w*n_u + wk*n_u + uk];
 
@@ -65,16 +64,15 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
         // p*V_{k+1}
         int p_idx = wk*n_w + wk_;
         float p = model->prob_table[p_idx];
-        int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
+        int v_idx = k*(n_x*n_w) + xk_*n_w + wk_;
         float v = value[v_idx];
         sum += p*v;
-        test_sum += p*v;
     }
     float x = model->x_set.list[xk];
     float u = model->u_set.list[uk];
     float l = x*x + u*u;
 
-    test_table[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk] = test_sum;
+    q_table[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk] = l+sum;
     
     return l + sum;
 }

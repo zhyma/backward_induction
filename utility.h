@@ -10,7 +10,7 @@ int write_to_file(DPModel * model, std::string solver_type, float *v, int * a, f
     int n_u = model->u_set.count;
 
     std::ofstream out_value;
-    out_value.open(solver_type + "_value.csv", std::ios::out);
+    out_value.open("output/" + solver_type + "_value.csv", std::ios::out);
     out_value << std::setiosflags(std::ios::fixed) << std::setprecision(2);
 
     //title needs to be re-assigned
@@ -37,7 +37,7 @@ int write_to_file(DPModel * model, std::string solver_type, float *v, int * a, f
     out_value.close();
 
     std::ofstream out_action;
-    out_action.open(solver_type + "_action.csv", std::ios::out);
+    out_action.open("output/" + solver_type + "_action.csv", std::ios::out);
     out_action << std::setiosflags(std::ios::fixed) << std::setprecision(2);
     for (int i = 0; i < model->xw_cnt; ++i)
     {
@@ -62,7 +62,7 @@ int write_to_file(DPModel * model, std::string solver_type, float *v, int * a, f
     out_action.close();
 
     std::ofstream out_q;
-    out_q.open(solver_type + "_q.csv", std::ios::out);
+    out_q.open("output/" + solver_type + "_q.csv", std::ios::out);
     out_q << std::setiosflags(std::ios::fixed) << std::setprecision(2);
     for (int xk = 0; xk < model->x_set.count; ++xk)
     {

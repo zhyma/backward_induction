@@ -21,7 +21,7 @@ if len(sys.argv) < 1:
     exit()
 
 solver_type = str(sys.argv[1])
-mat1 = np.genfromtxt(solver_type+'_value.csv', delimiter=',')[:,:-1]
+mat1 = np.genfromtxt("output/" + solver_type+'_value.csv', delimiter=',')[:,:-1]
 print(mat1.shape)
 
 # x from -2, 2. N=10
@@ -39,7 +39,7 @@ ax1.set_yticks(range(0, mat1.shape[0], 1))
 ax1.plot_surface(x, y, mat1, cmap=cm.coolwarm)
 # ax.plot_wireframe(x,y,mat, alpha=0.5)
 
-mat2 = np.genfromtxt(solver_type+'_action.csv', delimiter=',')[:,:-1]
+mat2 = np.genfromtxt("output/" + solver_type+'_action.csv', delimiter=',')[:,:-1]
 # delete element, (mat1, column/row No. 0, axis=0/row-wise)
 mat2 = np.delete(mat2, 0, 0)
 ax2 = fig.add_subplot(2, 1, 2, projection='3d')
