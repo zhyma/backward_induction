@@ -19,7 +19,7 @@ int main()
     std::string solver_type;
 
     PHYModel phy_model;
-    DPModel dp_model(&phy_model, 3);
+    DPModel dp_model(&phy_model, 80);
     std::cout << "creating a new DP model is done" << std::endl;
     int N = dp_model.N;
     int n_x = dp_model.x_set.count;
@@ -35,14 +35,14 @@ int main()
     CPUSolver cpu_solver(&dp_model);
     cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "CPU time: " << cpu_duration << " s" << std::endl;
-    write_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action, cpu_solver.test_table);
+    // write_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action, cpu_solver.test_table);
 
     start = std::clock();
     solver_type = "gpu";
     gpu_main(&dp_model, value, action, test_table);
     gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
-    write_to_file(&dp_model, solver_type, value, action, test_table);
+    // write_to_file(&dp_model, solver_type, value, action, test_table);
 
     int error_flag = 0;
     for (int i = 0; i < (N+1)*n_x*n_w; ++i)

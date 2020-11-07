@@ -24,7 +24,6 @@ int find_min(float *q, int cnt, q_info *min)
     return 0;
 }
 
-// TODO: modify this kernel
 // Kernel function to calculate the control/action cost
 __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q, float *test_table)
 {
@@ -78,7 +77,6 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   }
 }
 
-// TODO: modify this kernel
 // Kernel function to find the control/action with the lowest cost (q-value)
 __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q, int *a)
 {
@@ -98,18 +96,17 @@ __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int 
   int uk = threadIdx.x;
 
   int tid = threadIdx.x;
-  int q_idx = xk*n_w*n_u + wk*n_u + uk;
   // STEP 1: 
   // initialize each element with
   if (tid < n_u)
   {
     sdata_q[tid].index = tid;
-    sdata_q[tid].value = q[q_idx];
+    sdata_q[tid].value = q[xk*n_w*n_u + wk*n_u + uk];
   }
   else
   {
     sdata_q[tid].index = 0;
-    sdata_q[tid].value = q[0];
+    sdata_q[tid].value = q[xk*n_w*n_u + wk*n_u];
   }
   
 	__syncthreads();
@@ -225,7 +222,7 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
   // Wait for GPU to finish before accessing on host
   cudaDeviceSynchronize();
 
-  cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
+  // cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int k = N-1; k >= 0; k--)
   {
@@ -236,26 +233,26 @@ int gpu_main(DPModel * model, float *v_out, int *a_out, float *q_out)
 
     cudaMemcpy(q_out, q, n_x*n_w*n_u*sizeof(float), cudaMemcpyDeviceToHost);
     //bi_min_kernel<<<s_grid, s_block, s_block*sizeof(float)>>>(k, x, w, u, t, p, v, q, a);
-    // bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
-    // cudaDeviceSynchronize();
+    bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
+    cudaDeviceSynchronize();
     // break;
-    for (int xk = 0; xk < n_x; ++xk)
-    {
-      for (int wk = 0; wk < n_w; ++wk)
-      {
-        q_info *min = new q_info[1];
-        find_min(&q_out[xk*n_w*n_u + wk*n_u], n_u, min);
-        v_out[k*n_x*n_w + xk*n_w + wk] = min[0].value;
-        a_out[k*n_x*n_w + xk*n_w + wk] = min[0].index;
-      }
-    }
-    cudaMemcpy(v, v_out, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyHostToDevice);
+    // for (int xk = 0; xk < n_x; ++xk)
+    // {
+    //   for (int wk = 0; wk < n_w; ++wk)
+    //   {
+    //     q_info *min = new q_info[1];
+    //     find_min(&q_out[xk*n_w*n_u + wk*n_u], n_u, min);
+    //     v_out[k*n_x*n_w + xk*n_w + wk] = min[0].value;
+    //     a_out[k*n_x*n_w + xk*n_w + wk] = min[0].index;
+    //   }
+    // }
+    // cudaMemcpy(v, v_out, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyHostToDevice);
   }
 
-  // // Backup data before it's too late
-  // cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(a_out, a, N*n_x*n_w*sizeof(int), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(q_out, test_table, N*n_x*n_w*n_u*sizeof(float), cudaMemcpyDeviceToHost);
+  // Backup data before it's too late
+  cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
+  cudaMemcpy(a_out, a, N*n_x*n_w*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(q_out, test_table, N*n_x*n_w*n_u*sizeof(float), cudaMemcpyDeviceToHost);
 
   // Free memory
   cudaFree(x);
