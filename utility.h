@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "dp_model.h"
 
-int write_to_file(DPModel * model, std::string solver_type, float *v, int * a, float *q)
+int write_to_file(DPModel * model, std::string solver_type, float *v, int * a)
 {
     int N = model->N;
     int n_x = model->x_set.count;
@@ -61,37 +61,5 @@ int write_to_file(DPModel * model, std::string solver_type, float *v, int * a, f
     }
     out_action.close();
 
-    std::ofstream out_q;
-    out_q.open("output/" + solver_type + "_q.csv", std::ios::out);
-    out_q << std::setiosflags(std::ios::fixed) << std::setprecision(2);
-    for (int xk = 0; xk < model->x_set.count; ++xk)
-    {
-        for (int wk = 0; wk < model->w_set.count; ++wk)
-        {
-            for (int uk = 0; uk < n_u; ++uk)
-            {
-                out_q << model->x_set.list[xk] << "/" << model->w_set.list[wk] << "/" << model->u_set.list[uk] << ",";
-            }
-        }
-    }
-    out_q << std::endl;
-    out_q << std::endl;
-    for (int k = 0; k < model->N; k++)
-    {
-        for (int xk = 0; xk < model->x_set.count; ++xk)
-        {
-            for (int wk = 0; wk < model->w_set.count; ++wk)
-            {
-                for (int uk = 0; uk < n_u; ++uk)
-                {
-                    int idx = k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk;
-                    out_q << q[idx] << ",";
-                }
-            }
-        }
-        out_q << std::endl;
-    }
-    out_q.close();
-    
     return 0;
 }

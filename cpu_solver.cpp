@@ -9,7 +9,6 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
     n_u = model->u_set.count;
     value = new float[(N+1)*n_x*n_w];
     action = new int[N*n_x*n_w];
-    test_table = new float[N*n_x*n_w*n_u];
 
     for (int k = N; k >= 0; k--)
     {
@@ -111,8 +110,6 @@ int CPUSolver::estimate_one_step(int k)
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
                     q[uk] = calc_q(k, xk, wk, uk);
-
-                    test_table[xk*n_w*n_u + wk*n_u + uk] = q[uk];
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.

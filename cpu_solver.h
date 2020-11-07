@@ -9,7 +9,6 @@ class CPUSolver
         CPUSolver(DPModel * ptr_in);
         float * value;
         int * action;
-        float * test_table;
     private:
         int N;
         int n_x,n_w,n_u;
