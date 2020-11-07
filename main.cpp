@@ -19,7 +19,7 @@ int main()
     std::string solver_type;
 
     PHYModel phy_model;
-    DPModel dp_model(&phy_model, 5);
+    DPModel dp_model(&phy_model, 3);
     std::cout << "creating a new DP model is done" << std::endl;
     int N = dp_model.N;
     int n_x = dp_model.x_set.count;
@@ -44,14 +44,32 @@ int main()
     std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
     write_to_file(&dp_model, solver_type, value, action, test_table);
 
+    int error_flag = 0;
     for (int i = 0; i < (N+1)*n_x*n_w; ++i)
-        value[i] = abs(value[i] - cpu_solver.value[i])<0.01 ? 0:(value[i] - cpu_solver.value[i]);
+    {
+        value[i] = abs(value[i] - cpu_solver.value[i]);
+        if (value[i] > 0.0001)
+        {
+            error_flag ++;
+        }
+    }
+    if (error_flag > 0)
+    {
+        std::cout << "value error found! " << error_flag << std::endl;
+    }
+    else
+    {
+        std::cout << "no error was found" << std::endl;
+    }
+    
 
     for (int i = 0; i < N*n_x*n_w; ++i)
         action[i] = action[i] - cpu_solver.action[i];
 
     for (int i = 0; i < N*n_x*n_w*n_u; ++i)
-        test_table[i] = abs(test_table[i] - cpu_solver.test_table[i]) < 0.01?0:(test_table[i] - cpu_solver.test_table[i]);
+    {
+        test_table[i] = abs(test_table[i] - cpu_solver.test_table[i]) ;
+    }
     solver_type = "diff";
     write_to_file(&dp_model, solver_type, value, action, test_table);
 

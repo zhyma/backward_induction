@@ -56,7 +56,6 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
     int  wk_ = 0;
     int  idx = 0;
     float sum = 0;
-    float test_sum = 0;
 
     xk_ = model->s_trans_table[xk*n_w*n_u + wk*n_u + uk];
 
@@ -68,13 +67,10 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
         float v = value[v_idx];
         sum += p*v;
-        test_sum += p*v;
     }
     float x = model->x_set.list[xk];
     float u = model->u_set.list[uk];
     float l = x*x + u*u;
-
-    test_table[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk] = test_sum;
     
     return l + sum;
 }
@@ -115,6 +111,8 @@ int CPUSolver::estimate_one_step(int k)
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     // l(x) = x^2+u^2
                     q[uk] = calc_q(k, xk, wk, uk);
+
+                    test_table[xk*n_w*n_u + wk*n_u + uk] = q[uk];
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
