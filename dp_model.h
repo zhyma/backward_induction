@@ -27,7 +27,6 @@ class DPModel
         bool save_transition;
         int iter;
         int N = 10;
-        int grain;
 
         int sample_trials = 10e5;
 
@@ -44,7 +43,7 @@ class DPModel
         // float *value_table;
         // int *action_table;
 
-        DPModel(PHYModel * ptr_in, int grain);
+        DPModel(PHYModel * ptr_in, int steps, int x_grain, int w_grain, int u_grain);
 
     private:
         int discretize(Set *in);

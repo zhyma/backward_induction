@@ -1,23 +1,25 @@
 #include "dp_model.h"
 
 //initial function
-DPModel::DPModel(PHYModel * ptr_in, int grain_in)
+DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
 {
     ptr_model = ptr_in;
-    grain = grain_in;
 
-    N = ptr_model->N;
+    N = steps;
     // discretizing x, u, and w
     x_set.bound[0] = ptr_model->x_bound[0];
     x_set.bound[1] = ptr_model->x_bound[1];
+    x_set.count = n_x;
     discretize(&x_set);
 
     w_set.bound[0] = ptr_model->w_bound[0];
     w_set.bound[1] = ptr_model->w_bound[1];
+    w_set.count = n_w;
     discretize(&w_set);
 
     u_set.bound[0] = ptr_model->u_bound[0];
     u_set.bound[1] = ptr_model->u_bound[1];
+    u_set.count = n_u;
     discretize(&u_set);
 
     xw_cnt = x_set.count * w_set.count;
@@ -47,10 +49,9 @@ int DPModel::discretize(Set *in)
     std::cout << "get variable" << std::endl;
     std::cout << "lower bound " << in->bound[0] << std::endl;
     std::cout << "upper bound " << in->bound[1] << std::endl;
-    in->count = (int)(round((in->bound[1]-in->bound[0])*grain+1));
     in->list = new float[in->count];
     for (int i = 0;i < in->count; ++i)
-        in->list[i] = in->bound[0] + 1.0/grain * i;
+        in->list[i] = in->bound[0] + (in->bound[1]-in->bound[0])/(in->count-1) * i;
 
     std::cout << "number: " << in->count << std::endl;  
     // std::cout << "list: ";
@@ -81,7 +82,7 @@ int DPModel::state_idx(int k, int xk, int wk)
 int DPModel::val_to_idx(float val, struct Set *ref)
 {
     int idx = 0;
-    idx = round((val - ref->bound[0])*grain);
+    idx = (int) round((val - ref->bound[0])/((ref->bound[1]-ref->bound[0])/(ref->count-1)));
     // make sure it will not be out of boundary because of float accuracy
     idx < ref->bound[0] ? idx = 0 : idx;
     idx > ref->count - 1 ? idx = ref->count -1 : idx;
@@ -149,7 +150,7 @@ int DPModel::gen_w_trans_mat()
     p_mat_temp = new float[n_w]{};
     prob_table = new float[w_set.count*w_set.count]{};
     w_distribution();
-    
+
     for (int i = 0; i < n_w; ++i)
     {
         // given w_k

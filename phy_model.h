@@ -7,7 +7,7 @@ class PHYModel
 {
     public:
         int disturb_type;
-        int N = 10;
+        // int N = 10;
         float sigma = 2.0/6.0;
         float x_bound[2] = {-2.0, 2.0};
         float u_bound[2] = {0.2, 1.6};

@@ -226,7 +226,7 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
   cudaFree(q);
   cudaFree(a);
 
-  std::cout << "optimal actions found" << std::endl;
+  // std::cout << "optimal actions found" << std::endl;
 
   return 0;
 }
