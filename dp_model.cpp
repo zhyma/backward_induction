@@ -1,6 +1,5 @@
 #include "dp_model.h"
 
-
 //initial function
 DPModel::DPModel(PHYModel * ptr_in, int grain_in)
 {
@@ -36,9 +35,9 @@ DPModel::DPModel(PHYModel * ptr_in, int grain_in)
     state_trans();
 
     // create transition probability matrix
-    Prob_gen prob((int)10e5, w_set.count, 2.0/6.0, w_set.bound);
-    prob_table = new float[w_set.count*w_set.count]{};
-    memcpy(prob_table, prob.prob_mat, w_set.count*w_set.count*sizeof(float));
+    //Prob_gen prob((int)10e5, w_set.count, 2.0/6.0, w_set.bound);
+    gen_w_trans_mat();
+    //memcpy(prob_table, prob.prob_mat, w_set.count*w_set.count*sizeof(float));
     
     return;
 }
@@ -61,7 +60,6 @@ int DPModel::discretize(Set *in)
 
     return 0;
 }
-
 
 // 2D matrix <x, u>
 // find the index of corresponding <x, u> pair
@@ -109,6 +107,67 @@ int DPModel::state_trans()
                 int idx = xk*(w_set.count*u_set.count) + wk*u_set.count + uk;
                 s_trans_table[idx] = xk_;
             }
+        }
+    }
+    return 0;
+}
+
+int DPModel::w_distribution()
+{
+    int n_w = w_set.count;
+
+    float w_center = (w_set.bound[0] + w_set.bound[1])/2.0;
+    float gran = (w_set.bound[1] - w_set.bound[0])/(float) n_w;
+    int *list = new int[n_w]{};
+    for (int i = 0; i < sample_trials; ++i)
+    {
+        // get random number with normal distribution using gen as random source
+        float w_ = ptr_model->next_w(w_center);
+        if (w_ < w_set.bound[0] + gran/2.0)
+        {
+            list[0] += 1;
+        }
+        else if (w_ > w_set.bound[1] - gran/2.0)
+        {
+            list[n_w-1] += 1;
+        }
+        else
+        {
+            int no = 1 + (int) ((w_ - w_set.bound[0]-gran/2.0)/gran);
+            list[no] += 1;
+        }
+    }
+    for (int i = 0;i < n_w; ++i)
+        p_mat_temp[i] = (float) list[i]/(float) sample_trials;
+
+    return 0;
+}
+
+int DPModel::gen_w_trans_mat()
+{
+    int n_w = w_set.count;
+    p_mat_temp = new float[n_w]{};
+    prob_table = new float[w_set.count*w_set.count]{};
+    w_distribution();
+    
+    for (int i = 0; i < n_w; ++i)
+    {
+        // given w_k
+        for (int offset = 0; offset < n_w/2 + 1; ++offset)
+        {
+            // check j = i-0, i-1, ..., 0
+            int j_l = i - offset;
+            if (j_l < 0)
+                prob_table[i*n_w+0] += p_mat_temp[n_w/2 - offset];
+            else
+                prob_table[i*n_w+j_l] = p_mat_temp[n_w/2 - offset];
+
+            // check j = i+1, i+2, ..., n_w-1
+            int j_r = i + offset;
+            if (j_r > n_w-1)
+                prob_table[i*n_w+(n_w-1)] += p_mat_temp[n_w/2 + offset];
+            else
+                prob_table[i*n_w+j_r] = p_mat_temp[n_w/2 + offset];
         }
     }
     return 0;

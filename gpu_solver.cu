@@ -200,16 +200,17 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
   // Here k = N, the last step
   bi_terminal_kernel<<<n_x, q_block>>>(n_w, N, x, w, u, t, p, v, a);
   // Wait for GPU to finish before accessing on host
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
   for (int k = N-1; k >= 0; k--)
   {
     bi_q_kernel<<<q_grid, q_block>>>(k, x, w, u, t, p, v, q);
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 
     bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
   }
+  // cudaDeviceSynchronize();
 
   // Backup data before it's too late
   cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);

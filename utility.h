@@ -2,7 +2,27 @@
 #include <iomanip>
 #include "dp_model.h"
 
-int write_to_file(DPModel * model, std::string solver_type, float *v, int * a)
+int mat_to_file(std::string file_name, int *dim, float *mat)
+{
+    std::ofstream out_file;
+    out_file.open("output/" + file_name + ".csv", std::ios::out);
+    out_file << std::setiosflags(std::ios::fixed) << std::setprecision(2);
+
+    for (int i = 0; i < dim[0]; i++)
+    {
+        for (int j = 0; j < dim[1]; ++j)
+        {
+            int idx = i * dim[1] + j;
+            out_file << mat[idx] << ",";
+        }
+        out_file << std::endl;
+    }
+    out_file.close();
+
+    return 0;
+}
+
+int result_to_file(DPModel * model, std::string solver_type, float *v, int * a)
 {
     int N = model->N;
     int n_x = model->x_set.count;

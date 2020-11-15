@@ -6,7 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # csvFile = open("data.csv","r")
 # reader = csv.reader(csvFile)
 
-mat = np.genfromtxt('prob.csv', delimiter=',')[:,:-1]
+mat = np.genfromtxt('output/p_mat.csv', delimiter=',')[:,:-1]
 print(mat)
 print(mat.shape)
 

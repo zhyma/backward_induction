@@ -2,6 +2,12 @@
 #define CPU_SOLVER_H_
 #include "dp_model.h"
 
+struct Min_index
+{
+    int index;
+    float value;
+};
+
 class CPUSolver
 {
     public:

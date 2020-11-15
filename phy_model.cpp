@@ -18,3 +18,13 @@ float PHYModel::linear_model(float x, float w, float u)
 
     return x_;
 }
+
+float PHYModel::next_w(float w)
+{
+    std::normal_distribution<float> d(w, sigma);
+
+    float w_ = d(gen);
+    w_ = (w_ < w_bound[0])?w_bound[0]:w_;
+    w_ = (w_ > w_bound[1])?w_bound[1]:w_;
+    return w_;
+}

@@ -9,13 +9,7 @@
 #include <time.h>
 
 #include "phy_model.h"
-#include "prob_tool.h"
-
-struct Min_index
-{
-    int index;
-    float value;
-};
+// #include "prob_tool.h"
 
 // move to physical model
 typedef struct Set
@@ -25,25 +19,17 @@ typedef struct Set
     float bound[2];
 } Set;
 
-typedef struct Transition
-{
-    int xk;
-    int wk;
-    float p;
-    int xk_;
-    int wk_;
-} Trans;
-
 class DPModel
 {
     public:
         PHYModel * ptr_model;
-        bool GPU = false;
 
         bool save_transition;
         int iter;
         int N = 10;
         int grain;
+
+        int sample_trials = 10e5;
 
         Set x_set;
         Set u_set;
@@ -63,6 +49,10 @@ class DPModel
     private:
         int discretize(Set *in);
         int state_trans();
+
+        float *p_mat_temp;
+        int w_distribution();
+        int gen_w_trans_mat();
 
         int val_to_idx(float val, Set *ref);
         int xw_idx(int xk, int wk);
