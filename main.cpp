@@ -22,6 +22,28 @@ int main()
     int n_x = 128;
     int n_w = 128;
     int n_u = 32;
+
+    int param_set = 1;
+    if(param_set == 1)
+    {
+        n_x = 256;
+        n_w = 256;
+        n_u = 64;
+    }
+    else if(param_set==2)
+    {
+        n_x = 512;
+        n_w = 512;
+        n_u = 128;
+    }
+    else if(param_set==3)
+    {
+        n_x = 1024;
+        n_w = 1024;
+        n_u = 256;
+    }
+    
+
     DPModel dp_model(&phy_model, steps, n_x, n_w, n_u);
     std::cout << "creating a new DP model is done" << std::endl;
     int N = dp_model.N;
@@ -45,7 +67,7 @@ int main()
     }
 
     // if compared with CPU
-    if (true)
+    if (n_u < 64)
     {
         start = std::clock();
         solver_type = "cpu";

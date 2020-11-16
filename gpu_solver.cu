@@ -18,6 +18,7 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
 }
 
 // Kernel function to calculate the control/action cost
+template <unsigned int blockSize>
 __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
@@ -59,12 +60,20 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   if (tid + n_w/2 < n_w) sdata_sum[tid] += p[p2_idx]*v[v2_idx];
   __syncthreads();
 
-	for (unsigned int s = blockDim.x/2; s > 32; s >>=1)
-	{
-		if (tid < s)
-			sdata_sum[tid] += sdata_sum[tid+s];
-		__syncthreads();
-  }
+	// for (unsigned int s = blockDim.x/2; s > 32; s >>=1)
+	// {
+	// 	if (tid < s)
+	// 		sdata_sum[tid] += sdata_sum[tid+s];
+	// 	__syncthreads();
+  // }
+  if (blockSize >= 1024){
+    if (tid < 512) {sdata_sum[tid] += sdata_sum[tid+512];} __syncthreads();}
+  if (blockSize >= 512){
+      if (tid < 256) {sdata_sum[tid] += sdata_sum[tid+256];} __syncthreads();}
+  if (blockSize >= 256){
+      if (tid < 128) {sdata_sum[tid] += sdata_sum[tid+128];} __syncthreads();}
+  if (blockSize >= 128){
+      if (tid < 64) {sdata_sum[tid] += sdata_sum[tid+64];} __syncthreads();}
   if (tid < 32) warpReduce(sdata_sum, tid);
 
   // STEP 4: calculate q = l(k,x,u) + sum(pv), write q to global memory
@@ -219,7 +228,28 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
 
   for (int k = N-1; k >= 0; k--)
   {
-    bi_q_kernel<<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+    switch(q_block)
+    {
+      case 1024:
+        bi_q_kernel<1024/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 512:
+        bi_q_kernel< 512/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 256:
+        bi_q_kernel< 256/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 128:
+        bi_q_kernel< 128/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 64:
+        bi_q_kernel< 64/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 32:
+        bi_q_kernel< 32/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        break;
+    }
+    
     // cudaDeviceSynchronize();
 
     bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
