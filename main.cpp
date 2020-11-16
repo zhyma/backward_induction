@@ -33,7 +33,7 @@ int main()
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
 
-    for(int i = 0; i < 20; ++i)
+    for(int i = 0; i < 1; ++i)
     {
         start = std::clock();
         solver_type = "gpu";
@@ -44,9 +44,8 @@ int main()
         // result_to_file(&dp_model, solver_type, value, action);
     }
 
-
     // if compared with CPU
-    if (false)
+    if (true)
     {
         start = std::clock();
         solver_type = "cpu";
@@ -55,26 +54,26 @@ int main()
         std::cout << "CPU time: " << cpu_duration << " s" << std::endl;
         // result_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action);
 
-        // int error_flag = 0;
-        // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
-        // {
-        //     value[i] = abs(value[i] - cpu_solver.value[i]);
-        //     if (value[i] > 0.0001)
-        //     {
-        //         error_flag ++;
-        //     }
-        // }
-        // if (error_flag > 0)
-        // {
-        //     std::cout << "value error found! " << error_flag << std::endl;
-        // }
-        // else
-        // {
-        //     std::cout << "no error was found" << std::endl;
-        // }
+        int error_flag = 0;
+        for (int i = 0; i < (N+1)*n_x*n_w; ++i)
+        {
+            value[i] = abs(value[i] - cpu_solver.value[i]);
+            if (value[i] > 0.0001)
+            {
+                error_flag ++;
+            }
+        }
+        if (error_flag > 0)
+        {
+            std::cout << "value error found! " << error_flag << std::endl;
+        }
+        else
+        {
+            std::cout << "no error was found" << std::endl;
+        }
 
-        // for (int i = 0; i < N*n_x*n_w; ++i)
-        //     action[i] = action[i] - cpu_solver.action[i];
+        for (int i = 0; i < N*n_x*n_w; ++i)
+            action[i] = action[i] - cpu_solver.action[i];
 
         // solver_type = "diff";
         // result_to_file(&dp_model, solver_type, value, action);

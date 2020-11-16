@@ -7,6 +7,16 @@ struct q_info
     float value;
 };
 
+__device__ void warpReduce(volatile float* sdata_sum, int tid)
+{
+    sdata_sum[tid] += sdata_sum[tid + 32];
+    sdata_sum[tid] += sdata_sum[tid + 16];
+    sdata_sum[tid] += sdata_sum[tid + 8];
+    sdata_sum[tid] += sdata_sum[tid + 4];
+    sdata_sum[tid] += sdata_sum[tid + 2];
+    sdata_sum[tid] += sdata_sum[tid + 1];
+}
+
 // Kernel function to calculate the control/action cost
 __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q)
 {
@@ -35,22 +45,27 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
 
   // STEP 2: by given transition probability matrix, calculate the p*v
   // find p(w -> w') 
-  int p_idx = wk * n_w + wk_;
+  int p1_idx = wk * n_w + wk_;
   // find v(<x',w'>)
-  int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
+  int v1_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
+
+  int p2_idx = wk * n_w + wk_ + n_w/2;
+  int v2_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_ + n_w/2;
 
   int tid = threadIdx.x;
   // STEP 3: do the sum reduction here
   // initialize each element with corresponding pv 
-  sdata_sum[tid] = (tid < n_w)?p[p_idx]*v[v_idx]:0;
+  sdata_sum[tid] = (tid < n_w)?p[p1_idx]*v[v1_idx]:0;
+  if (tid + n_w/2 < n_w) sdata_sum[tid] += p[p2_idx]*v[v2_idx];
   __syncthreads();
 
-	for (unsigned int s = blockDim.x/2; s > 0; s >>=1)
+	for (unsigned int s = blockDim.x/2; s > 32; s >>=1)
 	{
 		if (tid < s)
 			sdata_sum[tid] += sdata_sum[tid+s];
 		__syncthreads();
-	}
+  }
+  if (tid < 32) warpReduce(sdata_sum, tid);
 
   // STEP 4: calculate q = l(k,x,u) + sum(pv), write q to global memory
   if (tid == 0)
@@ -204,7 +219,7 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
 
   for (int k = N-1; k >= 0; k--)
   {
-    bi_q_kernel<<<q_grid, q_block>>>(k, x, w, u, t, p, v, q);
+    bi_q_kernel<<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
     // cudaDeviceSynchronize();
 
     bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
