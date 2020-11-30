@@ -7,14 +7,15 @@ struct q_info
     float value;
 };
 
+template <unsigned int blockSize>
 __device__ void warpReduce(volatile float* sdata_sum, int tid)
 {
-    sdata_sum[tid] += sdata_sum[tid + 32];
-    sdata_sum[tid] += sdata_sum[tid + 16];
-    sdata_sum[tid] += sdata_sum[tid + 8];
-    sdata_sum[tid] += sdata_sum[tid + 4];
-    sdata_sum[tid] += sdata_sum[tid + 2];
-    sdata_sum[tid] += sdata_sum[tid + 1];
+  if (blockSize>=64) sdata_sum[tid] += sdata_sum[tid + 32];
+  if (blockSize>=32) sdata_sum[tid] += sdata_sum[tid + 16];
+  if (blockSize>=16) sdata_sum[tid] += sdata_sum[tid + 8];
+  if (blockSize>= 8) sdata_sum[tid] += sdata_sum[tid + 4];
+  if (blockSize>= 4) sdata_sum[tid] += sdata_sum[tid + 2];
+  if (blockSize>= 2) sdata_sum[tid] += sdata_sum[tid + 1];
 }
 
 // Kernel function to calculate the control/action cost
@@ -37,35 +38,24 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   int n_x = gridDim.x;
   int n_w = gridDim.y;
   int n_u = gridDim.z;
-  int wk_ = threadIdx.x;
+  int tid = threadIdx.x;
 
   // STEP 1: find the following x_ by given k, x, w, u and the model
   // prepare transition matrix <xk, wk> -uk-> x'_idx
   // input k, xk, wk, uk, output x'_idx
   int xk_ = t[xk*(n_w*n_u) + wk*n_u + uk];
 
-  // STEP 2: by given transition probability matrix, calculate the p*v
-  // find p(w -> w') 
-  int p1_idx = wk * n_w + wk_;
-  // find v(<x',w'>)
-  int v1_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
-
-  int p2_idx = wk * n_w + wk_ + n_w/2;
-  int v2_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_ + n_w/2;
-
-  int tid = threadIdx.x;
-  // STEP 3: do the sum reduction here
-  // initialize each element with corresponding pv 
-  sdata_sum[tid] = (tid < n_w)?p[p1_idx]*v[v1_idx]:0;
-  if (tid + n_w/2 < n_w) sdata_sum[tid] += p[p2_idx]*v[v2_idx];
+  sdata_sum[tid] = 0;
+  int i = 0;
+  int p_offset = wk * n_w;
+  int v_offset = (k+1)*(n_x*n_w) + xk_*n_w;
+  while (i < n_w)
+  {
+    sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
+    i += blockSize * 2;
+  }
   __syncthreads();
 
-	// for (unsigned int s = blockDim.x/2; s > 32; s >>=1)
-	// {
-	// 	if (tid < s)
-	// 		sdata_sum[tid] += sdata_sum[tid+s];
-	// 	__syncthreads();
-  // }
   if (blockSize >= 1024){
     if (tid < 512) {sdata_sum[tid] += sdata_sum[tid+512];} __syncthreads();}
   if (blockSize >= 512){
@@ -74,7 +64,7 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
       if (tid < 128) {sdata_sum[tid] += sdata_sum[tid+128];} __syncthreads();}
   if (blockSize >= 128){
       if (tid < 64) {sdata_sum[tid] += sdata_sum[tid+64];} __syncthreads();}
-  if (tid < 32) warpReduce(sdata_sum, tid);
+  if (tid < 32) warpReduce<blockSize>(sdata_sum, tid);
 
   // STEP 4: calculate q = l(k,x,u) + sum(pv), write q to global memory
   if (tid == 0)
@@ -165,7 +155,7 @@ __global__ void bi_terminal_kernel(int n_w, int k, float *x, float *w, float *u,
   }
 }
 
-int gpu_main(DPModel * model, float *v_out, int *a_out)
+int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
 {
   int max_threads = 1024;
   int n_x = model->x_set.count;
@@ -226,27 +216,43 @@ int gpu_main(DPModel * model, float *v_out, int *a_out)
   // Wait for GPU to finish before accessing on host
   // cudaDeviceSynchronize();
 
+  q_block = block_size;
   for (int k = N-1; k >= 0; k--)
   {
     switch(q_block)
     {
       case 1024:
-        bi_q_kernel<1024/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel<1024><<<q_grid, 1024>>>(k, x, w, u, t, p, v, q);
         break;
       case 512:
-        bi_q_kernel< 512/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel< 512><<<q_grid,  512>>>(k, x, w, u, t, p, v, q);
         break;
       case 256:
-        bi_q_kernel< 256/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel< 256><<<q_grid,  256>>>(k, x, w, u, t, p, v, q);
         break;
       case 128:
-        bi_q_kernel< 128/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel< 128><<<q_grid,  128>>>(k, x, w, u, t, p, v, q);
         break;
       case 64:
-        bi_q_kernel< 64/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel<  64><<<q_grid,   64>>>(k, x, w, u, t, p, v, q);
         break;
       case 32:
-        bi_q_kernel< 32/2><<<q_grid, q_block/2>>>(k, x, w, u, t, p, v, q);
+        bi_q_kernel<  32><<<q_grid,   32>>>(k, x, w, u, t, p, v, q);
+        break;
+      case 16:
+        bi_q_kernel<  16><<<q_grid,   16>>>(k, x, w, u, t, p, v, q);
+        break;
+      case  8:
+        bi_q_kernel<   8><<<q_grid,    8>>>(k, x, w, u, t, p, v, q);
+        break;
+      case  4:
+        bi_q_kernel<   4><<<q_grid,    4>>>(k, x, w, u, t, p, v, q);
+        break;
+      case  2:
+        bi_q_kernel<   2><<<q_grid,    2>>>(k, x, w, u, t, p, v, q);
+        break;
+      case  1:
+        bi_q_kernel<   1><<<q_grid,    1>>>(k, x, w, u, t, p, v, q);
         break;
     }
     

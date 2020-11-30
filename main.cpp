@@ -19,29 +19,31 @@ int main()
 
     PHYModel phy_model;
     int steps = 10;
-    int n_x = 128;
-    int n_w = 128;
-    int n_u = 32;
+    int n_x = 1024;
+    int n_w = 1024;
+    int n_u = 256;
 
-    int param_set = 1;
-    if(param_set == 1)
-    {
-        n_x = 256;
-        n_w = 256;
-        n_u = 64;
-    }
-    else if(param_set==2)
-    {
-        n_x = 512;
-        n_w = 512;
-        n_u = 128;
-    }
-    else if(param_set==3)
-    {
-        n_x = 1024;
-        n_w = 1024;
-        n_u = 256;
-    }
+    int block_size = 128;
+
+    // int param_set = 3;
+    // if(param_set == 1)
+    // {
+    //     n_x = 256;
+    //     n_w = 256;
+    //     n_u = 64;
+    // }
+    // else if(param_set==2)
+    // {
+    //     n_x = 512;
+    //     n_w = 512;
+    //     n_u = 128;
+    // }
+    // else if(param_set==3)
+    // {
+    //     n_x = 1024;
+    //     n_w = 1024;
+    //     n_u = 256;
+    // }
     
 
     DPModel dp_model(&phy_model, steps, n_x, n_w, n_u);
@@ -55,11 +57,11 @@ int main()
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
 
-    for(int i = 0; i < 1; ++i)
+    for(int i = 0; i < 20; ++i)
     {
         start = std::clock();
         solver_type = "gpu";
-        gpu_main(&dp_model, value, action);
+        gpu_main(&dp_model, block_size, value, action);
         gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         // std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
         std::cout << gpu_duration << ",";
@@ -67,13 +69,13 @@ int main()
     }
 
     // if compared with CPU
-    if (n_u < 64)
+    if (false)
     {
         start = std::clock();
         solver_type = "cpu";
         CPUSolver cpu_solver(&dp_model);
         cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-        std::cout << "CPU time: " << cpu_duration << " s" << std::endl;
+        std::cout << std::endl << "CPU time: " << cpu_duration << " s" << std::endl;
         // result_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action);
 
         int error_flag = 0;
