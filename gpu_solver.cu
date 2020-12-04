@@ -47,7 +47,7 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
 
   sdata_sum[tid] = 0;
   int i = 0;
-  int p_offset = wk * n_w;
+  int p_offset = k*n_w*n_w + wk * n_w;
   int v_offset = (k+1)*(n_x*n_w) + xk_*n_w;
   while (i < n_w)
   {
@@ -176,7 +176,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
   
   cudaMalloc(&t, n_x * n_w * n_u*sizeof(int));
   // transition probability matrix size: Nw*Nw
-  cudaMalloc(&p, n_w*n_w*sizeof(float));
+  cudaMalloc(&p, N*n_w*n_w*sizeof(float));
   // You can do (N+1) for the whole value table, or 2 as a ping-pong buffer
   // The whole value table size will be (N+1)*N_x*N_w
   // Ping-pong buffer type will be 2*N_x*N_w
@@ -193,7 +193,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
   // Initialize "index" transition matrix <x,w> -u-> x'
   cudaMemcpy(t, model->s_trans_table, n_x*n_w*n_u*sizeof(int), cudaMemcpyHostToDevice);
   // Initialize transition probability matrix w -> w'
-  cudaMemcpy(p, model->prob_table, n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(p, model->prob_table, N*n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
 
   // Set up parameters for parallel computing
   // For calculating q-value

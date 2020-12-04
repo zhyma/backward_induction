@@ -19,11 +19,13 @@ int main()
 
     PHYModel phy_model;
     int steps = 10;
-    int n_x = 1024;
-    int n_w = 1024;
-    int n_u = 256;
+    int n_x = 128;
+    int n_w = 128;
+    int n_u = 32;
 
-    int block_size = 128;
+    int block_size = 32;
+    if (block_size > n_w)
+        block_size = n_w/2;
 
     // int param_set = 3;
     // if(param_set == 1)
@@ -57,7 +59,7 @@ int main()
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
 
-    for(int i = 0; i < 20; ++i)
+    for(int i = 0; i < 2; ++i)
     {
         start = std::clock();
         solver_type = "gpu";
@@ -69,7 +71,7 @@ int main()
     }
 
     // if compared with CPU
-    if (false)
+    if (true)
     {
         start = std::clock();
         solver_type = "cpu";

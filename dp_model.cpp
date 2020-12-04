@@ -27,19 +27,11 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
     
     std::cout << "total states: " << states_cnt << std::endl;
 
-    // value_table = new float[(N+1)*xw_cnt]();
-    // action_table = new int[states_cnt]();
-
-    // TODO: create your distribution from w -> w_ here!
-    //create_distribution();
-
     // create <x,w> -u-> x' table here
     state_trans();
 
     // create transition probability matrix
-    //Prob_gen prob((int)10e5, w_set.count, 2.0/6.0, w_set.bound);
     gen_w_trans_mat();
-    //memcpy(prob_table, prob.prob_mat, w_set.count*w_set.count*sizeof(float));
     
     return;
 }
@@ -148,27 +140,31 @@ int DPModel::gen_w_trans_mat()
 {
     int n_w = w_set.count;
     p_mat_temp = new float[n_w]{};
-    prob_table = new float[w_set.count*w_set.count]{};
+    prob_table = new float[N*w_set.count*w_set.count]{};
     w_distribution();
 
-    for (int i = 0; i < n_w; ++i)
+    for (int k = 0; k < N; ++k)
     {
-        // given w_k
-        for (int offset = 0; offset < n_w/2 + 1; ++offset)
+        int offset = k*n_w*n_w;
+        for (int i = 0; i < n_w; ++i)
         {
-            // check j = i-0, i-1, ..., 0
-            int j_l = i - offset;
-            if (j_l < 0)
-                prob_table[i*n_w+0] += p_mat_temp[n_w/2 - offset];
-            else
-                prob_table[i*n_w+j_l] = p_mat_temp[n_w/2 - offset];
+            // given w_k
+            for (int idx = 0; idx < n_w/2 + 1; ++idx)
+            {
+                // check j = i-0, i-1, ..., 0
+                int j_l = i - idx;
+                if (j_l < 0)
+                    prob_table[offset + i*n_w+0] += p_mat_temp[n_w/2 - idx];
+                else
+                    prob_table[offset + i*n_w+j_l] = p_mat_temp[n_w/2 - idx];
 
-            // check j = i+1, i+2, ..., n_w-1
-            int j_r = i + offset;
-            if (j_r > n_w-1)
-                prob_table[i*n_w+(n_w-1)] += p_mat_temp[n_w/2 + offset];
-            else
-                prob_table[i*n_w+j_r] = p_mat_temp[n_w/2 + offset];
+                // check j = i+1, i+2, ..., n_w-1
+                int j_r = i + idx;
+                if (j_r > n_w-1)
+                    prob_table[offset + i*n_w+(n_w-1)] += p_mat_temp[n_w/2 + idx];
+                else
+                    prob_table[offset + i*n_w+j_r] = p_mat_temp[n_w/2 + idx];
+            }
         }
     }
     return 0;

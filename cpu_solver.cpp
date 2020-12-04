@@ -61,7 +61,7 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
     for (int wk_ = 0; wk_ < n_w; ++wk_)
     {
         // p*V_{k+1}
-        int p_idx = wk*n_w + wk_;
+        int p_idx = k*n_w*n_w + wk*n_w + wk_;
         float p = model->prob_table[p_idx];
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
         float v = value[v_idx];
