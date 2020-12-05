@@ -23,8 +23,8 @@ int main()
     int n_w = 128;
     int n_u = 32;
 
-    int block_size = 32;
-    if (block_size > n_w)
+    int block_size = 128;
+    if (block_size >= n_w)
         block_size = n_w/2;
 
     // int param_set = 3;

@@ -216,7 +216,10 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
   // Wait for GPU to finish before accessing on host
   // cudaDeviceSynchronize();
 
-  q_block = block_size;
+  if (block_size >= n_w)
+    q_block = n_w/2;
+  else
+    q_block = block_size;
   for (int k = N-1; k >= 0; k--)
   {
     switch(q_block)
