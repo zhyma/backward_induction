@@ -18,22 +18,39 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
   if (blockSize>= 2) sdata_sum[tid] += sdata_sum[tid + 1];
 }
 
-template <unsigned int blockSize, unsigned int n_w>
+template <unsigned int blockSize, unsigned int calcSize>
 __device__ void blockReduce(float *p, float *v, int p_offset, int v_offset, volatile float* sdata_sum, int tid)
 {
-  // sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
-  if (blockSize==64 && n_w >=1024) sdata_sum[tid] += p[p_offset+896+tid]*v[v_offset+896+tid] + p[p_offset+960+tid]*v[v_offset+960+tid];
-  if (blockSize==64 && n_w >= 896) sdata_sum[tid] += p[p_offset+768+tid]*v[v_offset+768+tid] + p[p_offset+832+tid]*v[v_offset+832+tid];
-  if (blockSize==64 && n_w >= 768) sdata_sum[tid] += p[p_offset+640+tid]*v[v_offset+640+tid] + p[p_offset+704+tid]*v[v_offset+704+tid];
-  if (blockSize==64 && n_w >= 640) sdata_sum[tid] += p[p_offset+512+tid]*v[v_offset+512+tid] + p[p_offset+576+tid]*v[v_offset+576+tid];
-  if (blockSize==64 && n_w >= 512) sdata_sum[tid] += p[p_offset+384+tid]*v[v_offset+384+tid] + p[p_offset+448+tid]*v[v_offset+448+tid];
-  if (blockSize==64 && n_w >= 384) sdata_sum[tid] += p[p_offset+256+tid]*v[v_offset+256+tid] + p[p_offset+320+tid]*v[v_offset+320+tid];
-  if (blockSize==64 && n_w >= 256) sdata_sum[tid] += p[p_offset+128+tid]*v[v_offset+128+tid] + p[p_offset+192+tid]*v[v_offset+192+tid];
-  if (blockSize==64 && n_w >= 128) sdata_sum[tid] += p[p_offset+  0+tid]*v[v_offset+  0+tid] + p[p_offset+ 64+tid]*v[v_offset+ 64+tid];
+  // equal to ```sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];```
+  if (blockSize==64 && calcSize >=1024) sdata_sum[tid] += p[p_offset+896+tid]*v[v_offset+896+tid] + p[p_offset+960+tid]*v[v_offset+960+tid];
+  if (blockSize==64 && calcSize >= 896) sdata_sum[tid] += p[p_offset+768+tid]*v[v_offset+768+tid] + p[p_offset+832+tid]*v[v_offset+832+tid];
+  if (blockSize==64 && calcSize >= 768) sdata_sum[tid] += p[p_offset+640+tid]*v[v_offset+640+tid] + p[p_offset+704+tid]*v[v_offset+704+tid];
+  if (blockSize==64 && calcSize >= 640) sdata_sum[tid] += p[p_offset+512+tid]*v[v_offset+512+tid] + p[p_offset+576+tid]*v[v_offset+576+tid];
+  if (blockSize==64 && calcSize >= 512) sdata_sum[tid] += p[p_offset+384+tid]*v[v_offset+384+tid] + p[p_offset+448+tid]*v[v_offset+448+tid];
+  if (blockSize==64 && calcSize >= 384) sdata_sum[tid] += p[p_offset+256+tid]*v[v_offset+256+tid] + p[p_offset+320+tid]*v[v_offset+320+tid];
+  if (blockSize==64 && calcSize >= 256) sdata_sum[tid] += p[p_offset+128+tid]*v[v_offset+128+tid] + p[p_offset+192+tid]*v[v_offset+192+tid];
+  if (blockSize==64 && calcSize >= 128) sdata_sum[tid] += p[p_offset+  0+tid]*v[v_offset+  0+tid] + p[p_offset+ 64+tid]*v[v_offset+ 64+tid];
+
+  if (blockSize==32 && calcSize >=1024) sdata_sum[tid] += p[p_offset+960+tid]*v[v_offset+960+tid] + p[p_offset+992+tid]*v[v_offset+992+tid];
+  if (blockSize==32 && calcSize >= 960) sdata_sum[tid] += p[p_offset+896+tid]*v[v_offset+896+tid] + p[p_offset+928+tid]*v[v_offset+928+tid];
+  if (blockSize==32 && calcSize >= 896) sdata_sum[tid] += p[p_offset+832+tid]*v[v_offset+832+tid] + p[p_offset+864+tid]*v[v_offset+864+tid];
+  if (blockSize==32 && calcSize >= 832) sdata_sum[tid] += p[p_offset+768+tid]*v[v_offset+768+tid] + p[p_offset+800+tid]*v[v_offset+800+tid];
+  if (blockSize==32 && calcSize >= 768) sdata_sum[tid] += p[p_offset+704+tid]*v[v_offset+704+tid] + p[p_offset+736+tid]*v[v_offset+736+tid];
+  if (blockSize==32 && calcSize >= 704) sdata_sum[tid] += p[p_offset+640+tid]*v[v_offset+640+tid] + p[p_offset+672+tid]*v[v_offset+672+tid];
+  if (blockSize==32 && calcSize >= 640) sdata_sum[tid] += p[p_offset+576+tid]*v[v_offset+576+tid] + p[p_offset+608+tid]*v[v_offset+608+tid];
+  if (blockSize==32 && calcSize >= 576) sdata_sum[tid] += p[p_offset+512+tid]*v[v_offset+512+tid] + p[p_offset+544+tid]*v[v_offset+544+tid];
+  if (blockSize==32 && calcSize >= 512) sdata_sum[tid] += p[p_offset+448+tid]*v[v_offset+448+tid] + p[p_offset+480+tid]*v[v_offset+480+tid];
+  if (blockSize==32 && calcSize >= 448) sdata_sum[tid] += p[p_offset+384+tid]*v[v_offset+384+tid] + p[p_offset+416+tid]*v[v_offset+416+tid];
+  if (blockSize==32 && calcSize >= 384) sdata_sum[tid] += p[p_offset+320+tid]*v[v_offset+320+tid] + p[p_offset+352+tid]*v[v_offset+352+tid];
+  if (blockSize==32 && calcSize >= 320) sdata_sum[tid] += p[p_offset+256+tid]*v[v_offset+256+tid] + p[p_offset+288+tid]*v[v_offset+288+tid];
+  if (blockSize==32 && calcSize >= 256) sdata_sum[tid] += p[p_offset+192+tid]*v[v_offset+192+tid] + p[p_offset+224+tid]*v[v_offset+224+tid];
+  if (blockSize==32 && calcSize >= 192) sdata_sum[tid] += p[p_offset+128+tid]*v[v_offset+128+tid] + p[p_offset+160+tid]*v[v_offset+160+tid];
+  if (blockSize==32 && calcSize >= 128) sdata_sum[tid] += p[p_offset+ 64+tid]*v[v_offset+ 64+tid] + p[p_offset+ 96+tid]*v[v_offset+ 96+tid];
+  if (blockSize==32 && calcSize >=  64) sdata_sum[tid] += p[p_offset+  0+tid]*v[v_offset+  0+tid] + p[p_offset+ 32+tid]*v[v_offset+ 32+tid];
 }
 
 // Kernel function to calculate the control/action cost
-template <unsigned int blockSize>
+template <unsigned int blockSize, unsigned int calcSize>
 __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
@@ -63,13 +80,13 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   int p_offset = k*n_w*n_w + wk * n_w;
   int v_offset = (k+1)*(n_x*n_w) + xk_*n_w;
 
-  int i = 0;
-  while (i < n_w)
-  {
-    sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
-    i += blockSize * 2;
-  }
-  // blockReduce<blockSize, 1024>(p, v, p_offset, v_offset, sdata_sum, tid);
+  // int i = 0;
+  // while (i < n_w)
+  // {
+  //   sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
+  //   i += blockSize * 2;
+  // }
+  blockReduce<blockSize, calcSize>(p, v, p_offset, v_offset, sdata_sum, tid);
   __syncthreads();
 
   if (blockSize >= 1024){
@@ -238,42 +255,43 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
     q_block = block_size;
   for (int k = N-1; k >= 0; k--)
   {
-    switch(q_block)
+    if (q_block == 32)
     {
-      case 1024:
-        bi_q_kernel<1024><<<q_grid, 1024>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 512:
-        bi_q_kernel< 512><<<q_grid,  512>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 256:
-        bi_q_kernel< 256><<<q_grid,  256>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 128:
-        bi_q_kernel< 128><<<q_grid,  128>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 64:
-        bi_q_kernel<  64><<<q_grid,   64>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 32:
-        bi_q_kernel<  32><<<q_grid,   32>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 16:
-        bi_q_kernel<  16><<<q_grid,   16>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  8:
-        bi_q_kernel<   8><<<q_grid,    8>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  4:
-        bi_q_kernel<   4><<<q_grid,    4>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  2:
-        bi_q_kernel<   2><<<q_grid,    2>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  1:
-        bi_q_kernel<   1><<<q_grid,    1>>>(k, x, w, u, t, p, v, q);
-        break;
+      switch(n_w)
+      {
+        case 1024:
+          bi_q_kernel<32, 1024><<<q_grid, 32>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 512:
+          bi_q_kernel<32, 512><<<q_grid,  32>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 256:
+          bi_q_kernel<32, 256><<<q_grid,  32>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 128:
+          bi_q_kernel<32, 128><<<q_grid,  32>>>(k, x, w, u, t, p, v, q);
+          break;
+      }
     }
+    if (q_block == 64)
+    {
+      switch(n_w)
+      {
+        case 1024:
+          bi_q_kernel<64, 1024><<<q_grid, 64>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 512:
+          bi_q_kernel<64, 512><<<q_grid,  64>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 256:
+          bi_q_kernel<64, 256><<<q_grid,  64>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 128:
+          bi_q_kernel<64, 128><<<q_grid,  64>>>(k, x, w, u, t, p, v, q);
+          break;
+      }
+    }
+    
     
     // cudaDeviceSynchronize();
 

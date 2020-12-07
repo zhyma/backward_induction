@@ -6,8 +6,9 @@
 
 #include "phy_model.h"
 #include "dp_model.h"
-#include "gpu_solver.h"
 #include "cpu_solver.h"
+#include "gpu_solver.h"
+// #include "gpu_solver_beta.h"
 #include "utility.h"
 
 int main()
@@ -23,7 +24,7 @@ int main()
     int n_w = 128;
     int n_u = 32;
 
-    int block_size = 64;
+    int block_size = 32;
     if (block_size >= n_w)
         block_size = n_w/2;
 
