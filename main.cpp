@@ -23,7 +23,7 @@ int main()
     int n_w = 128;
     int n_u = 32;
 
-    int block_size = 128;
+    int block_size = 64;
     if (block_size >= n_w)
         block_size = n_w/2;
 
@@ -59,7 +59,9 @@ int main()
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
 
-    for(int i = 0; i < 2; ++i)
+    int iter = 21;// default: 50
+    float avg = 0;
+    for(int i = 0; i < iter; ++i)
     {
         start = std::clock();
         solver_type = "gpu";
@@ -67,11 +69,14 @@ int main()
         gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         // std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
         std::cout << gpu_duration << ",";
+        if(i > 0)
+            avg += gpu_duration;
         // result_to_file(&dp_model, solver_type, value, action);
     }
+    std::cout << std::endl << "gpu_duration: " << avg/(iter-1) << std::endl;
 
     // if compared with CPU
-    if (true)
+    if (false)
     {
         start = std::clock();
         solver_type = "cpu";

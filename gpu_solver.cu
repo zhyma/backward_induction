@@ -18,6 +18,20 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
   if (blockSize>= 2) sdata_sum[tid] += sdata_sum[tid + 1];
 }
 
+template <unsigned int blockSize, unsigned int n_w>
+__device__ void blockReduce(float *p, float *v, int p_offset, int v_offset, volatile float* sdata_sum, int tid)
+{
+  // sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
+  if (blockSize==64 && n_w >=1024) sdata_sum[tid] += p[p_offset+896+tid]*v[v_offset+896+tid] + p[p_offset+960+tid]*v[v_offset+960+tid];
+  if (blockSize==64 && n_w >= 896) sdata_sum[tid] += p[p_offset+768+tid]*v[v_offset+768+tid] + p[p_offset+832+tid]*v[v_offset+832+tid];
+  if (blockSize==64 && n_w >= 768) sdata_sum[tid] += p[p_offset+640+tid]*v[v_offset+640+tid] + p[p_offset+704+tid]*v[v_offset+704+tid];
+  if (blockSize==64 && n_w >= 640) sdata_sum[tid] += p[p_offset+512+tid]*v[v_offset+512+tid] + p[p_offset+576+tid]*v[v_offset+576+tid];
+  if (blockSize==64 && n_w >= 512) sdata_sum[tid] += p[p_offset+384+tid]*v[v_offset+384+tid] + p[p_offset+448+tid]*v[v_offset+448+tid];
+  if (blockSize==64 && n_w >= 384) sdata_sum[tid] += p[p_offset+256+tid]*v[v_offset+256+tid] + p[p_offset+320+tid]*v[v_offset+320+tid];
+  if (blockSize==64 && n_w >= 256) sdata_sum[tid] += p[p_offset+128+tid]*v[v_offset+128+tid] + p[p_offset+192+tid]*v[v_offset+192+tid];
+  if (blockSize==64 && n_w >= 128) sdata_sum[tid] += p[p_offset+  0+tid]*v[v_offset+  0+tid] + p[p_offset+ 64+tid]*v[v_offset+ 64+tid];
+}
+
 // Kernel function to calculate the control/action cost
 template <unsigned int blockSize>
 __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q)
@@ -46,14 +60,16 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   int xk_ = t[xk*(n_w*n_u) + wk*n_u + uk];
 
   sdata_sum[tid] = 0;
-  int i = 0;
   int p_offset = k*n_w*n_w + wk * n_w;
   int v_offset = (k+1)*(n_x*n_w) + xk_*n_w;
+
+  int i = 0;
   while (i < n_w)
   {
     sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
     i += blockSize * 2;
   }
+  // blockReduce<blockSize, 1024>(p, v, p_offset, v_offset, sdata_sum, tid);
   __syncthreads();
 
   if (blockSize >= 1024){
