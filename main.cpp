@@ -8,7 +8,6 @@
 #include "dp_model.h"
 #include "cpu_solver.h"
 #include "gpu_solver.h"
-// #include "gpu_solver_beta.h"
 #include "utility.h"
 
 int main()
@@ -21,8 +20,8 @@ int main()
     PHYModel phy_model;
     int steps = 10;
     int n_x = 128;
-    int n_w = 128;
-    int n_u = 32;
+    int n_w = 256;
+    int n_u = 128;
 
     int block_size = 32;
     if (block_size >= n_w)
@@ -77,7 +76,7 @@ int main()
     std::cout << std::endl << "gpu_duration: " << avg/(iter-1) << std::endl;
 
     // if compared with CPU
-    if (false)
+    if (true)
     {
         start = std::clock();
         solver_type = "cpu";
