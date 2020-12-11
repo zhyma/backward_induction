@@ -1,17 +1,40 @@
-objects=linear_func
+CC = g++
+NVCC = nvcc
+LIBS = -lcudart -lpthread
+LIBDIRS = -L/usr/local/cuda/lib64
+BUILD_DIR = ./build
+
+GPU_SRC = gpu_solver.cu
+GPU_OBJ = $(GPU_SRC:%.cu=$(BUILD_DIR)/%.o)
+GPU_TARGET = $(GPU_SRC:%.cu=%)
+
+CPU_SRC = $(wildcard *.cpp)
+CPU_OBJ = $(CPU_SRC:%.cpp=$(BUILD_DIR)/%.o)
+CPU_TARGET = $(CPU_SRC:%.cpp=%)
+
+objects = dp_solver
 
 edit:$(objects)
 
-linear_func:
-	nvcc -dc gpu_solver.cu -o ./build/gpu_solver.o
-	nvcc -dc gpu_solver_beta.cu -o ./build/gpu_solver_beta.o
-	nvcc -dlink ./build/gpu_solver.o -o ./build/gpu.dlink.o
-	g++ -c phy_model.cpp -o ./build/phy_model.o
-	g++ -c dp_model.cpp -o ./build/dp_model.o
-	g++ -c cpu_solver.cpp -o ./build/cpu_solver.o
-	g++ -c main.cpp -o ./build/main.o
-	g++ ./build/main.o ./build/dp_model.o ./build/cpu_solver.o ./build/gpu.dlink.o ./build/gpu_solver.o ./build/phy_model.o -o ./build/main -L/usr/local/cuda/lib64 -lcudart
+cpu_module: $(CPU_SRC)
+	mkdir -p $(BUILD_DIR)
+	@for i in $(CPU_TARGET); do \
+		echo "complile $$i.cpp";\
+		$(CC) -c $$i.cpp -o ${BUILD_DIR}/$$i.o; \
+    done
+
+gpu_module: $(GPU_SRC)
+	mkdir -p $(BUILD_DIR)
+	@for i in $(GPU_TARGET); do \
+		echo "complile $$i.cu";\
+		$(NVCC) -dc $$i.cu -o ${BUILD_DIR}/$$i.o; \
+    done
+
+dp_solver: $(CPU_OBJ) $(GPU_OBJ)
+	# $(NVCC) -dc gpu_solver.cu -o ./build/gpu_solver.o
+	$(NVCC) -dlink ./build/gpu_solver.o -o ./build/gpu.dlink.o
+	$(CC) $(CPU_OBJ) $(GPU_OBJ) ./build/gpu.dlink.o $(LIBDIRS) $(LIBS) -o ./build/dp_solver
 
 .PHONY:clean
 clean:$(objects)
-	-rm ./build/$(objects)
+	-rm $(BUILD_DIR)/*

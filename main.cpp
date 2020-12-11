@@ -20,41 +20,20 @@ int main()
     PHYModel phy_model;
     int steps = 10;
     int n_x = 128;
-    int n_w = 256;
-    int n_u = 128;
+    int n_w = 128;
+    int n_u = 32;
 
     int block_size = 32;
     if (block_size >= n_w)
         block_size = n_w/2;
 
-    // int param_set = 3;
-    // if(param_set == 1)
-    // {
-    //     n_x = 256;
-    //     n_w = 256;
-    //     n_u = 64;
-    // }
-    // else if(param_set==2)
-    // {
-    //     n_x = 512;
-    //     n_w = 512;
-    //     n_u = 128;
-    // }
-    // else if(param_set==3)
-    // {
-    //     n_x = 1024;
-    //     n_w = 1024;
-    //     n_u = 256;
-    // }
-    
-
     DPModel dp_model(&phy_model, steps, n_x, n_w, n_u);
     std::cout << "creating a new DP model is done" << std::endl;
     int N = dp_model.N;
 
-    std::string save_prob_mat = "p_mat";
-    int dim[2] = {dp_model.w_set.count, dp_model.w_set.count};
-    mat_to_file(save_prob_mat, dim, dp_model.prob_table);
+    // std::string save_prob_mat = "p_mat";
+    // int dim[2] = {dp_model.w_set.count, dp_model.w_set.count};
+    // mat_to_file(save_prob_mat, dim, dp_model.prob_table);
 
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
