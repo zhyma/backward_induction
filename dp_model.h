@@ -28,6 +28,7 @@ class DPModel
         int N = 10;
 
         int sample_trials = 10e5;
+        int sample_size;
 
         Set x_set;
         Set u_set;
@@ -49,7 +50,7 @@ class DPModel
         int state_trans();
 
         float *p_mat_temp;
-        int w_distribution();
+        int distribution();
         int gen_w_trans_mat();
 
         int val_to_idx(float val, Set *ref);

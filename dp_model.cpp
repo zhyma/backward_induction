@@ -1,9 +1,16 @@
+#include <fstream>
+#include <string>
+#include <sstream> 
+
 #include "dp_model.h"
 
 //initial function
 DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
 {
     ptr_model = ptr_in;
+    //sample size
+    sample_size = 1024;
+    p_mat_temp = new float[sample_size]{};
 
     N = steps;
     // discretizing x, u, and w
@@ -30,6 +37,59 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
     // create <x,w> -u-> x' table here
     state_trans();
 
+    // check if previously saved raw probability data exist.
+    std::string file_name = "raw_prob.csv";
+    bool file_exist = false;
+    if (FILE *file = fopen(file_name.c_str(), "r"))
+    {
+        // if exist, load from the existing one.
+        fclose(file);
+        // load the existing probability
+        std::ifstream in_file(file_name, std::ios::in);
+        std::string line_str;
+        // get lower, upper, gran. check parameters
+        getline(in_file, line_str);
+        std::stringstream ss_param(line_str); 
+        std::string arr[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            getline(ss_param, line_str, ',');
+            arr[i] = line_str;
+        }
+        if (std::stof(arr[0]) == w_set.bound[0] && std::stof(arr[1]) == w_set.bound[1] && std::stoi(arr[2]) == sample_size)
+        {
+            // parameter is consistent, load into memory 
+            std::cout << "Load raw distribution from existing data." << std::endl;
+            file_exist = true;
+            getline(in_file, line_str);
+            std::stringstream ss_data(line_str); 
+            for (int i = 0; i < sample_size; ++i)
+            {
+                getline(ss_data, line_str, ',');
+                p_mat_temp[i] = std::stof(line_str);
+            }
+        } 
+        else
+            file_exist = false;
+    } 
+    if (file_exist == false)
+    {
+        // if not, create a new file and save.
+        std::cout << "Raw distribution file does not exist, create a new one." << std::endl;
+        distribution();
+        std::ofstream out_file;
+        out_file.open(file_name, std::ios::out);
+
+        out_file << w_set.bound[0] << ",";
+        out_file << w_set.bound[1] << ",";
+        out_file << sample_size << std::endl;
+        for (int i = 0; i < sample_size; i++)
+            out_file << p_mat_temp[i] << ",";
+            
+        out_file << std::endl;
+        out_file.close();
+    }   
+    
     // create transition probability matrix
     gen_w_trans_mat();
     
@@ -105,32 +165,25 @@ int DPModel::state_trans()
     return 0;
 }
 
-int DPModel::w_distribution()
+int DPModel::distribution()
 {
-    int n_w = w_set.count;
-
     float w_center = (w_set.bound[0] + w_set.bound[1])/2.0;
-    float gran = (w_set.bound[1] - w_set.bound[0])/(float) n_w;
-    int *list = new int[n_w]{};
-    for (int i = 0; i < sample_trials; ++i)
+    float gran = (w_set.bound[1] - w_set.bound[0])/(float) sample_size;
+    int *list = new int[sample_size]{};
+    int i = 0;
+    while (i < sample_trials)
     {
         // get random number with normal distribution using gen as random source
         float w_ = ptr_model->next_w(w_center);
-        if (w_ < w_set.bound[0] + gran/2.0)
-        {
-            list[0] += 1;
-        }
-        else if (w_ > w_set.bound[1] - gran/2.0)
-        {
-            list[n_w-1] += 1;
-        }
-        else
+
+        if (w_ > w_set.bound[0] + gran/2.0 && w_ < w_set.bound[1] - gran/2.0)
         {
             int no = 1 + (int) ((w_ - w_set.bound[0]-gran/2.0)/gran);
-            list[no] += 1;
+            ++list[no];
+            ++i;
         }
     }
-    for (int i = 0;i < n_w; ++i)
+    for (int i = 0;i < sample_size; ++i)
         p_mat_temp[i] = (float) list[i]/(float) sample_trials;
 
     return 0;
@@ -139,32 +192,46 @@ int DPModel::w_distribution()
 int DPModel::gen_w_trans_mat()
 {
     int n_w = w_set.count;
-    p_mat_temp = new float[n_w]{};
+    float *prob_temp = new float[n_w]{};
     prob_table = new float[N*w_set.count*w_set.count]{};
-    w_distribution();
+    int cnt = sample_size/n_w;
+
+    for (int i = 0; i < sample_size; ++i)
+        prob_temp[i/cnt] += p_mat_temp[i];
+        
+    std::cout << std::endl;
 
     for (int k = 0; k < N; ++k)
     {
         int offset = k*n_w*n_w;
         for (int i = 0; i < n_w; ++i)
         {
+            float sum = 0;
             // given w_k
-            for (int idx = 0; idx < n_w/2 + 1; ++idx)
+            if (i < n_w/2)
             {
-                // check j = i-0, i-1, ..., 0
-                int j_l = i - idx;
-                if (j_l < 0)
-                    prob_table[offset + i*n_w+0] += p_mat_temp[n_w/2 - idx];
-                else
-                    prob_table[offset + i*n_w+j_l] = p_mat_temp[n_w/2 - idx];
-
-                // check j = i+1, i+2, ..., n_w-1
-                int j_r = i + idx;
-                if (j_r > n_w-1)
-                    prob_table[offset + i*n_w+(n_w-1)] += p_mat_temp[n_w/2 + idx];
-                else
-                    prob_table[offset + i*n_w+j_r] = p_mat_temp[n_w/2 + idx];
+                for (int j = 0, p_idx = n_w/2-i-1; j < n_w/2+i+1; ++j, ++p_idx)
+                {
+                    prob_table[offset + i*n_w + j] = prob_temp[p_idx];
+                    sum += prob_temp[p_idx];
+                    // std::cout << j << "+" << p_idx << ",";
+                }
+                // std::cout << std::endl;
             }
+            else
+            {
+                for (int j = i-n_w/2, p_idx = 0; j < n_w; ++j, ++p_idx)
+                {
+                    prob_table[offset + i*n_w + j] = prob_temp[p_idx];
+                    sum += prob_temp[p_idx];
+                    // std::cout << j << "+" << p_idx << ",";
+                }
+                // std::cout << std::endl;
+            }
+            
+            for (int j = 0; j < n_w; ++j)
+                prob_table[offset + i*n_w + j] /= sum;
+
         }
     }
     return 0;

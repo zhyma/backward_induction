@@ -9,7 +9,7 @@ int mat_to_file(std::string file_name, int *dim, float *mat)
     out_file.open("output/" + file_name + ".csv", std::ios::out);
     out_file << std::setiosflags(std::ios::fixed) << std::setprecision(2);
 
-    for (int i = 0; i < dim[0]; i++)
+    for (int i = 0; i < dim[0]; ++i)
     {
         for (int j = 0; j < dim[1]; ++j)
         {

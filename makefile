@@ -12,9 +12,13 @@ CPU_SRC = $(wildcard *.cpp)
 CPU_OBJ = $(CPU_SRC:%.cpp=$(BUILD_DIR)/%.o)
 CPU_TARGET = $(CPU_SRC:%.cpp=%)
 
-objects = dp_solver
+# objects = dp_solver
 
-edit:$(objects)
+# edit:$(objects)
+
+dp_solver: cpu_module gpu_module $(CPU_OBJ) $(GPU_OBJ)
+	$(NVCC) -dlink ./build/gpu_solver.o -o ./build/gpu.dlink.o
+	$(CC) $(CPU_OBJ) $(GPU_OBJ) ./build/gpu.dlink.o $(LIBDIRS) $(LIBS) -o ./build/dp_solver
 
 cpu_module: $(CPU_SRC)
 	mkdir -p $(BUILD_DIR)
@@ -29,11 +33,6 @@ gpu_module: $(GPU_SRC)
 		echo "complile $$i.cu";\
 		$(NVCC) -dc $$i.cu -o ${BUILD_DIR}/$$i.o; \
     done
-
-dp_solver: $(CPU_OBJ) $(GPU_OBJ)
-	# $(NVCC) -dc gpu_solver.cu -o ./build/gpu_solver.o
-	$(NVCC) -dlink ./build/gpu_solver.o -o ./build/gpu.dlink.o
-	$(CC) $(CPU_OBJ) $(GPU_OBJ) ./build/gpu.dlink.o $(LIBDIRS) $(LIBS) -o ./build/dp_solver
 
 .PHONY:clean
 clean:$(objects)
