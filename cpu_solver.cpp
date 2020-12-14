@@ -85,7 +85,8 @@ int CPUSolver::estimate_one_step(int k)
         {
             for (int wk = 0; wk < n_w; ++wk)
             {
-                float v = pow(1 - model->x_set.list[xk],2);
+                float x = model->x_set.list[xk];
+                float v = (1-x)*(1-x);
                 value[state_idx(N, xk, wk)] = v;
             }
         }

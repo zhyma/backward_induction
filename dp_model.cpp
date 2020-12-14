@@ -38,6 +38,7 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u, std::a
 
     // create <x,w> -u-> x' table here
     state_trans();
+    cost_init();
 
     prob_table[0] = new float[N*w_set.count*w_set.count]{};
     prob_table[1] = new float[N*w_set.count*w_set.count]{};
@@ -168,6 +169,35 @@ int DPModel::state_trans()
             }
         }
     }
+    return 0;
+}
+
+int DPModel::cost_init()
+{
+    int n_x = x_set.count, n_w = w_set.count, n_u = u_set.count;
+    // init cost-to-go mat
+    // N_x * N_w * N_u
+    cost2go = new float[n_x*n_w*n_u]{};
+    t_cost = new float[n_x*n_w]{};
+    int idx = 0;
+    float x, w, u;
+    for (int xk = 0; xk < n_x; ++xk)
+    {
+        x = x_set.list[xk];
+        for (int wk = 0; wk < n_w; ++wk)
+        {
+            w = w_set.list[wk];
+            for (int uk = 0; uk < n_u; ++uk)
+            {
+                idx = xk*n_w*n_u + wk*n_u + uk;
+                u = u_set.list[uk];
+                cost2go[idx] = x*x + u*u;
+            }
+            idx = xk*n_w + wk;
+            t_cost[idx] = (1-x)*(1-x);
+        }
+    }
+
     return 0;
 }
 

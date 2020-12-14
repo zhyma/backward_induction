@@ -10,7 +10,7 @@
 
 // Kernel function to calculate the control/action cost
 template <unsigned int blockSize>
-__global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q)
+__global__ void bi_q_kernel(int k, float *cost2go, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
   __shared__ float sdata_sum[1024];
@@ -60,7 +60,8 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   if (tid == 0)
   {
     int q_idx = xk*n_w*n_u + wk*n_u + uk;
-    q[q_idx] = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
+    //q[q_idx] = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
+    q[q_idx] = cost2go[q_idx] + sdata_sum[0];
   }
 }
 
@@ -77,16 +78,15 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   int n_u = model->u_set.count;
   int N = model->N;
 
-  float *x, *w, *u;
+  float *cost2go, *t_cost;
   int *t;
   float *p, *v;
   float *q;
   int *a;
 
   // Allocate memory
-  cudaMalloc(&x, n_x*sizeof(float));
-  cudaMalloc(&w, n_w*sizeof(float));
-  cudaMalloc(&u, n_u*sizeof(float));
+  cudaMalloc(&cost2go, n_x*n_w*n_u*sizeof(float));
+  cudaMalloc(&t_cost,  n_x*n_w*sizeof(float));
   
   cudaMalloc(&t, n_x * n_w * n_u*sizeof(int));
   // transition probability matrix size: Nw*Nw
@@ -100,9 +100,8 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   cudaMalloc(&a, N*n_x*n_w*sizeof(int));
 
   // initialize x, w, and u value to GPU for reference arrays on the host
-  cudaMemcpy(x, model->x_set.list, n_x*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(w, model->w_set.list, n_w*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(u, model->u_set.list, n_u*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(cost2go, model->cost2go, n_x*n_w*n_u*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(t_cost, model->t_cost, n_x*n_w*sizeof(float), cudaMemcpyHostToDevice);
 
   // Initialize "index" transition matrix <x,w> -u-> x'
   cudaMemcpy(t, model->s_trans_table, n_x*n_w*n_u*sizeof(int), cudaMemcpyHostToDevice);
@@ -137,7 +136,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
     start = std::clock();
 
     // Here k = N, the last step
-    bi_terminal_kernel<<<n_x, q_block>>>(n_w, N, x, w, u, t, p, v, a);
+    bi_terminal_kernel<<<n_x, q_block>>>(n_w, N, t_cost, v);
     // Wait for GPU to finish before accessing on host
     // cudaDeviceSynchronize();
 
@@ -150,41 +149,41 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
       switch(q_block)
       {
         case 1024:
-          bi_q_kernel<1024><<<q_grid, 1024>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<1024><<<q_grid, 1024>>>(k, cost2go, t, p, v, q);
           break;
         case 512:
-          bi_q_kernel< 512><<<q_grid,  512>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel< 512><<<q_grid,  512>>>(k, cost2go, t, p, v, q);
           break;
         case 256:
-          bi_q_kernel< 256><<<q_grid,  256>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel< 256><<<q_grid,  256>>>(k, cost2go, t, p, v, q);
           break;
         case 128:
-          bi_q_kernel< 128><<<q_grid,  128>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel< 128><<<q_grid,  128>>>(k, cost2go, t, p, v, q);
           break;
         case 64:
-          bi_q_kernel<  64><<<q_grid,   64>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<  64><<<q_grid,   64>>>(k, cost2go, t, p, v, q);
           break;
         case 32:
-          bi_q_kernel<  32><<<q_grid,   32>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<  32><<<q_grid,   32>>>(k, cost2go, t, p, v, q);
           break;
         case 16:
-          bi_q_kernel<  16><<<q_grid,   16>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<  16><<<q_grid,   16>>>(k, cost2go, t, p, v, q);
           break;
         case  8:
-          bi_q_kernel<   8><<<q_grid,    8>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<   8><<<q_grid,    8>>>(k, cost2go, t, p, v, q);
           break;
         case  4:
-          bi_q_kernel<   4><<<q_grid,    4>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<   4><<<q_grid,    4>>>(k, cost2go, t, p, v, q);
           break;
         case  2:
-          bi_q_kernel<   2><<<q_grid,    2>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<   2><<<q_grid,    2>>>(k, cost2go, t, p, v, q);
           break;
         case  1:
-          bi_q_kernel<   1><<<q_grid,    1>>>(k, x, w, u, t, p, v, q);
+          bi_q_kernel<   1><<<q_grid,    1>>>(k, cost2go, t, p, v, q);
           break;
       }
 
-      bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
+      bi_min_kernel<<<s_grid, s_block>>>(n_u, k, v, q, a);
     }
 
     // Backup data before it's too late
@@ -195,13 +194,11 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
     std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    
   }
 
   // Free memory
-  cudaFree(x);
-  cudaFree(w);
-  cudaFree(u);
+  cudaFree(cost2go);
+  cudaFree(t_cost);
   cudaFree(t);
   cudaFree(p);
   cudaFree(v);

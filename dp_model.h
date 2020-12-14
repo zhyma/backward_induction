@@ -36,6 +36,11 @@ class DPModel
         Set u_set;
         Set w_set;
 
+        // Save cost-to-go as a matrix
+        float *cost2go;
+        // Save terminal cost as a matrix
+        float *t_cost;
+
         int xw_cnt;
         int states_cnt;
         
@@ -52,6 +57,7 @@ class DPModel
         std::atomic<int>* busy_mat_ptr;
         int discretize(Set *in);
         int state_trans();
+        int cost_init();
 
         float *p_mat_temp;
         int distribution();

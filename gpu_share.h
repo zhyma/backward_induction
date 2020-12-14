@@ -19,7 +19,7 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
 }
 
 // Kernel function to find the control/action with the lowest cost (q-value)
-__global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int *t, float *p, float *v, float *q, int *a)
+__global__ void bi_min_kernel(int n_u, int k, float *v, float *q, int *a)
 {
   __shared__ q_info sdata_q[1024];
 
@@ -78,7 +78,7 @@ __global__ void bi_min_kernel(int n_u, int k, float *x, float *w, float *u, int 
 }
 
 // Kernel function to calculate the final cost/value at the last step
-__global__ void bi_terminal_kernel(int n_w, int k, float *x, float *w, float *u, int *t, float *p, float *v, int *a)
+__global__ void bi_terminal_kernel(int n_w, int k, float *t_cost, float *v)
 {
   // <x, w> -u-> <x2, w2>
   // grid: 3D, <x,w,u>
@@ -95,7 +95,8 @@ __global__ void bi_terminal_kernel(int n_w, int k, float *x, float *w, float *u,
   if (wk < n_w)
   {
     int v_idx = k*(n_x*n_w) + xk * n_w + wk;
-    v[v_idx] = (1-x[xk])*(1-x[xk]);
+    int g_idx = xk*n_w + wk;
+    v[v_idx] = t_cost[g_idx];
   }
 }
 
