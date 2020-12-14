@@ -3,12 +3,14 @@
 
 #include <iostream>
 #include <cmath>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
+// #include <math.h>
+// #include <stdlib.h>
+// #include <time.h>
+
+#include <thread>
+#include <atomic>
 
 #include "phy_model.h"
-// #include "prob_tool.h"
 
 // move to physical model
 typedef struct Set
@@ -39,19 +41,21 @@ class DPModel
         
         // save <x,w> -u-> x'
         int *s_trans_table;
-        float *prob_table;
+        float *prob_table[2];
         // float *value_table;
         // int *action_table;
 
-        DPModel(PHYModel * ptr_in, int steps, int x_grain, int w_grain, int u_grain);
+        DPModel(PHYModel * ptr_in, int steps, int x_grain, int w_grain, int u_grain, std::atomic<int>* busy_p_mat);
+        int daemon(std::atomic<bool>* running);
 
     private:
+        std::atomic<int>* busy_mat_ptr;
         int discretize(Set *in);
         int state_trans();
 
         float *p_mat_temp;
         int distribution();
-        int gen_w_trans_mat();
+        int gen_w_trans_mat(int update_mat, int prob_type);
 
         int val_to_idx(float val, Set *ref);
         int xw_idx(int xk, int wk);

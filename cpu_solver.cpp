@@ -1,8 +1,10 @@
 #include "cpu_solver.h"
 
-CPUSolver::CPUSolver(DPModel * ptr_in)
+CPUSolver::CPUSolver(DPModel * ptr_in, std::atomic<int>* busy_p_mat)
 {
     model = ptr_in;
+    busy_mat_ptr = busy_p_mat;
+
     N = model->N;
     n_x = model->x_set.count;
     n_w = model->w_set.count;
@@ -10,10 +12,6 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
     value = new float[(N+1)*n_x*n_w];
     action = new int[N*n_x*n_w];
 
-    for (int k = N; k >= 0; k--)
-    {
-        estimate_one_step(k);
-    }
     return;
 }
 
@@ -62,7 +60,7 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
     {
         // p*V_{k+1}
         int p_idx = k*n_w*n_w + wk*n_w + wk_;
-        float p = model->prob_table[p_idx];
+        float p = model->prob_table[*busy_mat_ptr][p_idx];
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + wk_;
         float v = value[v_idx];
         sum += p*v;
@@ -125,5 +123,14 @@ int CPUSolver::estimate_one_step(int k)
     {
         std::cout << "Error! k="<< k <<" is out of the boundary!" << std::endl;
     }
+    return 0;
+}
+
+int CPUSolver::solve()
+{
+    std::cout << "CPU using p_mat buffer #" << *busy_mat_ptr << std::endl;
+    for (int k = N; k >= 0; k--)
+        estimate_one_step(k);
+    
     return 0;
 }

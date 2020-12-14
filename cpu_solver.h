@@ -1,5 +1,8 @@
 #ifndef CPU_SOLVER_H_
 #define CPU_SOLVER_H_
+#include <thread>
+#include <atomic>
+
 #include "dp_model.h"
 
 struct Min_index
@@ -12,10 +15,12 @@ class CPUSolver
 {
     public:
         DPModel * model;
-        CPUSolver(DPModel * ptr_in);
+        CPUSolver(DPModel * ptr_in, std::atomic<int>* busy_p_mat);
+        int solve();
         float * value;
         int * action;
     private:
+        std::atomic<int>* busy_mat_ptr;
         int N;
         int n_x,n_w,n_u;
 

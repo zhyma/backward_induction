@@ -5,12 +5,14 @@
 #include "dp_model.h"
 
 //initial function
-DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
+DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u, std::atomic<int> * busy_p_mat)
 {
     ptr_model = ptr_in;
     //sample size
     sample_size = 1024;
     p_mat_temp = new float[sample_size]{};
+
+    busy_mat_ptr = busy_p_mat;
 
     N = steps;
     // discretizing x, u, and w
@@ -36,6 +38,9 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
 
     // create <x,w> -u-> x' table here
     state_trans();
+
+    prob_table[0] = new float[N*w_set.count*w_set.count]{};
+    prob_table[1] = new float[N*w_set.count*w_set.count]{};
 
     // check if previously saved raw probability data exist.
     std::string file_name = "raw_prob.csv";
@@ -90,8 +95,9 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u)
         out_file.close();
     }   
     
-    // create transition probability matrix
-    gen_w_trans_mat();
+    // create transition probability matrix, with default configuration
+    std::cout << "Configured to use probability matrix buffer #0 first." << std::endl;
+    gen_w_trans_mat(0, 0);
     
     return;
 }
@@ -189,11 +195,13 @@ int DPModel::distribution()
     return 0;
 }
 
-int DPModel::gen_w_trans_mat()
+int DPModel::gen_w_trans_mat(int update_mat, int prob_type)
 {
+    if (update_mat != 0 && update_mat != 1)
+        update_mat = 0;
+
     int n_w = w_set.count;
     float *prob_temp = new float[n_w]{};
-    prob_table = new float[N*w_set.count*w_set.count]{};
     int cnt = sample_size/n_w;
 
     for (int i = 0; i < sample_size; ++i)
@@ -212,7 +220,7 @@ int DPModel::gen_w_trans_mat()
             {
                 for (int j = 0, p_idx = n_w/2-i-1; j < n_w/2+i+1; ++j, ++p_idx)
                 {
-                    prob_table[offset + i*n_w + j] = prob_temp[p_idx];
+                    prob_table[update_mat][offset + i*n_w + j] = prob_temp[p_idx];
                     sum += prob_temp[p_idx];
                     // std::cout << j << "+" << p_idx << ",";
                 }
@@ -222,7 +230,7 @@ int DPModel::gen_w_trans_mat()
             {
                 for (int j = i-n_w/2, p_idx = 0; j < n_w; ++j, ++p_idx)
                 {
-                    prob_table[offset + i*n_w + j] = prob_temp[p_idx];
+                    prob_table[update_mat][offset + i*n_w + j] = prob_temp[p_idx];
                     sum += prob_temp[p_idx];
                     // std::cout << j << "+" << p_idx << ",";
                 }
@@ -230,9 +238,48 @@ int DPModel::gen_w_trans_mat()
             }
             
             for (int j = 0; j < n_w; ++j)
-                prob_table[offset + i*n_w + j] /= sum;
+                prob_table[update_mat][offset + i*n_w + j] /= sum;
 
         }
     }
+    return 0;
+}
+
+int DPModel::daemon(std::atomic<bool>* running)
+{
+    int p_type = -1;
+    while (*running)
+    {
+        std::cout << "Change the type of probability to: " << std::endl;
+        std::cin >> p_type;
+        
+        if (p_type == 0)
+        {
+            // flip the busy_p_mat (ping-pong)
+            if (*busy_mat_ptr == 0)
+            {
+                std::cout << "dp write to buffer channel #1" << std::endl;
+                // p_mat 0 is busy, update p_mat 1
+                gen_w_trans_mat(1, p_type);
+                *busy_mat_ptr = 1;
+            }
+            else
+            {
+                std::cout << "dp write to buffer channel #0" << std::endl;
+                gen_w_trans_mat(0, p_type);
+                *busy_mat_ptr = 0;
+            }
+            std::cout << "The type of probability has been changed to: " << p_type << ". On buffer channel #" << *busy_mat_ptr << std::endl;
+        }
+        
+        if (p_type > 5)
+        {
+            *running = false;
+        }
+        
+    }
+
+    std::cout << "Exiting DP model daemon" << std::endl;
+
     return 0;
 }

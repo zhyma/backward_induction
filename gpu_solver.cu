@@ -1,4 +1,10 @@
 #include <iostream>
+#include <ctime>
+
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include "dp_model.h"
 #include "gpu_share.h"
 
@@ -58,9 +64,14 @@ __global__ void bi_q_kernel(int k, float *x, float *w, float *u, int *t, float *
   }
 }
 
-int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
+// int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
+int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::atomic<int>* busy_p_mat, std::atomic<bool>* running)
 {
-  int max_threads = 1024;
+  // int max_threads = 1024;
+  std::clock_t start;
+  double gpu_duration = 0;
+  int prev_busy_mat = 0;
+
   int n_x = model->x_set.count;
   int n_w = model->w_set.count;
   int n_u = model->u_set.count;
@@ -96,7 +107,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
   // Initialize "index" transition matrix <x,w> -u-> x'
   cudaMemcpy(t, model->s_trans_table, n_x*n_w*n_u*sizeof(int), cudaMemcpyHostToDevice);
   // Initialize transition probability matrix w -> w'
-  cudaMemcpy(p, model->prob_table, N*n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(p, model->prob_table[*busy_p_mat], N*n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
 
   // Set up parameters for parallel computing
   // For calculating q-value
@@ -114,64 +125,78 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
     u_pow2 <<= 1;
   int s_block = u_pow2;
 
-  // Here k = N, the last step
-  bi_terminal_kernel<<<n_x, q_block>>>(n_w, N, x, w, u, t, p, v, a);
-  // Wait for GPU to finish before accessing on host
-  // cudaDeviceSynchronize();
-
-  if (block_size >= n_w)
-    q_block = n_w/2;
-  else
-    q_block = block_size;
-  for (int k = N-1; k >= 0; k--)
+  while(*running)
   {
-    switch(q_block)
+    if (prev_busy_mat != *busy_p_mat)
     {
-      case 1024:
-        bi_q_kernel<1024><<<q_grid, 1024>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 512:
-        bi_q_kernel< 512><<<q_grid,  512>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 256:
-        bi_q_kernel< 256><<<q_grid,  256>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 128:
-        bi_q_kernel< 128><<<q_grid,  128>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 64:
-        bi_q_kernel<  64><<<q_grid,   64>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 32:
-        bi_q_kernel<  32><<<q_grid,   32>>>(k, x, w, u, t, p, v, q);
-        break;
-      case 16:
-        bi_q_kernel<  16><<<q_grid,   16>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  8:
-        bi_q_kernel<   8><<<q_grid,    8>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  4:
-        bi_q_kernel<   4><<<q_grid,    4>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  2:
-        bi_q_kernel<   2><<<q_grid,    2>>>(k, x, w, u, t, p, v, q);
-        break;
-      case  1:
-        bi_q_kernel<   1><<<q_grid,    1>>>(k, x, w, u, t, p, v, q);
-        break;
+      cudaMemcpy(p, model->prob_table[*busy_p_mat], N*n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
+      prev_busy_mat = *busy_p_mat;
     }
+    std::cout << "GPU using p_mat buffer #" << (*busy_p_mat) << std::endl;
+
+    start = std::clock();
+
+    // Here k = N, the last step
+    bi_terminal_kernel<<<n_x, q_block>>>(n_w, N, x, w, u, t, p, v, a);
+    // Wait for GPU to finish before accessing on host
+    // cudaDeviceSynchronize();
+
+    if (block_size >= n_w)
+      q_block = n_w/2;
+    else
+      q_block = block_size;
+    for (int k = N-1; k >= 0; k--)
+    {
+      switch(q_block)
+      {
+        case 1024:
+          bi_q_kernel<1024><<<q_grid, 1024>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 512:
+          bi_q_kernel< 512><<<q_grid,  512>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 256:
+          bi_q_kernel< 256><<<q_grid,  256>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 128:
+          bi_q_kernel< 128><<<q_grid,  128>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 64:
+          bi_q_kernel<  64><<<q_grid,   64>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 32:
+          bi_q_kernel<  32><<<q_grid,   32>>>(k, x, w, u, t, p, v, q);
+          break;
+        case 16:
+          bi_q_kernel<  16><<<q_grid,   16>>>(k, x, w, u, t, p, v, q);
+          break;
+        case  8:
+          bi_q_kernel<   8><<<q_grid,    8>>>(k, x, w, u, t, p, v, q);
+          break;
+        case  4:
+          bi_q_kernel<   4><<<q_grid,    4>>>(k, x, w, u, t, p, v, q);
+          break;
+        case  2:
+          bi_q_kernel<   2><<<q_grid,    2>>>(k, x, w, u, t, p, v, q);
+          break;
+        case  1:
+          bi_q_kernel<   1><<<q_grid,    1>>>(k, x, w, u, t, p, v, q);
+          break;
+      }
+
+      bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
+    }
+
+    // Backup data before it's too late
+    cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(a_out, a, N*n_x*n_w*sizeof(int), cudaMemcpyDeviceToHost);
+
+    gpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     
-    // cudaDeviceSynchronize();
-
-    bi_min_kernel<<<s_grid, s_block>>>(n_u, k, x, w, u, t, p, v, q, a);
-    // cudaDeviceSynchronize();
   }
-  // cudaDeviceSynchronize();
-
-  // Backup data before it's too late
-  cudaMemcpy(v_out, v, (N+1)*n_x*n_w*sizeof(float), cudaMemcpyDeviceToHost);
-  cudaMemcpy(a_out, a, N*n_x*n_w*sizeof(int), cudaMemcpyDeviceToHost);
 
   // Free memory
   cudaFree(x);
@@ -183,7 +208,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out)
   cudaFree(q);
   cudaFree(a);
 
-  // std::cout << "optimal actions found" << std::endl;
+  std::cout << "Exiting GPU solver" << std::endl;
 
   return 0;
 }

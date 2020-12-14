@@ -1,4 +1,4 @@
-- Test under Ubuntu 18.04TLS + CUDA V11.1.74.
+- Test under Ubuntu 18.04TLS + CUDA v11.1.74.
 <br />
 
 - There are three main parts in this repo:
