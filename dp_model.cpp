@@ -1,8 +1,31 @@
 #include <fstream>
 #include <string>
-#include <sstream> 
+#include <sstream>
 
 #include "dp_model.h"
+
+int search_files(std::vector<std::string> *files)
+{
+	DIR *dpdf;
+    struct dirent *epdf;
+    int cnt = 0;
+
+    dpdf = opendir("output");
+    if (dpdf != NULL){
+        while (epdf = readdir(dpdf))
+        {
+            std::string name = epdf->d_name;
+            std::size_t found = name.find("raw_prob");
+            if (found != std::string::npos)
+            {
+                files->push_back(name);
+                ++cnt;
+            }
+        }
+    }
+    closedir(dpdf);
+    return cnt;
+}
 
 //initial function
 DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u, std::atomic<int> * busy_p_mat)
@@ -10,7 +33,6 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u, std::a
     ptr_model = ptr_in;
     //sample size
     sample_size = 1024;
-    p_mat_temp = new float[sample_size]{};
 
     busy_mat_ptr = busy_p_mat;
 
@@ -44,56 +66,68 @@ DPModel::DPModel(PHYModel * ptr_in, int steps, int n_x, int n_w, int n_u, std::a
     prob_table[1] = new float[N*w_set.count*w_set.count]{};
 
     // check if previously saved raw probability data exist.
-    std::string file_name = "raw_prob.csv";
     bool file_exist = false;
-    if (FILE *file = fopen(file_name.c_str(), "r"))
+    std::vector<std::string> files;
+    search_files(&files);
+
+    no_of_p = 0;
+    for (int i = 0; i < files.size(); ++i)
     {
-        // if exist, load from the existing one.
-        fclose(file);
-        // load the existing probability
-        std::ifstream in_file(file_name, std::ios::in);
-        std::string line_str;
-        // get lower, upper, gran. check parameters
-        getline(in_file, line_str);
-        std::stringstream ss_param(line_str); 
-        std::string arr[3];
-        for (int i = 0; i < 3; ++i)
+        std::cout << "checking: " << files[i] << std::endl;
+    	std::string file_name = "./output/" + files[i];
+        if (FILE *file = fopen(file_name.c_str(), "r"))
         {
-            getline(ss_param, line_str, ',');
-            arr[i] = line_str;
-        }
-        if (std::stof(arr[0]) == w_set.bound[0] && std::stof(arr[1]) == w_set.bound[1] && std::stoi(arr[2]) == sample_size)
-        {
-            // parameter is consistent, load into memory 
-            std::cout << "Load raw distribution from existing data." << std::endl;
-            file_exist = true;
+            // if exist, load from the existing one.
+            fclose(file);
+            // load the existing probability
+            std::ifstream in_file(file_name, std::ios::in);
+            std::string line_str;
+            // get lower, upper, gran. check parameters
             getline(in_file, line_str);
-            std::stringstream ss_data(line_str); 
-            for (int i = 0; i < sample_size; ++i)
+            std::stringstream ss_param(line_str); 
+            std::string arr[3];
+            for (int j = 0; j < 3; ++j)
             {
-                getline(ss_data, line_str, ',');
-                p_mat_temp[i] = std::stof(line_str);
+                getline(ss_param, line_str, ',');
+                arr[j] = line_str;
             }
-        } 
-        else
-            file_exist = false;
-    } 
+            if (std::stof(arr[0]) == w_set.bound[0] && std::stof(arr[1]) == w_set.bound[1] && std::stoi(arr[2]) == sample_size)
+            {
+            	p_mat_temp.push_back(new float[sample_size]{});
+                // parameter is consistent, load into memory 
+                std::cout << "Load" << file_name << "from existing data." << std::endl;
+                file_exist = true;
+                no_of_p++;
+                getline(in_file, line_str);
+                std::stringstream ss_data(line_str); 
+                for (int j = 0; j < sample_size; ++j)
+                {
+                    getline(ss_data, line_str, ',');
+                    p_mat_temp[i][j] = std::stof(line_str);
+                }
+            }
+        }
+    }
     if (file_exist == false)
     {
         // if not, create a new file and save.
-        std::cout << "Raw distribution file does not exist, create a new one." << std::endl;
-        distribution();
-        std::ofstream out_file;
-        out_file.open(file_name, std::ios::out);
+        for (int i = 0; i < 2; ++i)
+        {
+            std::cout << "Raw distribution file does not exist, create a new one." << std::endl;
+            p_mat_temp.push_back(new float[sample_size]{});
+            distribution(p_mat_temp[i]);
+            std::ofstream out_file;
+            out_file.open(("./output/raw_prob"+std::to_string(i)+".csv"), std::ios::out);
 
-        out_file << w_set.bound[0] << ",";
-        out_file << w_set.bound[1] << ",";
-        out_file << sample_size << std::endl;
-        for (int i = 0; i < sample_size; i++)
-            out_file << p_mat_temp[i] << ",";
-            
-        out_file << std::endl;
-        out_file.close();
+            out_file << w_set.bound[0] << ",";
+            out_file << w_set.bound[1] << ",";
+            out_file << sample_size << std::endl;
+            for (int j = 0; j < sample_size; j++)
+                out_file << p_mat_temp[i][j] << ",";
+                
+            out_file << std::endl;
+            out_file.close();
+        }
     }   
     
     // create transition probability matrix, with default configuration
@@ -201,7 +235,7 @@ int DPModel::cost_init()
     return 0;
 }
 
-int DPModel::distribution()
+int DPModel::distribution(float * temp_array)
 {
     float w_center = (w_set.bound[0] + w_set.bound[1])/2.0;
     float gran = (w_set.bound[1] - w_set.bound[0])/(float) sample_size;
@@ -220,7 +254,7 @@ int DPModel::distribution()
         }
     }
     for (int i = 0;i < sample_size; ++i)
-        p_mat_temp[i] = (float) list[i]/(float) sample_trials;
+        temp_array[i] = (float) list[i]/(float) sample_trials;
 
     return 0;
 }
@@ -234,8 +268,12 @@ int DPModel::gen_w_trans_mat(int update_mat, int prob_type)
     float *prob_temp = new float[n_w]{};
     int cnt = sample_size/n_w;
 
+    if (update_mat >= no_of_p)
+        update_mat = no_of_p -1;
+    if (update_mat < 0)
+        update_mat = 0;
     for (int i = 0; i < sample_size; ++i)
-        prob_temp[i/cnt] += p_mat_temp[i];
+        prob_temp[i/cnt] += p_mat_temp[update_mat][i];
         
     std::cout << std::endl;
 
@@ -283,7 +321,7 @@ int DPModel::daemon(std::atomic<bool>* running)
         std::cout << "Change the type of probability to: " << std::endl;
         std::cin >> p_type;
         
-        if (p_type == 0)
+        if (p_type > 0 & p_type < no_of_p)
         {
             // flip the busy_p_mat (ping-pong)
             if (*busy_mat_ptr == 0)
@@ -302,11 +340,10 @@ int DPModel::daemon(std::atomic<bool>* running)
             std::cout << "The type of probability has been changed to: " << p_type << ". On buffer channel #" << *busy_mat_ptr << std::endl;
         }
         
-        if (p_type > 5)
+        if (p_type > no_of_p || p_type < 0)
         {
             *running = false;
         }
-        
     }
 
     std::cout << "Exiting DP model daemon" << std::endl;

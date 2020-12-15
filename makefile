@@ -38,3 +38,4 @@ gpu_module: $(GPU_SRC)
 .PHONY:clean
 clean:$(objects)
 	-rm $(BUILD_DIR)/*
+	-rm ./output/*

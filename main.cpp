@@ -47,10 +47,10 @@ int main()
     float *value = new float[(N+1)*n_x*n_w]{};
     int *action = new int[N*n_x*n_w]{};
 
-    // std::thread t_dp(&DPModel::daemon, dp_model, &running);
+    std::thread t_dp(&DPModel::daemon, dp_model, &running);
     std::thread t_gpu(gpu_main, &dp_model, block_size, value, action, &busy_p_mat, &running);
 
-    // t_dp.join();
+    t_dp.join();
     t_gpu.join();
 
     result_to_file(&dp_model, "gpu", value, action);

@@ -7,6 +7,11 @@
 // #include <stdlib.h>
 // #include <time.h>
 
+#include <dirent.h>
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include <thread>
 #include <atomic>
 
@@ -28,6 +33,7 @@ class DPModel
         bool save_transition;
         int iter;
         int N = 10;
+        int no_of_p;
 
         int sample_trials = 10e5;
         int sample_size;
@@ -59,8 +65,8 @@ class DPModel
         int state_trans();
         int cost_init();
 
-        float *p_mat_temp;
-        int distribution();
+        std::vector<float*> p_mat_temp;
+        int distribution(float * temp_array);
         int gen_w_trans_mat(int update_mat, int prob_type);
 
         int val_to_idx(float val, Set *ref);
