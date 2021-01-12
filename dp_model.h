@@ -15,12 +15,10 @@
 #include <thread>
 #include <atomic>
 
-#include "phy_model.h"
-
 // move to physical model
 typedef struct Set
 {
-    int count;
+    int n;
     float *list;
     float bound[2];
 } Set;
@@ -28,27 +26,24 @@ typedef struct Set
 class DPModel
 {
     public:
-        PHYModel * ptr_model;
 
         bool save_transition;
         int iter;
         int N = 10;
         int no_of_p;
 
-        int sample_trials = 10e5;
-        int sample_size;
+        Set d;
+        Set v;
+        Set a;
 
-        Set x_set;
-        Set u_set;
-        Set w_set;
+        Set x;
+        Set u;
+        Set w;
 
         // Save cost-to-go as a matrix
-        float *cost2go;
+        float *running_cost;
         // Save terminal cost as a matrix
         float *t_cost;
-
-        int xw_cnt;
-        int states_cnt;
         
         // save <x,w> -u-> x'
         int *s_trans_table;
@@ -56,23 +51,34 @@ class DPModel
         // float *value_table;
         // int *action_table;
 
-        DPModel(PHYModel * ptr_in, int steps, int x_grain, int w_grain, int u_grain, std::atomic<int>* busy_p_mat);
+        DPModel(int steps, std::atomic<int>* busy_p_mat);
         int daemon(std::atomic<bool>* running);
 
     private:
+        float dt=2;
+        // distance to the traffic light
+        int d2tl;
+        // the time that the red light will start
+        int rl_start;
+        // the time that the red light will end
+        int rl_end;
+        float t_tcc;
+        float d_target = 400;
+        float v_target = 30;
+        // weight of the car
+        float m = 1500;
+        float g = 9.8;
         std::atomic<int>* busy_mat_ptr;
+        int phy_model(int xk, int wk, int uk);
         int discretize(Set *in);
         int state_trans();
         int cost_init();
 
-        std::vector<float*> p_mat_temp;
-        int distribution(float * temp_array);
-        int gen_w_trans_mat(int update_mat, int prob_type);
+        // if you have multiple probability matrices
+        std::vector<float*> p_mat;
+        int check_driving_data();
 
         int val_to_idx(float val, Set *ref);
-        int xw_idx(int xk, int wk);
-        int state_idx(int k, int xk, int wk);
-        int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
 
 };
 #endif // DP_MODEL_H_

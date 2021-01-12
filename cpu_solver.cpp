@@ -6,9 +6,9 @@ CPUSolver::CPUSolver(DPModel * ptr_in, std::atomic<int>* busy_p_mat)
     busy_mat_ptr = busy_p_mat;
 
     N = model->N;
-    n_x = model->x_set.count;
-    n_w = model->w_set.count;
-    n_u = model->u_set.count;
+    n_x = model->x.n;
+    n_w = model->w.n;
+    n_u = model->u.n;
     value = new float[(N+1)*n_x*n_w];
     action = new int[N*n_x*n_w];
 
@@ -65,8 +65,8 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
         float v = value[v_idx];
         sum += p*v;
     }
-    float x = model->x_set.list[xk];
-    float u = model->u_set.list[uk];
+    float x = model->x.list[xk];
+    float u = model->u.list[uk];
     float l = x*x + u*u;
     
     return l + sum;
@@ -85,7 +85,7 @@ int CPUSolver::estimate_one_step(int k)
         {
             for (int wk = 0; wk < n_w; ++wk)
             {
-                float x = model->x_set.list[xk];
+                float x = model->x.list[xk];
                 float v = (1-x)*(1-x);
                 value[state_idx(N, xk, wk)] = v;
             }

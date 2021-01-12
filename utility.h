@@ -1,3 +1,6 @@
+#ifndef UTILITY_H_
+#define UTILITY_H_
+
 #include <string>
 #include <fstream>
 #include <iomanip>
@@ -26,20 +29,20 @@ int mat_to_file(std::string file_name, int *dim, float *mat)
 int result_to_file(DPModel * model, std::string solver_type, float *v, int * a)
 {
     int N = model->N;
-    int n_x = model->x_set.count;
-    int n_w = model->w_set.count;
-    int n_u = model->u_set.count;
+    int n_x = model->x.n;
+    int n_w = model->w.n;
+    int n_u = model->u.n;
 
     std::ofstream out_value;
     out_value.open("output/" + solver_type + "_value.csv", std::ios::out);
     out_value << std::setiosflags(std::ios::fixed) << std::setprecision(2);
 
     //title needs to be re-assigned
-    for (int i = 0; i < model->xw_cnt; ++i)
+    for (int i = 0; i < model->x.n*model->w.n; ++i)
     {
         // xw_idx = xk*w_cnt + wk
-        out_value << model->x_set.list[i/n_w] << ";";
-        out_value << model->x_set.list[i%n_w] << ",";
+        out_value << model->x.list[i/n_w] << ";";
+        out_value << model->x.list[i%n_w] << ",";
     }
     out_value << std::endl;
 
@@ -60,11 +63,11 @@ int result_to_file(DPModel * model, std::string solver_type, float *v, int * a)
     std::ofstream out_action;
     out_action.open("output/" + solver_type + "_action.csv", std::ios::out);
     out_action << std::setiosflags(std::ios::fixed) << std::setprecision(2);
-    for (int i = 0; i < model->xw_cnt; ++i)
+    for (int i = 0; i < model->x.n*model->w.n; ++i)
     {
         // xw_idx = xk*w_cnt + wk
-        out_action << model->x_set.list[i/n_w] << ";";
-        out_action << model->x_set.list[i%n_w] << ",";
+        out_action << model->x.list[i/n_w] << ";";
+        out_action << model->x.list[i%n_w] << ",";
     }
     out_action << std::endl;
     for (int k = 0; k < N; k++)
@@ -84,3 +87,28 @@ int result_to_file(DPModel * model, std::string solver_type, float *v, int * a)
 
     return 0;
 }
+
+int search_files(std::vector<std::string> *files, std::string search_key)
+{
+	DIR *dpdf;
+    struct dirent *epdf;
+    int cnt = 0;
+
+    dpdf = opendir("output");
+    if (dpdf != NULL){
+        while (epdf = readdir(dpdf))
+        {
+            std::string name = epdf->d_name;
+            std::size_t found = name.find(search_key);
+            if (found != std::string::npos)
+            {
+                files->push_back(name);
+                ++cnt;
+            }
+        }
+    }
+    closedir(dpdf);
+    return cnt;
+}
+
+#endif //UTILITY_H_

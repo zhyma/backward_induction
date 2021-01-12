@@ -10,7 +10,7 @@
 
 // Kernel function to calculate the control/action cost
 template <unsigned int blockSize>
-__global__ void bi_q_kernel(int k, float *cost2go, int *t, float *p, float *v, float *q)
+__global__ void bi_q_kernel(int k, float *running_cost, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
   __shared__ float sdata_sum[1024];
@@ -61,7 +61,7 @@ __global__ void bi_q_kernel(int k, float *cost2go, int *t, float *p, float *v, f
   {
     int q_idx = xk*n_w*n_u + wk*n_u + uk;
     //q[q_idx] = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
-    q[q_idx] = cost2go[q_idx] + sdata_sum[0];
+    q[q_idx] = running_cost[q_idx] + sdata_sum[0];
   }
 }
 
@@ -73,19 +73,19 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   double gpu_duration = 0;
   int prev_busy_mat = 0;
 
-  int n_x = model->x_set.count;
-  int n_w = model->w_set.count;
-  int n_u = model->u_set.count;
+  int n_x = model->x.n;
+  int n_w = model->w.n;
+  int n_u = model->u.n;
   int N = model->N;
 
-  float *cost2go, *t_cost;
+  float *running_cost, *t_cost;
   int *t;
   float *p, *v;
   float *q;
   int *a;
 
   // Allocate memory
-  cudaMalloc(&cost2go, n_x*n_w*n_u*sizeof(float));
+  cudaMalloc(&running_cost, n_x*n_w*n_u*sizeof(float));
   cudaMalloc(&t_cost,  n_x*n_w*sizeof(float));
   
   cudaMalloc(&t, n_x * n_w * n_u*sizeof(int));
@@ -100,7 +100,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   cudaMalloc(&a, N*n_x*n_w*sizeof(int));
 
   // initialize x, w, and u value to GPU for reference arrays on the host
-  cudaMemcpy(cost2go, model->cost2go, n_x*n_w*n_u*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(running_cost, model->running_cost, n_x*n_w*n_u*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(t_cost, model->t_cost, n_x*n_w*sizeof(float), cudaMemcpyHostToDevice);
 
   // Initialize "index" transition matrix <x,w> -u-> x'
@@ -149,37 +149,37 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
       switch(q_block)
       {
         case 1024:
-          bi_q_kernel<1024><<<q_grid, 1024>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<1024><<<q_grid, 1024>>>(k, running_cost, t, p, v, q);
           break;
         case 512:
-          bi_q_kernel< 512><<<q_grid,  512>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel< 512><<<q_grid,  512>>>(k, running_cost, t, p, v, q);
           break;
         case 256:
-          bi_q_kernel< 256><<<q_grid,  256>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel< 256><<<q_grid,  256>>>(k, running_cost, t, p, v, q);
           break;
         case 128:
-          bi_q_kernel< 128><<<q_grid,  128>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel< 128><<<q_grid,  128>>>(k, running_cost, t, p, v, q);
           break;
         case 64:
-          bi_q_kernel<  64><<<q_grid,   64>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<  64><<<q_grid,   64>>>(k, running_cost, t, p, v, q);
           break;
         case 32:
-          bi_q_kernel<  32><<<q_grid,   32>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<  32><<<q_grid,   32>>>(k, running_cost, t, p, v, q);
           break;
         case 16:
-          bi_q_kernel<  16><<<q_grid,   16>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<  16><<<q_grid,   16>>>(k, running_cost, t, p, v, q);
           break;
         case  8:
-          bi_q_kernel<   8><<<q_grid,    8>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<   8><<<q_grid,    8>>>(k, running_cost, t, p, v, q);
           break;
         case  4:
-          bi_q_kernel<   4><<<q_grid,    4>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<   4><<<q_grid,    4>>>(k, running_cost, t, p, v, q);
           break;
         case  2:
-          bi_q_kernel<   2><<<q_grid,    2>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<   2><<<q_grid,    2>>>(k, running_cost, t, p, v, q);
           break;
         case  1:
-          bi_q_kernel<   1><<<q_grid,    1>>>(k, cost2go, t, p, v, q);
+          bi_q_kernel<   1><<<q_grid,    1>>>(k, running_cost, t, p, v, q);
           break;
       }
 
@@ -197,7 +197,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   }
 
   // Free memory
-  cudaFree(cost2go);
+  cudaFree(running_cost);
   cudaFree(t_cost);
   cudaFree(t);
   cudaFree(p);
