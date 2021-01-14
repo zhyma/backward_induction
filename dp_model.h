@@ -79,6 +79,8 @@ class DPModel
         int check_driving_data();
 
         int val_to_idx(float val, Set *ref);
+        int copy_p_mat(int buffer_idx, int mat_idx);
 
 };
 #endif // DP_MODEL_H_
+

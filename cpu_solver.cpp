@@ -32,29 +32,14 @@ int CPUSolver::find_min(float *q, int cnt, struct Min_index *min)
     return 0;
 }
 
-// 2D matrix <x, u>
-// find the index of corresponding <x, u> pair
-// the full state contains time step k
-int CPUSolver::xw_idx(int xk, int wk)
-{
-    int idx = xk * n_w + wk;
-    return idx;
-}
-
-int CPUSolver::state_idx(int k, int xk, int wk)
-{
-    int idx = k*n_x*n_w + xk*n_w + wk;
-    return idx;
-}
-
 float CPUSolver::calc_q(int k, int xk, int wk, int uk)
 {
     int  xk_ = 0;
     int  wk_ = 0;
-    int  idx = 0;
     float sum = 0;
 
-    xk_ = model->s_trans_table[xk*n_w*n_u + wk*n_u + uk];
+    int idx = xk*n_w*n_u + wk*n_u + uk;
+    xk_ = model->s_trans_table[idx];
 
     for (int wk_ = 0; wk_ < n_w; ++wk_)
     {
@@ -65,9 +50,7 @@ float CPUSolver::calc_q(int k, int xk, int wk, int uk)
         float v = value[v_idx];
         sum += p*v;
     }
-    float x = model->x.list[xk];
-    float u = model->u.list[uk];
-    float l = x*x + u*u;
+    float l = model->running_cost[k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk];
     
     return l + sum;
 }
@@ -85,9 +68,8 @@ int CPUSolver::estimate_one_step(int k)
         {
             for (int wk = 0; wk < n_w; ++wk)
             {
-                float x = model->x.list[xk];
-                float v = (1-x)*(1-x);
-                value[state_idx(N, xk, wk)] = v;
+                int idx = xk*n_w + wk;
+                value[k*n_x*n_w + xk*n_w + wk] = model->t_cost[idx];
             }
         }
     }
@@ -98,6 +80,7 @@ int CPUSolver::estimate_one_step(int k)
         // generate probability estimation for intermediate steps
 
         // a temporary buffer to save all the result of executing different u for a given xk, wk
+        std::cout << "working on step " << k << std::endl;
         float *q = new float[n_u]{};
         for (int xk = 0; xk < n_x; ++xk)
         {
@@ -114,9 +97,9 @@ int CPUSolver::estimate_one_step(int k)
                 // find the minimium now.
                 Min_index min;
                 find_min(q, n_u, &min);
-                value[state_idx(k, xk, wk)] = min.value;
-                //action[state_idx(k, xk, wk)] = model->u_set.list[min.index];
-                action[state_idx(k, xk, wk)] = min.index;
+                value[k*n_x*n_w + xk*n_w + wk] = min.value;
+                //action[k*n_x*n_w + xk*n_w + wk] = model->u_set.list[min.index];
+                action[k*n_x*n_w + xk*n_w + wk] = min.index;
             }
         }
     }

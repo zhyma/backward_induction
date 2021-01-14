@@ -24,8 +24,6 @@ class CPUSolver
         int N;
         int n_x,n_w,n_u;
 
-        int xw_idx(int xk, int wk);
-        int state_idx(int k, int xk, int wk);
         int find_min(float *q, int cnt, struct Min_index *min);
         float calc_q(int k, int xk, int wk, int uk);
         int estimate_one_step(int k);

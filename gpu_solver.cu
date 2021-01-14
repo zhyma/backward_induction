@@ -59,9 +59,9 @@ __global__ void bi_q_kernel(int k, float *running_cost, int *t, float *p, float 
   // STEP 4: calculate q = l(k,x,u) + sum(pv), write q to global memory
   if (tid == 0)
   {
+    int cost_idx = k*n_x*n_w*n_u + xk*n_w*n_u + wk*n_u + uk;
     int q_idx = xk*n_w*n_u + wk*n_u + uk;
-    //q[q_idx] = x[xk]*x[xk] + u[uk]*u[uk] + sdata_sum[0];
-    q[q_idx] = running_cost[q_idx] + sdata_sum[0];
+    q[q_idx] = running_cost[cost_idx] + sdata_sum[0];
   }
 }
 
@@ -85,11 +85,13 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   int *a;
 
   // Allocate memory
-  cudaMalloc(&running_cost, n_x*n_w*n_u*sizeof(float));
-  cudaMalloc(&t_cost,  n_x*n_w*sizeof(float));
-  
+  // running cost N*Nx*Nw*Nu
+  cudaMalloc(&running_cost, N*n_x*n_w*n_u*sizeof(float));
+  // terminal cost NxNw
+  cudaMalloc(&t_cost, n_x*n_w*sizeof(float));
+  // state transition matrix Nx*Nw*Nu
   cudaMalloc(&t, n_x * n_w * n_u*sizeof(int));
-  // transition probability matrix size: Nw*Nw
+  // transition probability matrix size: N*Nw*Nw
   cudaMalloc(&p, N*n_w*n_w*sizeof(float));
   // You can do (N+1) for the whole value table, or 2 as a ping-pong buffer
   // The whole value table size will be (N+1)*N_x*N_w
@@ -100,7 +102,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
   cudaMalloc(&a, N*n_x*n_w*sizeof(int));
 
   // initialize x, w, and u value to GPU for reference arrays on the host
-  cudaMemcpy(running_cost, model->running_cost, n_x*n_w*n_u*sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(running_cost, model->running_cost, N*n_x*n_w*n_u*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(t_cost, model->t_cost, n_x*n_w*sizeof(float), cudaMemcpyHostToDevice);
 
   // Initialize "index" transition matrix <x,w> -u-> x'
@@ -124,8 +126,8 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
     u_pow2 <<= 1;
   int s_block = u_pow2;
 
-  while(*running)
-  {
+  // while(*running)
+  // {
     if (prev_busy_mat != *busy_p_mat)
     {
       cudaMemcpy(p, model->prob_table[*busy_p_mat], N*n_w*n_w*sizeof(float), cudaMemcpyHostToDevice);
@@ -194,7 +196,7 @@ int gpu_main(DPModel * model, int block_size, float *v_out, int *a_out, std::ato
     std::cout << "GPU time: " << gpu_duration << " s" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
-  }
+  // }
 
   // Free memory
   cudaFree(running_cost);

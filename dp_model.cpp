@@ -3,24 +3,48 @@
 #include <sstream>
 
 #include "dp_model.h"
-#include "utility.h"
+
+int search_files(std::vector<std::string> *files, std::string search_key)
+{
+	DIR *dpdf;
+    struct dirent *epdf;
+    int cnt = 0;
+
+    dpdf = opendir("output");
+    if (dpdf != NULL){
+        while (epdf = readdir(dpdf))
+        {
+            std::string name = epdf->d_name;
+            std::size_t found = name.find(search_key);
+            if (found != std::string::npos)
+            {
+                files->push_back(name);
+                ++cnt;
+            }
+        }
+    }
+    closedir(dpdf);
+    return cnt;
+}
 
 //initial function
 DPModel::DPModel(int steps, std::atomic<int> * busy_p_mat)
 {
     busy_mat_ptr = busy_p_mat;
 
-    d2tl = 200;
+    d2tl = 240;
     // the time that the red light will start
-    rl_start = 8;
+    rl_start = 12;
     // the time that the red light will end
-    rl_end = rl_start + 8;
+    rl_end = rl_start + 30;
     t_tcc = 3;
+    // mass of the vehicle
     m = 1500;
 
     N = steps;
     dt = 2;
     float bound_d[2] = {.0, 400.0};
+    // int n_d = 128;
     int n_d = 128;
     float bound_v[2] = {.0, 20.0};
     int n_v = 32;
@@ -46,31 +70,31 @@ DPModel::DPModel(int steps, std::atomic<int> * busy_p_mat)
     // x=[d,v]
     x.n = d.n*v.n;
     x.list = new float[x.n]{};
-    for (int i = 0; i < d.n; ++i)
-        for (int j = 0; j < v.n; ++j)
-            x.list[v.n*i + j] = 0;
+    // for (int i = 0; i < d.n; ++i)
+    //     for (int j = 0; j < v.n; ++j)
+    //         x.list[v.n*i + j] = 0;
     
     // u = [a]
     u.n = a.n;
     u.list = new float[a.n]{};
-    for (int i = 0; i < u.n; ++i)
-        u.list[i] = 0;
+    // for (int i = 0; i < u.n; ++i)
+    //     u.list[i] = 0;
 
     // w = [d, intention]
     w.n = d.n * 2;
     w.list = new float[w.n]{};
-    for (int i = 0; i < d.n; ++i)
-    {
-        w.list[i * 2] = 0;
-        w.list[i * 2 + 1] = 0;
-    }
+    // for (int i = 0; i < d.n; ++i)
+    // {
+    //     w.list[i * 2] = 0;
+    //     w.list[i * 2 + 1] = 0;
+    // }
 
     // create <x,w> -u-> x' table here
     state_trans();
     cost_init();
 
-    // prob_table[0] = new float[N*w.n*w.n]{};
-    // prob_table[1] = new float[N*w.n*w.n]{};
+    prob_table[0] = new float[N*w.n*w.n]{};
+    prob_table[1] = new float[N*w.n*w.n]{};
 
     check_driving_data();
     
@@ -161,9 +185,9 @@ int DPModel::cost_init()
 
             for (int uk = 0; uk < u.n; ++uk)
             {
-                for (int i = 0; i < N; ++i)
+                for (int k = 0; k < N; ++k)
                 {
-                    idx = i * (x.n*w.n*u.n) + xk*w.n*u.n + wk*u.n + uk;
+                    idx = k * (x.n*w.n*u.n) + xk*w.n*u.n + wk*u.n + uk;
                     // get the running cost
                     float ax = a.list[uk];
 
@@ -176,7 +200,7 @@ int DPModel::cost_init()
                     }
 
                     // before reaching the red light, and the red light is on
-                    if (dx < d2tl && i*dt > rl_start && i*dt < rl_end)
+                    if (dx < d2tl && k*dt > rl_start && k*dt < rl_end)
                     {
                         int xk_ = phy_model(xk, wk, uk);
                         float d_ = d.list[xk_/v.n], v_ = v.list[xk%v.n];
@@ -245,80 +269,62 @@ int DPModel::cost_init()
 int DPModel::check_driving_data()
 {
     // check if previously saved raw probability data exist.
-    bool p_file_exist = false;
     bool raw_data_exist = false;
     std::vector<std::string> files;
-    search_files(&files, "w2w_mat");
+    no_of_p = search_files(&files, "w2w_mat");
 
-    no_of_p = 0;
-    // for (int i = 0; i < files.size(); ++i)
-    // {
-    //     // check file name first
-    //     std::cout << files[i].substr(0, 5) << std::endl;
-    //     if (files[i].substr(0, 12)!="front_car_data")
-    //     {
-    //         std::cout << files[i] << " is not a driving data, skip" << std::endl;
-    //         continue;
-    //     }
-
-    //     std::cout << "checking: " << files[i] << std::endl;
-    //     std::string file_name = "./output/" + files[i];
-    //     p_mat.push_back(new float[w.n*w.n]{});
-    //     // parameter is consistent, load into memory 
-    //     std::cout << "Load" << file_name << "from existing data." << std::endl;
-    //     p_file_exist = true;
-    //     no_of_p++;
-    //     // if (FILE *file = fopen(file_name.c_str(), "r"))
-    //     // {
-    //     //     // if exist, load from the existing one.
-    //     //     fclose(file);
-    //     //     // load the existing data and generate
-    //     //     std::ifstream in_file(file_name, std::ios::in);
-    //     //     std::string line_str;
-    //     //     bool end_of_file = false;
-    //     //     while(end_of_file = false)
-    //     //     {
-    //     //         // temp for [d, v, a, i] s
-    //     //         std::vector<float*> data_temp;
-    //     //         bool end_of_trial = false;
-    //     //         while(end_of_trial = false)
-    //     //         {
-    //     //             getline(in_file, line_str);
-    //     //             if (line_str == "end")
-    //     //                 end_of_trial = true;
-    //     //             else
-    //     //             {
-    //     //                 // get d, v, a, intention
-    //     //                 std::stringstream ss_param(line_str); 
-    //     //                 std::string arr[4];
-    //     //                 for (int k = 0; k < 4; ++k)
-    //     //                 {
-    //     //                     getline(ss_param, line_str, ',');
-    //     //                     arr[k] = line_str;
-    //     //                 }
-    //     //                 if (std::stof(arr[0]) == w.bound[0] && std::stof(arr[1]) == w.bound[1] && std::stoi(arr[2]) == sample_size)
-    //     //                 {
-                            
-    //     //                     getline(in_file, line_str);
-    //     //                     std::stringstream ss_data(line_str); 
-    //     //                     for (int j = 0; j < sample_size; ++j)
-    //     //                     {
-    //     //                         getline(ss_data, line_str, ',');
-    //     //                         p_mat_temp[i][j] = std::stof(line_str);
-    //     //                     }
-    //     //                 }
-    //     //             }
-    //     //         }
-    //     //     }
-
-    //     // }
-    // }
-    if (p_file_exist == false)
+    // load pre-processed transition probability matrices
+    if (no_of_p > 0)
     {
+        for (int f = 0; f < files.size(); ++f)
+        {
+            std::string file_name = "./output/" + files[f];
+
+            // read from raw driving data
+            if (FILE *file = fopen(file_name.c_str(), "r"))
+            {
+                // if exist, load from the existing one.
+                fclose(file);
+                std::cout << "loading transition probability matrix " << file_name << std::endl;
+
+                std::ifstream in_file(file_name, std::ios::in);         
+                if (in_file.eof())
+                {
+                    std::cout << "empty file" << std::endl;
+                    continue;
+                }
+                else
+                {
+                    std::string line_str;
+                    getline(in_file, line_str);
+                    p_mat.push_back(new float[N * w.n * w.n]{});
+                    std::stringstream ss_param;
+                    ss_param.clear();
+                    ss_param.str(line_str);
+                    for (int idx = 0; idx < N*w.n*w.n; ++idx)
+                    {
+                        getline(ss_param, line_str, ',');
+                        p_mat[f][idx] = std::stof(line_str);
+                    }
+                    std::cout << "prepared: " << f << std::endl;
+                }
+            }
+
+        }
+    }
+    // load raw driving data, generate transition probability matrices
+    else
+    {
+        no_of_p  = 0;
         std::cout << "w to w' file does not exist, create a new one." << std::endl;
         // if not, create a new file and save.
-        search_files(&files, "front_car_data");
-        int no_of_f = 0;
+        int no_of_f = search_files(&files, "front_car_data");
+
+        if (no_of_f < 1)
+        {
+            std::cout << "ERROR! Neither has raw driving data, nor transition probability matrix" << std::endl;
+        }
+        // number of raw data files
         for (int f = 0; f < files.size(); ++f)
         {   
             std::string file_name = "./output/" + files[f];
@@ -372,13 +378,15 @@ int DPModel::check_driving_data()
                         int dck = val_to_idx(stof(arr[0]), &d);
                         int i = stoi(arr[3]);
                         old_w = dck*2 + i;
-                        std::cout << old_w << std::endl;
+                        // std::cout << "load" << k << std::endl;
+                        ++k;
                     }
                     while(end_of_trial == false)
                     {
                         getline(in_file, line_str);
                         if (in_file.eof())
                         {
+                            end_of_trial = true;
                             end_of_file = true;
                             continue;
                         }
@@ -387,11 +395,12 @@ int DPModel::check_driving_data()
                         if (line_str.find("end")!=std::string::npos)
                         {
                             end_of_trial = true;
-                            std::cout << std::endl;
+                            // std::cout << "find end" << std::endl;
                             k = 0;
                         }
                         else
                         {
+                            // std::cout << "load " << k << ",";
                             // get d, v, a, intention
                             for (int j = 0; j < 4; ++j)
                             {
@@ -406,7 +415,7 @@ int DPModel::check_driving_data()
                             old_w = new_w;
                             ++k;
                         }
-                        std::cout << k << ",";
+                        
                     }
                 }
 
@@ -425,16 +434,16 @@ int DPModel::check_driving_data()
                         {
                             int idx = k*w.n*w.n + w.n*wk + wk_;
                             if (sum == 0)
-                                p_mat[no_of_f][idx] = 0;
+                                p_mat[no_of_p][idx] = 0;
                             else
-                                p_mat[no_of_f][idx] = float(cnt_mat[idx])/float(sum);
+                                p_mat[no_of_p][idx] = float(cnt_mat[idx])/float(sum);
                         }
                     }
                 }
                 
                 // write to files to save w to w' matrices
                 std::ofstream out_file;
-                out_file.open(("./output/p_mat"+std::to_string(no_of_p)+".csv"), std::ios::out);
+                out_file.open(("./output/w2w_mat"+std::to_string(no_of_p)+".csv"), std::ios::out);
 
                 for (int k = 0; k < N; ++k)
                 {
@@ -443,7 +452,7 @@ int DPModel::check_driving_data()
                         for (int wk_ = 0; wk_ < w.n; ++wk_)
                         {
                             int idx = k*w.n*w.n + w.n*wk + wk_;
-                            out_file << p_mat[no_of_f][idx] << ",";
+                            out_file << p_mat[no_of_p][idx] << ",";
                         }
                     }
                 }
@@ -451,14 +460,28 @@ int DPModel::check_driving_data()
 
                 ++no_of_p;
             }
-
-            
         }
     }
 
     // create transition probability matrix, with default configuration
     std::cout << "Configured to use probability matrix buffer #0 first." << std::endl;
-    // gen_w_trans_mat(0, 0);
+    copy_p_mat(0, 0);
+}
+
+int DPModel::copy_p_mat(int buffer_idx, int mat_idx)
+{
+    for (int k = 0; k < N; ++k)
+    {
+        for (int wk = 0; wk < w.n; ++wk)
+        {
+            for (int wk_ = 0; wk_ < w.n; ++wk_)
+            {
+                int idx = k*w.n*w.n + w.n*wk + wk_;
+                prob_table[buffer_idx][idx] = p_mat[mat_idx][idx];
+            }
+        }
+    }
+    return 0;
 }
 
 // By given a value x, find the index of 
@@ -487,7 +510,7 @@ int DPModel::daemon(std::atomic<bool>* running)
             {
                 std::cout << "dp write to buffer channel #1" << std::endl;
                 // p_mat 0 is busy, update p_mat 1
-                // gen_w_trans_mat(1, p_type);
+                // copy_p_mat(1, p_type);
                 *busy_mat_ptr = 1;
             }
             else
@@ -508,3 +531,4 @@ int DPModel::daemon(std::atomic<bool>* running)
 
     return 0;
 }
+

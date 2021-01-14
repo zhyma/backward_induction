@@ -88,27 +88,4 @@ int result_to_file(DPModel * model, std::string solver_type, float *v, int * a)
     return 0;
 }
 
-int search_files(std::vector<std::string> *files, std::string search_key)
-{
-	DIR *dpdf;
-    struct dirent *epdf;
-    int cnt = 0;
-
-    dpdf = opendir("output");
-    if (dpdf != NULL){
-        while (epdf = readdir(dpdf))
-        {
-            std::string name = epdf->d_name;
-            std::size_t found = name.find(search_key);
-            if (found != std::string::npos)
-            {
-                files->push_back(name);
-                ++cnt;
-            }
-        }
-    }
-    closedir(dpdf);
-    return cnt;
-}
-
 #endif //UTILITY_H_

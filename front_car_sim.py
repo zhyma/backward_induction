@@ -129,14 +129,14 @@ class Vehicle():
 if __name__ == "__main__":
     with open('output/front_car_data.csv', mode='w') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
-        for iter in range(10):
+        for iter in range(10000):
             t = 0
             d = 0
             # distance to traffic light
-            d2tl = 200
+            d2tl = 240
             # time to redlight
-            rl_start = 8
-            rl_end = rl_start + 8
+            rl_start = 12
+            rl_end = rl_start + 30
             dt = 2
             
             gtr = Vehicle(d2tl, dt, 40, [-8.0, 2.0])
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                 a, intention = gtr.vehicle_ctrl(rl)
                 # print("[%f, %f, %f, %d]"% (gtr.d, gtr.v, a, intention))
                 if k > 0:
-                    writer.writerow([gtr.d, gtr.v, a, intention])
+                    writer.writerow([format(gtr.d, '.2f'), format(gtr.v, '.2f'), format(a, '.2f'), intention])
                 
                 d, v = gtr.sim_step()
                 t += dt
