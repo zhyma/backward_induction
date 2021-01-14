@@ -9,8 +9,8 @@ CPUSolver::CPUSolver(DPModel * ptr_in, std::atomic<int>* busy_p_mat)
     n_x = model->x.n;
     n_w = model->w.n;
     n_u = model->u.n;
-    value = new float[(N+1)*n_x*n_w];
-    action = new int[N*n_x*n_w];
+    value = new float[(N+1)*n_x*n_w]{};
+    action = new int[N*n_x*n_w]{};
 
     return;
 }

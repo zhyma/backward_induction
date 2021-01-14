@@ -44,7 +44,6 @@ DPModel::DPModel(int steps, std::atomic<int> * busy_p_mat)
     N = steps;
     dt = 2;
     float bound_d[2] = {.0, 400.0};
-    // int n_d = 128;
     int n_d = 128;
     float bound_v[2] = {.0, 20.0};
     int n_v = 32;
@@ -70,24 +69,12 @@ DPModel::DPModel(int steps, std::atomic<int> * busy_p_mat)
     // x=[d,v]
     x.n = d.n*v.n;
     x.list = new float[x.n]{};
-    // for (int i = 0; i < d.n; ++i)
-    //     for (int j = 0; j < v.n; ++j)
-    //         x.list[v.n*i + j] = 0;
-    
-    // u = [a]
+
     u.n = a.n;
     u.list = new float[a.n]{};
-    // for (int i = 0; i < u.n; ++i)
-    //     u.list[i] = 0;
 
-    // w = [d, intention]
     w.n = d.n * 2;
     w.list = new float[w.n]{};
-    // for (int i = 0; i < d.n; ++i)
-    // {
-    //     w.list[i * 2] = 0;
-    //     w.list[i * 2 + 1] = 0;
-    // }
 
     // create <x,w> -u-> x' table here
     state_trans();

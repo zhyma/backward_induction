@@ -1,6 +1,6 @@
 CC = g++
 NVCC = nvcc
-CXXFLAGS = -std=c++11 -pthread
+CXXFLAGS = -std=c++11 -pthread -O3
 LIBS = -lcudart
 LIBDIRS = -L/usr/local/cuda/lib64
 BUILD_DIR = ./build
