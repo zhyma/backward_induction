@@ -1,6 +1,6 @@
 CC = g++
 NVCC = nvcc
-CXXFLAGS = -std=c++11 -pthread
+CXXFLAGS = -std=c++11 -pthread -O3
 LIBS = -lcudart
 LIBDIRS = -L/usr/local/cuda/lib64
 BUILD_DIR = ./build
@@ -20,6 +20,7 @@ CPU_TARGET = $(CPU_SRC:%.cpp=%)
 dp_solver: cpu_module gpu_module $(CPU_OBJ) $(GPU_OBJ)
 	$(NVCC) -dlink ./build/gpu_solver.o -o ./build/gpu.dlink.o
 	$(CC) $(CXXFLAGS) $(CPU_OBJ) $(GPU_OBJ) ./build/gpu.dlink.o $(LIBDIRS) $(LIBS) -o ./build/dp_solver
+
 
 cpu_module: $(CPU_SRC)
 	mkdir -p $(BUILD_DIR)

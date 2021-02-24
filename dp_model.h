@@ -15,12 +15,10 @@
 #include <thread>
 #include <atomic>
 
-#include "phy_model.h"
-
 // move to physical model
 typedef struct Set
 {
-    int count;
+    int n;
     float *list;
     float bound[2];
 } Set;
@@ -28,51 +26,69 @@ typedef struct Set
 class DPModel
 {
     public:
-        PHYModel * ptr_model;
 
         bool save_transition;
         int iter;
-        int N = 10;
-        int no_of_p;
+        // predict 10 steps forward
+        int N_pred = 10;
+        // run the controller 10 times
+        int N_run = 10;
+        int N_total = N_pred + N_run - 1;
+        int n_t = 128;
+        int max_last_step = 13;
+        int n_p = 28;
+        int n_p_gpu = 32;
 
-        int sample_trials = 10e5;
-        int sample_size;
+        Set d;
+        Set v;
+        Set a;
 
-        Set x_set;
-        Set u_set;
-        Set w_set;
+        Set x;
+        Set u;
+        Set w;
 
         // Save cost-to-go as a matrix
-        float *cost2go;
+        float *r_cost;
+        unsigned long long int *r_mask;
         // Save terminal cost as a matrix
         float *t_cost;
-
-        int xw_cnt;
-        int states_cnt;
         
         // save <x,w> -u-> x'
         int *s_trans_table;
-        float *prob_table[2];
-        // float *value_table;
-        // int *action_table;
+        float *prob_table;
 
-        DPModel(PHYModel * ptr_in, int steps, int x_grain, int w_grain, int u_grain, std::atomic<int>* busy_p_mat);
-        int daemon(std::atomic<bool>* running);
+        DPModel(int pred_steps, int running_steps);
+        ~DPModel();
+        // int terminal_cost_init(float d0);
+        float terminal_cost(int dk0, int dk, int vk);
+        int get_dist_idx(float dist);
+        int get_subset(int k0, int dk0, int dck0);
+        int get_subset_gpu(int k0, int dk0, int dck0);
 
     private:
-        std::atomic<int>* busy_mat_ptr;
+        float dt=2;
+        // distance to the traffic light
+        int d2tl;
+        // the time that the red light will start
+        int rl_start;
+        // the time that the red light will end
+        int rl_end;
+        float t_tcc;
+        // weight of the car
+        float m = 1500;
+        float g = 9.8;
+        int phy_model(int xk, int uk);
         int discretize(Set *in);
         int state_trans();
-        int cost_init();
+        int running_cost_init();
 
-        std::vector<float*> p_mat_temp;
-        int distribution(float * temp_array);
-        int gen_w_trans_mat(int update_mat, int prob_type);
+        // if you have multiple probability matrices
+        float* p_mat;
+        int check_driving_data();
 
         int val_to_idx(float val, Set *ref);
-        int xw_idx(int xk, int wk);
-        int state_idx(int k, int xk, int wk);
-        int sas2idx(int xk, int wk, int uk, int xk_, int wk_);
+        int copy_p_mat();
 
 };
 #endif // DP_MODEL_H_
+

@@ -1,97 +1,77 @@
 #include <iostream>
-#include <fstream>
-#include <ctime>
+
 #include <string>
-#include <cmath>
+#include <cstring>
 
-#include <thread>
-#include <chrono>
-#include <atomic>
-
-#include "phy_model.h"
+#include "simulate.h"
+#include "front_car.h"
 #include "dp_model.h"
-#include "cpu_solver.h"
-#include "gpu_solver.h"
-#include "utility.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-    std::clock_t start;
-    double cpu_duration = 0;
-    double gpu_duration = 0;
-    std::string solver_type;
-
-    PHYModel phy_model;
-    int steps = 10;
-    int n_x = 128;
-    int n_w = 128;
-    int n_u = 32;
-
-    int block_size = 64;
-    if (block_size >= n_w)
-        block_size = n_w/2;
-
-    std::atomic<int> busy_p_mat;
-    busy_p_mat = 0;
-    std::atomic<bool> running;
-    running = true;
-
-    DPModel dp_model(&phy_model, steps, n_x, n_w, n_u, &busy_p_mat);
-    std::cout << "creating a new DP model is done" << std::endl;
-    int N = dp_model.N;
-
-    // std::string save_prob_mat = "p_mat";
-    // int dim[2] = {dp_model.w_set.count, dp_model.w_set.count};
-    // mat_to_file(save_prob_mat, dim, dp_model.prob_table);
-
-    float *value = new float[(N+1)*n_x*n_w]{};
-    int *action = new int[N*n_x*n_w]{};
-
-    std::thread t_dp(&DPModel::daemon, dp_model, &running);
-    std::thread t_gpu(gpu_main, &dp_model, block_size, value, action, &busy_p_mat, &running);
-
-    t_dp.join();
-    t_gpu.join();
-
-    result_to_file(&dp_model, "gpu", value, action);
-
-    // if compared with CPU
-    if (true)
+    std::string modeStr = "";
+    if (argc > 1)
     {
-        CPUSolver cpu_solver(&dp_model, &busy_p_mat);
-        start = std::clock();
-        solver_type = "cpu";
-        cpu_solver.solve();
-        cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-        std::cout << std::endl << "CPU time: " << cpu_duration << " s" << std::endl;
-        result_to_file(&dp_model, solver_type, cpu_solver.value, cpu_solver.action);
+        modeStr.assign(argv[1], strlen(argv[1]));
+    }
+    else
+        modeStr = "compare";
 
-        //check error
-        int error_flag = 0;
-        for (int i = 0; i < (N+1)*n_x*n_w; ++i)
+    if (modeStr == "one_step" || modeStr == "n_step"|| modeStr == "compare")
+    {
+        int pred_steps = 10;
+        // int run_steps = 10;
+        int run_steps = 2;
+
+
+        DPModel dp_model(pred_steps, run_steps);
+        if (modeStr == "compare")
         {
-            value[i] = abs(value[i] - cpu_solver.value[i]);
-            if (value[i] > 0.0001)
+            std::cout << "run solver comparison for one step" << std::endl;
+            one_iter(COMPARE, true, &dp_model);
+        }
+        else if (modeStr == "one_step")
+        {
+            // run one step
+            std::cout << "run simulation for one step" << std::endl;
+            if (argc > 2)
             {
-                error_flag ++;
+                std::string solverStr = "";
+                solverStr.assign(argv[2], strlen(argv[2]));
+                if (solverStr == "cpu")
+                    one_iter(CPU_SOLVER, true, &dp_model);
+                else if(solverStr == "gpu")
+                    one_iter(GPU_SOLVER, true, &dp_model);
             }
+            else
+                one_iter(CPU_SOLVER, true, &dp_model);
         }
-        if (error_flag > 0)
+        else if (modeStr == "n_step")
+        { 
+            // whole simulation
+            std::cout << "run simulation for n steps" << std::endl;
+            int steps = 0;
+        }
+    }
+    
+    else if (modeStr == "gen_data")
+    {
+        // generate front car data
+        std::cout << "generate front car driving data" << std::endl;
+        int iter = 10;
+        if (argc > 2)
         {
-            std::cout << "value error found! " << error_flag << std::endl;
+            std::string val(argv[2]); 
+            iter = std::stoi(val);
+            if (iter <= 0)
+                iter = 10;
         }
-        else
-        {
-            std::cout << "no error was found" << std::endl;
-        }
-
-        for (int i = 0; i < N*n_x*n_w; ++i)
-            action[i] = action[i] - cpu_solver.action[i];
-
-        solver_type = "diff";
-        result_to_file(&dp_model, solver_type, value, action);
+        std::cout << "Simulate the front car for " << iter << " times" << std::endl;
+        
+        fc_n_step_sim(iter);
     }
 
+    std::cout << "done" << std::endl;
 
     return 0;
 }
