@@ -77,7 +77,7 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         sum += p*v;
     }
     float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e20;
+    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
     
     return l + sum;
 }

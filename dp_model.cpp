@@ -207,7 +207,7 @@ int DPModel::running_cost_init()
     r_mask = new unsigned long long int[idx]{};
     idx = 0;
 
-    float cost_min = 1e20, cost_max = 0;
+    float cost_min = 1e30, cost_max = 0;
 
     std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
 

@@ -11,7 +11,6 @@ def get_data(mode, t):
     lines = f.readlines()
 
     dim = np.fromstring(lines[0], sep=',')
-    print(dim)
     N   = int(dim[0])
     n_x = int(dim[1])
     n_w = int(dim[2])
@@ -25,10 +24,11 @@ def get_data(mode, t):
     return N, n_x, n_w, mat
 
 def compare(t):
+    print("\nk=%d"%(t))
     N, n_x, n_w, cpu_mat = get_data('cpu', t)
     _, _, _, gpu_mat = get_data('gpu', t)
-    print(cpu_mat.shape)
-    print(gpu_mat.shape)
+    # print(cpu_mat.shape)
+    # print(gpu_mat.shape)
     print(np.array_equal(cpu_mat, gpu_mat))
     
     error = 0
@@ -40,26 +40,24 @@ def compare(t):
     for i in range(n_x):
         for j in range(n_w):
             diff = abs(cpu_mat[i, j] - gpu_mat[i, j])
-            if cpu_mat[i, j] > 1e15 and gpu_mat[i, j] > 1e15:
+            if cpu_mat[i, j] > 1e29 and gpu_mat[i, j] > 1e29:
                 continue
-            # elif cpu_mat[i, j] > 1e18 or gpu_mat[i, j] < 1e18:
-            #     # print("at %d, %d, cpu hits the constraint" %(i, j))
-            #     cpu_c += 1
-            # elif gpu_mat[i, j] > 1e18 and cpu_mat[i, j] < 1e18:
-            #     # print("at %d, %d, gpu hits the constraint" %(i, j))
-            #     gpu_c += 1
-            #     cpu_dist.append(cpu_mat[i,j])
             elif diff > 0:
                 # print("at %d, %d, error is %f" %(i, j, diff))
-                diff_precent = diff/cpu_mat[i,j]
-                if diff/gpu_mat[i,j] > diff/cpu_mat[i,j]:
-                    diff_precent = diff/gpu_mat[i,j]
+                diff_precent = abs(diff/cpu_mat[i,j])
+                if abs(diff/gpu_mat[i,j]) > abs(diff/cpu_mat[i,j]):
+                    diff_precent = abs(diff/gpu_mat[i,j])
                 if diff_precent > max:
                     max = diff_precent
                     max_idx = [i,j]
-                if diff_precent > 0.01:
+                if diff_precent > 0.001:
                     error_mat.append(diff)
                     error += 1
+                if diff > 0.1:
+                    if diff < 1e5:
+                        print("cpu_value=%.3f, diff_value=%.3f, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
+                    else:
+                        print("cpu_value=%.2e, diff_value=%.2e, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
                     
             else:
                 same += 1
@@ -67,12 +65,13 @@ def compare(t):
     print('total error: %d, same: %d'\
         %(error, same))
 
-    print(same)
-    print(max, end='@')
-    print(max_idx)
-    # plt.hist(diff_precent, density=False, bins=10)
-    # plt.show()
-    return max, max_idx
+    if (len(max_idx)!=0):
+        i = max_idx[0]
+        j = max_idx[1]
+        print("%.6f%%@"%(max*100), end='')
+        print("[%d, %d], cpu_value: %f, diff_value: %f"%(i, j, cpu_mat[i,j], abs(cpu_mat[i, j] - gpu_mat[i, j])))
+
+    return
 
 
 if __name__ == '__main__':
@@ -82,16 +81,11 @@ if __name__ == '__main__':
             print(sys.argv[1])
             compare(int(sys.argv[1]))
         elif sys.argv[1] == 'all':
-            max_all = 0
-            max_idx_all = []
-            k_idx = 0
             for i in range(11):
-                max_k, max_idx_k = compare(i)
-                if max_k > max_all:
-                    max_all = max_k
-                    max_idx_all = max_idx_k
-                    k_idx = i
-            
-            print('max error at step %d, percentage %f, at [%d, %d]'%(k_idx, max_all, max_idx_all[0], max_idx_all[1]))
+                compare(i)
+
+    else:
+        for i in range(11):
+            compare(i)
 
     

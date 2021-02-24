@@ -80,7 +80,7 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, unsigned long
   {
     //indexes for q and running cost are accidentally the same
     int idx = xk*n_w_s*n_u + wk*n_u + uk;
-    float penalty = (r_mask[idx] & 1<<(k0+k)) * 1e20;
+    float penalty = (r_mask[idx] & 1<<(k0+k)) * 1e30;
     q[idx] = r_cost[idx] + penalty + sdata_sum[0];
   }
 };
