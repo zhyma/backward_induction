@@ -20,7 +20,8 @@ typedef struct Set
 {
     int n;
     float *list;
-    float bound[2];
+    float min;
+    float max;
 } Set;
 
 class DPModel
@@ -62,8 +63,10 @@ class DPModel
         // int terminal_cost_init(float d0);
         float terminal_cost(int dk0, int dk, int vk);
         int get_dist_idx(float dist);
+        int get_velc_idx(float velc);
         int get_subset(int k0, int dk0, int dck0);
         int get_subset_gpu(int k0, int dk0, int dck0);
+        int phy_model(float *attr, float ax);
 
     private:
         float dt=2;

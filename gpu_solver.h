@@ -17,9 +17,11 @@ class BIData
 
 		template <typename... T2>
 		int init(T2... args)
-		{    
+		{   
+            // number of dimensions 
 			dimc = sizeof...(args);
 			size = 1;
+            // size of each dimension
 			dimv = new int[dimc]{args...};
 			for (int i = 0; i < dimc; ++i)
 				size = size * dimv[i];
@@ -49,7 +51,7 @@ class GPUSolver
         int n_x, n_w, n_u;
         int n_x_s, n_w_s;
 
-        int solve(bool debug, int k0, int dk0, int dck0);
+        int solve(bool debug, int k0, float d0, float v0, float dw0, int intention);
         // float * value;
         // int * action;
         BIData<float> value;

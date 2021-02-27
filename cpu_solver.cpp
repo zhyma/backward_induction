@@ -106,7 +106,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
         // generate probability estimation for intermediate steps
 
         // a temporary buffer to save all the result of executing different u for a given xk, wk
-        std::cout << "working on step " << k << std::endl;
+        // std::cout << "working on step " << k << std::endl;
         float *q = new float[n_u]{};
         for (int xk = 0; xk < n_x_s; ++xk)
         {

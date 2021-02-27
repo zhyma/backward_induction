@@ -135,7 +135,8 @@ def simulate(iter):
         d_final = []
         for i in range(iter):
             t = 0
-            d = 54 + np.random.uniform(0, 20, 1)
+            d = 54 + np.random.uniform(0, 60, 1)
+            v = np.random.uniform(0,18,1)
             # distance to traffic light
             d2tl = 240
             # time to redlight
@@ -144,6 +145,8 @@ def simulate(iter):
             dt = 2
             
             gtr = Vehicle(d2tl, dt, 18, [-8.0, 2.0])
+            gtr.d = float(d)
+            gtr.v = float(v)
             trip = []
             for k in range(24):
                 if (t >= rl_start) and (t <= rl_end):

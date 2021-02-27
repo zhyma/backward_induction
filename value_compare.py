@@ -36,7 +36,6 @@ def compare(t):
     error_mat = []
     max = 0
     max_idx = []
-    cpu_dist = []
     for i in range(n_x):
         for j in range(n_w):
             diff = abs(cpu_mat[i, j] - gpu_mat[i, j])
@@ -53,11 +52,11 @@ def compare(t):
                 if diff_precent > 0.001:
                     error_mat.append(diff)
                     error += 1
-                if diff > 0.1:
-                    if diff < 1e5:
-                        print("cpu_value=%.3f, diff_value=%.3f, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
-                    else:
-                        print("cpu_value=%.2e, diff_value=%.2e, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
+                # if diff > 0.5:
+                #     if diff < 1e5:
+                #         print("cpu_value=%.3f, diff_value=%.3f, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
+                #     else:
+                #         print("cpu_value=%.2e, diff_value=%.2e, percentage=%.6f"%(cpu_mat[i, j],diff,diff_precent*100))
                     
             else:
                 same += 1

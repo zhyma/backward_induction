@@ -29,19 +29,6 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     q.init(n_x_s, n_w_s, n_u);
     action.init(N, n_x_s, n_w_s);
 
-    return;
-}
-
-GPUSolver::~GPUSolver()
-{}
-
-int GPUSolver::solve(bool debug, int k0, int dk0, int dck0)
-{
-    get_subset(k0, dk0, dck0);
-    std::cout << "extract subset done." << std::endl;
-
-    std::cout << value.size_b << std::endl; 
-
     // Allocate memory
     // running cost N*Nx*Nw*Nu
     cudaMalloc(&r_cost.gpu, r_cost.size_b);
@@ -59,6 +46,31 @@ int GPUSolver::solve(bool debug, int k0, int dk0, int dck0)
     cudaMalloc(&q.gpu, q.size_b);
     // You may only need 
     cudaMalloc(&action.gpu, action.size_b);
+
+    return;
+}
+
+GPUSolver::~GPUSolver()
+{
+    // Free memory
+    cudaFree(r_cost.gpu);
+    cudaFree(r_mask.gpu);
+    cudaFree(trans.gpu);
+    cudaFree(prob.gpu);
+    cudaFree(value.gpu);
+    cudaFree(q.gpu);
+    cudaFree(action.gpu);
+}
+
+int GPUSolver::solve(bool debug, int k0, float d0, float v0, float dw0, int intention)
+{
+    // just for find out the range (distance), so v and i are ignored.
+    int xk0 = model->get_dist_idx(d0) * model->v.n;
+    int wk0 = model->get_dist_idx(dw0) * 2 + 0;
+    get_subset(k0, xk0, wk0);
+    std::cout << "extract subset done." << std::endl;
+
+    // std::cout << value.size_b << std::endl; 
 
     // initialize x, w, and u value to GPU for reference arrays on the host
     cudaMemcpy(r_cost.gpu, r_cost.cpu, r_cost.size_b, cudaMemcpyHostToDevice);
@@ -136,21 +148,12 @@ int GPUSolver::solve(bool debug, int k0, int dk0, int dck0)
         bi_min_kernel<<<s_grid, s_block>>>(k, n_v, n_u, value.gpu, q.gpu, action.gpu);
     }
 
-    // Backup data before it's too late
-    cudaMemcpy(value.cpu, value.gpu, value.size_b, cudaMemcpyDeviceToHost);
-    cudaMemcpy(action.cpu, action.gpu, action.size_b, cudaMemcpyDeviceToHost);
-
-    // Free memory
-    cudaFree(r_cost.gpu);
-    cudaFree(r_mask.gpu);
-    cudaFree(trans.gpu);
-    cudaFree(prob.gpu);
-    cudaFree(value.gpu);
-    cudaFree(q.gpu);
-    cudaFree(action.gpu);
-
+    int idx = 0;
     if(debug)
     {
+        // Backup data before it's too late
+        cudaMemcpy(value.cpu, value.gpu, value.size_b, cudaMemcpyDeviceToHost);
+        cudaMemcpy(action.cpu, action.gpu, action.size_b, cudaMemcpyDeviceToHost);
         //N+1, n_x, n_w
         for (int k = 0; k < N; ++k)
         {
@@ -160,7 +163,7 @@ int GPUSolver::solve(bool debug, int k0, int dk0, int dck0)
                 {
                     if (xk >= n_x_s  || wk >= n_w_s )
                     {
-                        int idx = k*n_x*n_w + xk*n_w + wk;
+                        idx = k*n_x*n_w + xk*n_w + wk;
                         // value.cpu[idx] = 1e20;
                         value.cpu[idx] = 0;
                     }
@@ -168,13 +171,25 @@ int GPUSolver::solve(bool debug, int k0, int dk0, int dck0)
             }
         }
     }
+    else
+    {
+        cudaMemcpy(action.cpu, action.gpu, sizeof(int)*n_x_s*n_w_s, cudaMemcpyDeviceToHost);
+    }
+    int dk0 = model->get_dist_idx(d0);
+    int vk0 = model->get_velc_idx(v0);
+    int dwk0 = model->get_dist_idx(dw0);
 
-    return 0;
+    // xk*n_w_s + wk
+    idx = ((dk0*n_v)+vk0) * n_w_s + (dwk0*2+intention);
+    // std::cout << model->d << " @idx: " << idx << std::endl;
+    std::cout << action.cpu[idx] << " @idx: " << idx << std::endl;
+
+    return action.cpu[idx];
 }
 
 int GPUSolver::get_subset(int k0, int dk0, int dck0)
 {
-    std::cout << "get subset3" << std::endl;
+    // std::cout << "get subset" << std::endl;
 
     // long long int idx = 0;
     int idx = 0;
@@ -201,7 +216,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
         int dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans.cpu);
     }
-    std::cout << "extract subset from state transition" << std::endl;
+    // std::cout << "extract subset from state transition" << std::endl;
 
     //slicing transition probability (k,w,w')
     // k = k0+dk
@@ -233,7 +248,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
         int dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob.cpu);
     }
-    std::cout << "extract subset from transition probability" << std::endl;
+    // std::cout << "extract subset from transition probability" << std::endl;
 
 
     //slicing running_cost (k,x,w,u)
@@ -264,7 +279,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
             }
         }
     }
-    std::cout << "extract subset from running cost" << std::endl;
+    // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
     for (int dk = 0; dk < n_t; ++dk)
@@ -285,7 +300,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
             }
         }
     }
-    std::cout << "place terminal cost into the value table" << std::endl;
+    // std::cout << "place terminal cost into the value table" << std::endl;
 
     return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <string>
+#include <sstream>
 
 #include "dp_model.h"
 #include "cpu_solver.h"
@@ -14,7 +15,7 @@
 #define COMPARE    2
 
 float one_iter(int solver, bool log, DPModel * dp_model);
-int run_steps();
+int run_iters(int iters, int solver, DPModel * dp_model);
 int compare(CPUSolver * c_solver, GPUSolver * g_solver);
 
 #endif

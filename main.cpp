@@ -21,8 +21,7 @@ int main(int argc, char *argv[])
     {
         int pred_steps = 10;
         // int run_steps = 10;
-        int run_steps = 2;
-
+        int run_steps = 10;
 
         DPModel dp_model(pred_steps, run_steps);
         if (modeStr == "compare")
@@ -50,7 +49,12 @@ int main(int argc, char *argv[])
         { 
             // whole simulation
             std::cout << "run simulation for n steps" << std::endl;
-            int steps = 0;
+            int pred_steps = 10;
+            // int run_steps = 10;
+            int run_steps = 10;
+
+            DPModel dp_model(pred_steps, run_steps);
+            run_iters(run_steps, GPU_SOLVER, &dp_model);
         }
     }
     

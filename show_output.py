@@ -47,7 +47,7 @@ def value(solver):
             mats.append(mat)
             for i in range(n_x):
                 for j in range(n_w):
-                    if (mats1[k][i,j] > 10e25) and (mats2[k][i,j] > 10e25):
+                    if (mats1[k][i,j] > 1e10) and (mats2[k][i,j] > 1e10):
                         mats[k][i,j] = -1
 
     for k in range(N):
@@ -72,7 +72,7 @@ def value(solver):
             m = mat[0,0]
             for i in range(n_x):
                 for j in range(n_w):
-                    if (mat[i,j] > m) and (mat[i,j] < 1e25):
+                    if (mat[i,j] > m) and (mat[i,j] < 1e10):
                         m = mat[i,j]
 
             print(m)
@@ -89,7 +89,7 @@ def value(solver):
                     if mat[i,j] > 1e-6:
                         mat_histo.append(mat[i,j])
                 else:
-                    if mat[i, j] < 1e25:
+                    if mat[i, j] < 1e10:
                         mat_histo.append(mat[i,j])
         n, bins, patches = ax2.hist(mat_histo, 100, density=False)
 
