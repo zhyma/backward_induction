@@ -102,18 +102,6 @@ def action(solver):
     if solver == 'cpu' or solver == 'gpu':
         print('solver type ' + solver)
         N, n_x, n_w, mats = load(solver, 'action')
-    elif solver == 'compare':
-        print('compare results')
-        N, n_x, n_w, mats1 = load('cpu', 'action')
-        _,   _,   _, mats2 = load('gpu', 'action')
-        mats = []
-        for k in range(N):
-            mat = np.absolute(mats1[k] - mats2[k])
-            mats.append(mat)
-            for i in range(n_x):
-                for j in range(n_w):
-                    if (mats1[k][i,j] > 10e18) and (mats2[k][i,j] > 10e18):
-                        mats[k][i,j] = -1
 
     for k in range(N):
         # k = 10 is the last step
@@ -128,11 +116,8 @@ def action(solver):
 
         my_cmap = copy.copy(cm.get_cmap("rainbow"))
 
-        c = ax1.pcolormesh(mat,cmap=my_cmap)
+        c = ax1.pcolormesh(mat,cmap=my_cmap, vmin=0, vmax=31)
         fig.colorbar(c, ax=ax1)
-
-        # plt.xlim(xmin=0, xmax=n_w)
-        # plt.ylim(ymin=0, ymax=n_x)
 
         fig.tight_layout()
         plt.savefig('fig/' + solver + '_action_t_'+str(k)+'.png')
