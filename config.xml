@@ -1,34 +1,22 @@
 <?xml version="1.0"?>
 <config>
     <!--An XML must have a single root -->
-    <processor_type>
-        GPU
-    </processor_type>
 
-    <time_step>
-        10
-    </time_step>
+    <!--240 -->
+    <distance_to_trafiic_light>
+        1000
+    </distance_to_trafiic_light>
 
-    <!-- The number of points between each unit of x -->
-    <granularity>
-        10
-    </granularity>
+    <!--12 -->
+    <red_light_start>
+        30
+    </red_light_start>
 
-    <!-- The type of disturbance (no distrubance, fixed or Monte Carlo) -->
-    <!-- valid value can be: "markov", "fix", "none" -->
-    <disturb_type>
-        markov
-    </disturb_type>
+    <!--42 -->
+    <red_light_end>
+        80
+    </red_light_end>
 
-    <!-- The type of solver -->>
-    <!-- valid value can be: "whole_model", "one_step", "math_base" -->
-    <solver_type>
-        one_step
-    </solver_type>
-
-    <!-- The method used to get the transition probability -->
-    <!-- Valid value can be: "monte_carlo", "algebraic"-->
-    <probability_method>
-        algebraic
-    </probability_method>
+    <front_car_starting_position>
+    </front_car_starting_position>
 </config>

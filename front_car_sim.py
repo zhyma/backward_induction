@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
+import xml.etree.ElementTree as ET
 
 ## Generates the front car behavior, saves to output/front_car_data.csv
 
@@ -130,6 +131,13 @@ class Vehicle():
         return self.a, self.intention
 
 def simulate(iter):
+    root = ET.parse('config.xml').getroot()
+    # distance to traffic light
+    d2tl = int(root[0].text)
+    # time to redlight
+    rl_start = int(root[1].text)
+    rl_end = int(root[2].text)
+    print("%d, %d, %d"%(d2tl, rl_start, rl_end))
     with open('output/front_car_data.csv', mode='w') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         d_final = []
@@ -137,11 +145,7 @@ def simulate(iter):
             t = 0
             d = 54 + np.random.uniform(0, 60, 1)
             v = np.random.uniform(0,18,1)
-            # distance to traffic light
-            d2tl = 240
-            # time to redlight
-            rl_start = 12
-            rl_end = rl_start + 30
+            
             dt = 2
             
             gtr = Vehicle(d2tl, dt, 18, [-8.0, 2.0])

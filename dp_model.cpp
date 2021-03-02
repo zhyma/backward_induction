@@ -5,6 +5,8 @@
 #include "dp_model.h"
 #include "utility.h"
 
+#define POW4(x) ((x)*(x)*(x)*(x))
+
 int search_files(std::vector<std::string> *files, std::string search_key)
 {
 	DIR *dpdf;
@@ -28,14 +30,47 @@ int search_files(std::vector<std::string> *files, std::string search_key)
     return cnt;
 }
 
+int get_param_val(XMLElement* elmt_root, const char* tag)
+{
+    int param_val;
+    const char* param_char = elmt_root->FirstChildElement(tag)->GetText();
+    std::stringstream strValue;
+    strValue << param_char;
+    strValue >> param_val;
+    return param_val;
+}
+
 //initial function
 DPModel::DPModel(int pred_steps, int running_steps)
 {
-    d2tl = 240;
-    // the time that the red light will start
-    rl_start = 12;
-    // the time that the red light will end
-    rl_end = rl_start + 30;
+    tinyxml2::XMLDocument doc_xml;
+    XMLError err_xml = doc_xml.LoadFile("config.xml");
+
+    if(XML_SUCCESS==err_xml)
+    {
+        XMLElement* elmt_root = doc_xml.RootElement();
+
+        // Get the granulairty within a unit (discretizing to get states)
+        d2tl = get_param_val(elmt_root, "distance_to_trafiic_light");
+        std::cout << "distance to the traffic light: " << d2tl << std::endl;
+        
+        rl_start = get_param_val(elmt_root, "red_light_start");
+        std::cout << "red light starts at: " << rl_start << std::endl;
+
+        // the time that the red light will end
+        rl_end =get_param_val(elmt_root, "red_light_end");
+        std::cout << "red light ends at: " << rl_end << std::endl;
+    }
+    else
+    {
+        std::cout << "config.xml read error" << std::endl;
+
+        d2tl = 240;
+        // the time that the red light will start
+        rl_start = 12;
+        // the time that the red light will end
+        rl_end = rl_start + 30;
+    }
     t_tcc = 3;
     // mass of the vehicle
     m = 1500;
@@ -244,6 +279,7 @@ int DPModel::running_cost_init()
     // long long int valid = 0, total = N_total * x.n * w.n * u.n;
     int valid = 0, total = N_total * x.n * w.n * u.n;
 
+    float *running_cost_sample = new float[v.n*a.n];
     for (int xk = 0; xk < x.n; ++xk)
     {
         for (int wk = 0; wk < w.n; ++wk)
@@ -266,38 +302,90 @@ int DPModel::running_cost_init()
                 int ak = uk;
                 float ax = a.list[ak];
                 // tau_wheel
-                float tan_t = 0;
+                // float tan_t = 0;
                 float r = 0.3;
-                float tau_wheel = (m*ax + 0.005*m*g + 0.09*vx*vx + m*g*tan_t)*r;
+                // float tau_wheel = (m*ax + 0.005*m*g + 0.09*vx*vx + m*g*tan_t)*r;
 
-                // tau_motor, omega_motor
-                float tau_motor = 0;
-                float omega_motor = 0;
-                float t_ratio = 0;
-                if (vx <= 20)
-                {
-                    t_ratio = 1/4.71;
-                    omega_motor = 5 * M_PI * vx;
-                }
-                else
-                {
-                    t_ratio = 1/2.355;
-                    omega_motor = 2.5 * M_PI * vx;
-                }
-                if (tau_wheel >=0)
-                    tau_motor = tau_wheel * t_ratio;
-                else
-                    tau_motor = tau_wheel * t_ratio * 0.5;
-                    
-                float p_motor = omega_motor * tau_motor;
-                float factor = 0;
-                if (tau_motor < 0)
-                    factor = 0.97;
-                else
-                    factor = 1/0.97;
+                // // tau_motor, omega_motor
+                // float tau_motor = 0;
+                // float omega_motor = 0;
+                // float t_ratio = 0;
                 
-                float cost =  factor * p_motor * dt;
+                float t1 = 0, t2 = 0;
+                float c = 0;
+                if (ax >= 0)
+                {
+                    c = 1.0/0.97*4.71 * (5*M_PI*r);
+                    if ((v.max-vx)/ax < dt)
+                    {
+                        // accelerate then reach the maximum speed
+                        t1 = (v.max-vx)/ax;
+                        t2 = dt-t1;
+                    }
+                    else
+                    {
+                        // accelerate all the time
+                        t1 = dt;
+                        t2 = 0;
+                    }
+                    
+                }
+                else
+                {
+                    c = 0.97/4.71*0.5 * (5*M_PI*r);
+                    if (-vx/ax < dt)
+                    {
+                        // deccelrate then reach 0
+                        t1 = -vx/ax;
+                        t2 = dt - t1;
+                    }
+                    else
+                    {
+                        // deccelerate all the time
+                        t1 = dt;
+                        t2 = 0;
+                    }
+                }
+                float g1 = c * (m*ax*vx*t1 + m*ax*ax*t1*t1/2 + 0.005*m*g*vx*t1 + 0.005*m*g*ax*t1*t1/2 + 0.09*POW4(vx+ax*t1)/(4*ax) );
+                float g2 = t2 * c * vx*(m*ax + 0.005*m*g + 0.09*vx*vx);
+                float cost = g1 + g2;
+                
+                // // dt is always 2s. t is the actually time (from v->0 or v->v_max)
+                // if (ax < 0)
+                //     (-vx/ax > dt) ? (t = dt) : (t = -vx/ax);
+                // else if (ax > 0)
+                //     (((v.max-vx)/ax > dt)) ? (t=dt) : (t = (v.max-vx)/ax);
+                // else
+                //     t = dt;
+                // if (vx <= 20)
+                // {
+                //     t_ratio = 1/4.71;
+                //     omega_motor = 5 * M_PI * vx;
+                // }
+                // else
+                // {
+                //     t_ratio = 1/2.355;
+                //     omega_motor = 2.5 * M_PI * vx;
+                // }
+                // if (tau_wheel >=0)
+                //     tau_motor = tau_wheel * t_ratio;
+                // else
+                //     tau_motor = tau_wheel * t_ratio * 0.5;
+                    
+                // float p_motor = omega_motor * tau_motor;
+                // float factor = 0;
+                // if (tau_motor < 0)
+                //     factor = 0.97;
+                // else
+                //     factor = 1/0.97;
+                // float cost =  factor * p_motor * t;
+
                 r_cost[idx] = cost;
+
+                if (xk/v.n==0 && wk == 0)
+                {
+                    running_cost_sample[(xk%v.n)*a.n + ak] = cost;
+                }
 
                 if (cost > cost_max)
                     cost_max = cost;
@@ -348,13 +436,19 @@ int DPModel::running_cost_init()
             }
         }
     }
-    if(false)
+    if (false)
     {
         std::string filename = "full_r_cost";
         int dim[] = {1, x.n, w.n, u.n};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_cost);
         filename = "full_r_mask";
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_mask);
+    }
+    if (true)
+    {
+        std::string filename = "r_cost_va";
+        int dim[] = {1, v.n, a.n};
+        mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, running_cost_sample);
     }
     std::cout << "total <s,a> pairs: " << total << std::endl;
     std::cout << "valid <s,a> pairs: " << valid << std::endl;
@@ -365,7 +459,9 @@ int DPModel::running_cost_init()
 float DPModel::terminal_cost(int dk0, int dk, int vk)
 {
     // x stands for value
+    // starting position
     float d0x = d.list[dk0];
+    // targeting position
     float dx  = d.list[dk];
     float vx  = v.list[vk];
 

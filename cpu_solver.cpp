@@ -1,4 +1,5 @@
 #include "cpu_solver.h"
+#include "utility.h"
 #include <cstring>
 #include <algorithm>
 
@@ -245,6 +246,13 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
             idx = (dk*n_v+vk);
             t_cost[idx] = model->terminal_cost(dk0, dk, vk);
         }
+    }
+
+    if (true)
+    {
+        std::string filename = "t_cost_dv";
+        int dim[] = {1, n_t, n_v};
+        mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, t_cost);
     }
     std::cout << "generate terminal cost" << std::endl;
 

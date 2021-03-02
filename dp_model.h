@@ -11,9 +11,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <thread>
 #include <atomic>
+
+#include "tinyxml2/tinyxml2.h"
+
+using namespace tinyxml2;
 
 // move to physical model
 typedef struct Set
