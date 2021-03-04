@@ -14,4 +14,6 @@ for i in range(n):
     
     plt.plot(list(range(len(d))), d, 'g', alpha=0.1)
     
+plt.xlabel('step')
+plt.ylabel('distance (m)')
 plt.show()

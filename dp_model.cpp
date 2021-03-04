@@ -197,11 +197,18 @@ int DPModel::state_trans()
             // std::cout << "x=" << x << ", w=" << w << ", u=" << u << ", x_=" << x_set.list[xk_] << " (" << xk_ << ")" << std::endl; 
             int idx = xk*u.n + uk;
             s_trans_table[idx] = xk_;
+            if (xk_ < 0)
+            {
+                std::cout << d.list[xk/v.n] << "," << v.list[xk%v.n] << ", " << a.list[uk] << " -> " << xk_/v.n << "," << xk_%v.n  << std::endl;
+            }
         }
-    } 
-    // std::string filename = "full_trans";
-    // int dim[] = {1, x.n, u.n};
-    // mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, s_trans_table);
+    }
+    if (true)
+    {
+        std::string filename = "tran_full";
+        int dim[] = {1, x.n, u.n};
+        mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, s_trans_table);
+    }
 
     return 0;
 }
@@ -461,7 +468,7 @@ float DPModel::terminal_cost(int dk0, int dk, int vk)
     // x stands for value
     // starting position
     float d0x = d.list[dk0];
-    // targeting position
+    // ending position
     float dx  = d.list[dk];
     float vx  = v.list[vk];
 
@@ -582,6 +589,7 @@ int DPModel::check_driving_data()
                         int i = stoi(arr[3]);
                         // if arr[0] is out of range, dck is -1, old_wk is -2 or -1 (always <0)
                         old_wk = dck*2 + i;
+                        // std::cout << old_wk << std::endl;
                         // std::cout << "load" << k << std::endl;
                         ++k;
                     }
@@ -617,6 +625,7 @@ int DPModel::check_driving_data()
                                 int dck = val_to_idx(stof(arr[0]), &d);
                                 int i = stoi(arr[3]);
                                 int new_wk = dck*2 + i;
+                                // std::cout << new_wk << std::endl;
 
                                 // out of bound
                                 if ((old_wk < 0) || (new_wk < 0))
@@ -638,6 +647,13 @@ int DPModel::check_driving_data()
                         }
                         
                     }
+                }
+
+                if(false)
+                {
+                    std::string filename = "count";
+                    int dim[] = {N_total, w.n, n_p};
+                    mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, cnt_mat);
                 }
 
                 std::cout << "dwk range is: " << dwk_min << ", " << dwk_max << std::endl;
@@ -696,9 +712,9 @@ int DPModel::check_driving_data()
     }
     std::cout << "non-zero probability: " << valid_p << std::endl;
     
-    if(false)
+    if(true)
     {
-        std::string filename = "full_prob";
+        std::string filename = "prob_full";
         int dim[] = {N_total, w.n, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob_table);
     }

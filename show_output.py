@@ -53,7 +53,7 @@ def value(solver):
     for k in range(N):
         # k = 10 is the last step
         # 2D grid map
-        fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [2, 1]})
+        fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [2, 1]}, figsize=(12,9))
 
         title = 'value at k=' + str(k)
         fig.suptitle(title)
@@ -81,6 +81,9 @@ def value(solver):
             c = ax1.pcolormesh(mat,cmap=my_cmap,vmax=m)
 
         fig.colorbar(c, ax=ax1)
+
+        ax1.set_xlabel('w(d*intention)')
+        ax1.set_ylabel('x(d*v)')
 
         mat_histo = []
         for i in range(n_x):

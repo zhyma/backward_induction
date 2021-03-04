@@ -76,9 +76,14 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         float v = value[v_idx];
         sum += p*v;
+        if (p > 0 && xk == 0 && uk==0)
+        {
+            std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", " << v << "," << sum << std::endl;
+        }
     }
-    float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
+    // float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
+    // l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
+    float l = 0;
     
     return l + sum;
 }
@@ -138,13 +143,17 @@ int CPUSolver::estimate_one_step(int k0, int k)
     return 0;
 }
 
-int CPUSolver::solve(int k0, int dk0, int dck0)
+int CPUSolver::solve(int k0, float d0, float dc0)
 {
+    // int dk0 = dp_model->get_dist_idx(d0) * dp_model->v.n;
+    int dk0 = model->get_dist_idx(d0);
+    // int dwk0 = dp_model->get_dist_idx(dc0) * 2 + 0;
+    int dck0 = model->get_dist_idx(dc0);
     get_subset(k0, dk0, dck0);
     std::cout << "extract subset done." << std::endl;
     for (int k = N; k >= 0; k--)
+    // for (int k = N; k >= 9; k--)
         estimate_one_step(k0, k);
-
     return 0;
 }
 
@@ -175,9 +184,9 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
             trans[solver_idx] = model->s_trans_table[idx] - dk0*n_v;
         }
     }
-    if(false)
+    if(true)
     {
-        std::string filename = "partial_trans_cpu";
+        std::string filename = "cpu_tran_part";
         int dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans);
     }
@@ -187,21 +196,21 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     // k = k0+dk
     std::cout << "get transition probability starts here" << std::endl;
     
-    for (int dk = 0; dk < N; ++dk)
+    for (int k = 0; k < N; ++k)
     {
         for (int dwk = 0; dwk < n_w_s; ++dwk)
         {
             for (int dwk_ = 0; dwk_ < n_p; ++dwk_)
             {
-                idx = (k0+dk) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + dwk_;
-                solver_idx = dk*n_w_s*n_p + dwk*n_p + dwk_;
+                idx = (k0+k) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + dwk_;
+                solver_idx = k*n_w_s*n_p + dwk*n_p + dwk_;
                 prob[solver_idx] = model->prob_table[idx];
             }
         }
     }
-    if(false)
+    if(true)
     {
-        std::string filename = "partial_prob_cpu";
+        std::string filename = "cpu_prob_part";
         int dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob);
     }
@@ -248,7 +257,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
         }
     }
 
-    if (true)
+    if (false)
     {
         std::string filename = "t_cost_dv";
         int dim[] = {1, n_t, n_v};
