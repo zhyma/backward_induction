@@ -110,7 +110,7 @@ def action(solver):
         # k = 10 is the last step
 
         # 2D grid map
-        fig, ax1 = plt.subplots()
+        fig, ax1 = plt.subplots(figsize=(12,9))
 
         title = 'action at k=' + str(k)
         fig.suptitle(title)
@@ -121,6 +121,9 @@ def action(solver):
 
         c = ax1.pcolormesh(mat,cmap=my_cmap, vmin=0, vmax=31)
         fig.colorbar(c, ax=ax1)
+
+        ax1.set_xlabel('w(d*intention)')
+        ax1.set_ylabel('x(d*v)')
 
         fig.tight_layout()
         plt.savefig('fig/' + solver + '_action_t_'+str(k)+'.png')

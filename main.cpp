@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
             int run_steps = 10;
 
             DPModel dp_model(pred_steps, run_steps);
-            run_iters(run_steps, GPU_SOLVER, &dp_model);
+            run_iters(run_steps, CPU_SOLVER, &dp_model);
         }
     }
     

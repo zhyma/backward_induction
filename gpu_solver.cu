@@ -3,6 +3,8 @@
 
 GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
 {
+    debug = true;
+    
     model = ptr_in;
     block_size = block_size_in;
 
@@ -62,11 +64,11 @@ GPUSolver::~GPUSolver()
     cudaFree(action.gpu);
 }
 
-int GPUSolver::solve(bool debug, int k0, float d0, float v0, float dw0, int intention)
+int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 {
     // just for find out the range (distance), so v and i are ignored.
     int xk0 = model->get_dist_idx(d0) * model->v.n;
-    int wk0 = model->get_dist_idx(dw0) * 2 + 0;
+    int wk0 = model->get_dist_idx(dc0) * 2 + 0;
     get_subset(k0, xk0, wk0);
     std::cout << "extract subset done." << std::endl;
 
@@ -177,10 +179,10 @@ int GPUSolver::solve(bool debug, int k0, float d0, float v0, float dw0, int inte
     }
     int dk0 = model->get_dist_idx(d0);
     int vk0 = model->get_velc_idx(v0);
-    int dwk0 = model->get_dist_idx(dw0);
+    int dck0 = model->get_dist_idx(dc0);
 
     // xk*n_w_s + wk
-    idx = ((dk0*n_v)+vk0) * n_w_s + (dwk0*2+intention);
+    idx = ((dk0*n_v)+vk0) * n_w_s + (dck0*2+intention);
     // std::cout << model->d << " @idx: " << idx << std::endl;
     std::cout << action.cpu[idx] << " @idx: " << idx << std::endl;
 

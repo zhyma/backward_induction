@@ -76,10 +76,10 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         float v = value[v_idx];
         sum += p*v;
-        if (p > 0 && xk == 0 && uk==0)
-        {
-            std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", " << v << "," << sum << std::endl;
-        }
+        // if (p > 0 && xk == 0 && uk==0)
+        // {
+        //     std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", " << v << "," << sum << std::endl;
+        // }
     }
     // float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
     // l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
@@ -143,18 +143,20 @@ int CPUSolver::estimate_one_step(int k0, int k)
     return 0;
 }
 
-int CPUSolver::solve(int k0, float d0, float dc0)
+int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 {
-    // int dk0 = dp_model->get_dist_idx(d0) * dp_model->v.n;
     int dk0 = model->get_dist_idx(d0);
-    // int dwk0 = dp_model->get_dist_idx(dc0) * 2 + 0;
     int dck0 = model->get_dist_idx(dc0);
     get_subset(k0, dk0, dck0);
     std::cout << "extract subset done." << std::endl;
     for (int k = N; k >= 0; k--)
     // for (int k = N; k >= 9; k--)
         estimate_one_step(k0, k);
-    return 0;
+    
+    int vk0 = model->get_velc_idx(v0);
+    int idx = (dck0*model->v.n + vk0)*n_w_s + intention;
+
+    return action[idx];
 }
 
 int CPUSolver::get_subset(int k0, int dk0, int dck0)
@@ -184,17 +186,17 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
             trans[solver_idx] = model->s_trans_table[idx] - dk0*n_v;
         }
     }
-    if(true)
+    if (debug)
     {
         std::string filename = "cpu_tran_part";
         int dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans);
     }
-    std::cout << "extract subset from state transition" << std::endl;
+    // std::cout << "extract subset from state transition" << std::endl;
 
-    //slicing transition probability (k,w,w')
+    // slicing transition probability (k,w,w')
     // k = k0+dk
-    std::cout << "get transition probability starts here" << std::endl;
+    // std::cout << "get transition probability starts here" << std::endl;
     
     for (int k = 0; k < N; ++k)
     {
@@ -208,16 +210,16 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
             }
         }
     }
-    if(true)
+    if (debug)
     {
         std::string filename = "cpu_prob_part";
         int dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob);
     }
-    std::cout << "extract subset from transition probability" << std::endl;
+    // std::cout << "extract subset from transition probability" << std::endl;
 
 
-    //slicing running_cost (k,x,w,u)
+    // slicing running_cost (k,x,w,u)
     // k = k0+dk
     // xk = xk0 + dxk = dk0*n_v + dxk
     for (int dxk = 0; dxk < n_x_s; ++dxk)
@@ -234,18 +236,14 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
                 int temp2 = (dck0*2 + dwk) * model->u.n;
                 int temp3 = uk;
                 idx =  temp1 + temp2 + temp3;
-                if (idx < 0)
-                {
-                    std::cout << "In CPU solver, running cost index out of range! idx=" << idx << std::endl;
-                    std::cout << "ERROR!" << std::endl;
-                }
+
                 solver_idx = dxk*n_w_s*n_u + dwk*n_u + uk;
                 r_cost[solver_idx] = model->r_cost[idx];
                 r_mask[solver_idx] = model->r_mask[idx];
             }
         }
     }
-    std::cout << "extract subset from running cost" << std::endl;
+    // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
     for (int dk = 0; dk < n_t; ++dk)
@@ -257,13 +255,13 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
         }
     }
 
-    if (false)
+    if (debug)
     {
         std::string filename = "t_cost_dv";
         int dim[] = {1, n_t, n_v};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, t_cost);
     }
-    std::cout << "generate terminal cost" << std::endl;
+    // std::cout << "generate terminal cost" << std::endl;
 
     return 0;
 }

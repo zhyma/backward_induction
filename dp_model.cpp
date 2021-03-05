@@ -170,17 +170,17 @@ DPModel::~DPModel(void)
 
 int DPModel::discretize(Set *in)
 {
-    std::cout << "get variable" << std::endl;
-    std::cout << "lower bound " << in->min << std::endl;
-    std::cout << "upper bound " << in->max << std::endl;
+    // std::cout << "get variable" << std::endl;
+    std::cout << "lower bound " << in->min;
+    std::cout << ", upper bound " << in->max << std::endl;
     in->list = new float[in->n];
     for (int i = 0;i < in->n; ++i)
         in->list[i] = in->min + (in->max - in->min)/(in->n-1) * i;
 
     std::cout << "number: " << in->n << std::endl;  
-    // std::cout << "list: ";
-    // for(int i = 0;i < in->count; ++i)
-    //     std::cout << in->list[i] << ", ";
+    std::cout << "list: ";
+    for(int i = 0;i < in->n; ++i)
+        std::cout << in->list[i] << ", ";
     std::cout << std::endl;
 
     return 0;
@@ -188,26 +188,40 @@ int DPModel::discretize(Set *in)
 
 int DPModel::state_trans()
 {
+    // std::ofstream out_file;
+    // out_file.open("output/transition_test.csv", std::ios::out);
+    // out_file << std::setiosflags(std::ios::fixed) << std::setprecision(2);
+
+    // float attr[2] = {.0, .0};
+
     s_trans_table = new int[x.n * u.n]{};
     for (int xk = 0; xk < x.n; ++xk)
     {
         for (int uk = 0; uk < u.n; ++uk)
         {
+            // attr[0] = d.list[xk/v.n];
+            // attr[1] = v.list[xk%v.n];
+            // out_file << "d=" << d.list[xk/v.n] << ", v=" << v.list[xk%v.n] << ", a=" << u.list[uk] << " -> d=" ;
             int xk_ = phy_model(xk, uk);
-            // std::cout << "x=" << x << ", w=" << w << ", u=" << u << ", x_=" << x_set.list[xk_] << " (" << xk_ << ")" << std::endl; 
+            
             int idx = xk*u.n + uk;
             s_trans_table[idx] = xk_;
-            if (xk_ < 0)
-            {
-                std::cout << d.list[xk/v.n] << "," << v.list[xk%v.n] << ", " << a.list[uk] << " -> " << xk_/v.n << "," << xk_%v.n  << std::endl;
-            }
+
+            // out_file << d.list[xk_/v.n] << ", v=" << v.list[xk_%v.n] << std::endl;
+
+            // if (xk_ < 0)
+            // {
+            //     std::cout << d.list[xk/v.n] << "," << v.list[xk%v.n] << ", " << a.list[uk] << " -> " << xk_/v.n << "," << xk_%v.n  << std::endl;
+            // }
         }
     }
+    // out_file.close();
     if (true)
     {
         std::string filename = "tran_full";
         int dim[] = {1, x.n, u.n};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, s_trans_table);
+        std::cout << "write transition to file" << std::endl;
     }
 
     return 0;
@@ -219,21 +233,30 @@ int DPModel::phy_model(float *attr, float ax)
     float dx = attr[0];
     float vx = attr[1];
     float d_ = 0, v_ = 0;
-    if (vx + ax*dt >= 0)
+    float t = 0;
+    if (vx+ax*dt > v.max)
     {
-        d_ = dx + vx*dt + 0.5*ax*dt;
-        v_ = vx + ax*dt;
+        v_ = v.max;
+        t = (v_-vx)/ax;
+        d_ = dx + 0.5*(vx+v_)*t + v_*(dt-t);
     }
-    else 
+    else if (vx + ax*dt < 0)
     {
-        d_ = dx - vx*vx/2/ax;
+        // or vx+ax*dt < v.min, same
         v_ = 0;
+        t = vx/(-ax);
+        d_ = dx + 0.5*vx*t;
+    }
+    else
+    {
+        v_ = vx + ax*dt;
+        d_ = dx + 0.5*(vx+v_)*dt;
     }
 
-    d_ > d.max ? d.max : d_;
-    d_ < d.min ? d.min : d_;
-    v_ > v.max ? v.max : v_;
-    v_ < v.min ? v.min : v_;
+    d_ > d.max ? (d_ = d.max) : (d_ = d_);
+    d_ < d.min ? (d_ = d.min) : (d_ = d_);
+    v_ > v.max ? (v_ = v.max) : (v_ = v_);
+    v_ < v.min ? (v_ = v.min) : (v_ = v_);
 
     attr[0] = d_;
     attr[1] = v_;
@@ -244,29 +267,43 @@ int DPModel::phy_model(float *attr, float ax)
 int DPModel::phy_model(int xk, int uk)
 {
     // dx, vx, ax, d_, v_ are value; xk, wk, uk are index
-    float dx = d.list[xk/v.n], vx = d.list[xk%v.n];
-    float ax = a.list[uk];
-    float d_ = 0, v_ = 0;
-    if (vx + ax*dt >= 0)
-    {
-        d_ = dx + vx*dt + 0.5*ax*dt;
-        v_ = vx + ax*dt;
-    }
-    else 
-    {
-        d_ = dx - vx*vx/2/ax;
-        v_ = 0;
-    }
+    float attr[2] = {d.list[xk/v.n], v.list[xk%v.n]};
+    float ax = u.list[uk];
+    phy_model(attr, ax);
 
-    d_ > d.max ? d.max : d_;
-    d_ < d.min ? d.min : d_;
-    v_ > v.max ? v.max : v_;
-    v_ < v.min ? v.min : v_;
-
-    int dk_ = val_to_idx(d_, &d);
-    int vk_ = val_to_idx(v_, &v);
-    int xk_ = v.n*dk_ + vk_;
+    int dk_ = val_to_idx(attr[0], &d);
+    int vk_ = val_to_idx(attr[1], &v);
+    int xk_ = dk_*v.n+ vk_;
     return xk_;
+}
+
+// By given a value x, find the index of 
+int DPModel::val_to_idx(float val, struct Set *ref)
+{
+    // long long int idx = 0;
+    // idx = (long long int) round((val - ref->bound[0])/((ref->bound[1]-ref->bound[0])/(ref->n-1)));
+    int idx = 0;
+    idx = round((val - ref->min)/((ref->max - ref->min)/(ref->n-1)));
+    // make sure it will not be out of boundary because of float accuracy
+    // idx < ref->min ? idx = 0 : idx;
+    // idx > ref->n - 1 ? idx = ref->n -1 : idx;
+    idx < ref->min ? idx = -1 : idx;
+    idx > ref->n - 1 ? idx = -1 : idx;
+    return idx;
+}
+
+int DPModel::get_dist_idx(float dist)
+{
+    int idx = 0;
+    idx = val_to_idx(dist, &d);
+    return idx;
+}
+
+int DPModel::get_velc_idx(float velc)
+{
+    int idx = 0;
+    idx = val_to_idx(velc, &v);
+    return idx;
 }
 
 int DPModel::running_cost_init()
@@ -282,9 +319,6 @@ int DPModel::running_cost_init()
     float cost_min = 1e30, cost_max = 0;
 
     std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
-
-    // long long int valid = 0, total = N_total * x.n * w.n * u.n;
-    int valid = 0, total = N_total * x.n * w.n * u.n;
 
     float *running_cost_sample = new float[v.n*a.n];
     for (int xk = 0; xk < x.n; ++xk)
@@ -437,8 +471,6 @@ int DPModel::running_cost_init()
                     if (constraint > 0)
                         r_mask[idx] |= 1<<k;
 
-                    if (constraint == 0)
-                        ++valid;
                 }
             }
         }
@@ -457,8 +489,6 @@ int DPModel::running_cost_init()
         int dim[] = {1, v.n, a.n};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, running_cost_sample);
     }
-    std::cout << "total <s,a> pairs: " << total << std::endl;
-    std::cout << "valid <s,a> pairs: " << valid << std::endl;
     std::cout << "the range of running cost: " << cost_min << ", " << cost_max << std::endl;
     return 0;
 }
@@ -719,33 +749,4 @@ int DPModel::check_driving_data()
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob_table);
     }
     return 0;
-}
-
-// By given a value x, find the index of 
-int DPModel::val_to_idx(float val, struct Set *ref)
-{
-    // long long int idx = 0;
-    // idx = (long long int) round((val - ref->bound[0])/((ref->bound[1]-ref->bound[0])/(ref->n-1)));
-    int idx = 0;
-    idx = round((val - ref->min)/((ref->max - ref->min)/(ref->n-1)));
-    // make sure it will not be out of boundary because of float accuracy
-    // idx < ref->min ? idx = 0 : idx;
-    // idx > ref->n - 1 ? idx = ref->n -1 : idx;
-    idx < ref->min ? idx = -1 : idx;
-    idx > ref->n - 1 ? idx = -1 : idx;
-    return idx;
-}
-
-int DPModel::get_dist_idx(float dist)
-{
-    int idx = 0;
-    idx = val_to_idx(dist, &d);
-    return idx;
-}
-
-int DPModel::get_velc_idx(float velc)
-{
-    int idx = 0;
-    idx = val_to_idx(velc, &v);
-    return idx;
 }

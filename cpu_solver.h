@@ -23,9 +23,10 @@ class CPUSolver
         int n_x,n_w,n_u;
         int n_x_s, n_w_s;
         
-        int solve(int k0, float d0, float dc0);
+        int solve(int k0, float d0, float v0, float dc0, int intention);
         float * value;
         int * action;
+        bool debug = false;
         
     private:
         int n_v;

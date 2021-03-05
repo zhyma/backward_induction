@@ -14,18 +14,21 @@ float one_iter(int solver, bool log, DPModel * dp_model)
     // int n_u = dp_model->u.n;
 
     int k = 0;
+    // vehicle starting position
     float d0 = 0;
-    float v0 = 0;
+    // vehicle starting velocity
+    float v0 = 15;
+    // front car starting position
     float dc0 = 80.0;
+    // front car starting intention
     int intention = 0;
+
     // int dk0 = dp_model->get_dist_idx(d0) * dp_model->v.n;
     int dk0 = dp_model->get_dist_idx(d0);
     // int dwk0 = dp_model->get_dist_idx(dc0) * 2 + 0;
     int dck0 = dp_model->get_dist_idx(dc0);
 
-    std::cout << "dwk0 " << dck0 << std::endl;
-
-    std::cout << "prepare work all done" << std::endl;
+    std::cout << "dck0 " << dck0 << std::endl;
 
     if (solver == GPU_SOLVER)
     {
@@ -37,7 +40,7 @@ float one_iter(int solver, bool log, DPModel * dp_model)
 
         start = std::clock();
         
-        gpu_solver.solve(true, k, d0, v0, dc0, intention);
+        gpu_solver.solve(k, d0, v0, dc0, intention);
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << std::endl << "GPU time: " << duration << " s" << std::endl;
 
@@ -61,7 +64,8 @@ float one_iter(int solver, bool log, DPModel * dp_model)
 
         start = std::clock();
  
-        cpu_solver.solve(0, d0, dc0);
+        int a = cpu_solver.solve(0, d0, v0, dc0, intention);
+        std::cout << "best action: " << dp_model->v.list[a] << std::endl;
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << std::endl << "CPU time: " << duration << " s" << std::endl;
         
@@ -72,14 +76,15 @@ float one_iter(int solver, bool log, DPModel * dp_model)
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, cpu_solver.value);
 
             filename = "cpu_action";
-            int a_dim[] = {cpu_solver.N, cpu_solver.n_x, cpu_solver.n_w};
+            int a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
         }
         // show potential action for different starting velocity
-        // for (int i = 0; i < dp_model->v.n; ++i)
-        // {
-        //     std::cout << cpu_solver.action[i] << std::endl;
-        // }
+        for (int i = 0; i < dp_model->v.n; ++i)
+        {
+            int idx = (dck0*dp_model->v.n + i)*cpu_solver.n_w_s + 1;
+            std::cout << cpu_solver.action[idx] << std::endl;
+        }
 
     }
 
@@ -90,59 +95,116 @@ int run_iters(int iters, int solver, DPModel * dp_model)
 {
     float attr[2] = {.0, .0};
     int ak;
-    float dw0 = 60.0;
+    float dc0 = 60.0;
     int intention = 1;
     int dk0;
     int dwk0;
     int block_size = 32;
-    
-    GPUSolver gpu_solver(dp_model, block_size);
 
-    std::string file_name = "./output/front_car_data.csv";
-    // read from raw driving data
-    if (FILE *file = fopen(file_name.c_str(), "r"))
+    if (solver == CPU_SOLVER)
     {
-        // if exist, load from the existing one.
-        fclose(file);
-
-        std::cout << "loading " << file_name << std::endl;
-        // load the existing data and generate
-        std::ifstream in_file(file_name, std::ios::in);
-        std::string line_str;
-        std::stringstream ss_param;
-        std::string arr[4];
-        bool end_of_file = false;
-
-        std::cout << "start to solve" << std::endl;
-        for(int k = 0; k < iters; ++k)
+        CPUSolver cpu_solver(dp_model);
+        
+        std::string file_name = "./output/front_car_data.csv";
+        // read from raw driving data
+        if (FILE *file = fopen(file_name.c_str(), "r"))
         {
-            // load one from csv
+            // if exist, load from the existing one.
+            fclose(file);
+
+            std::cout << "loading " << file_name << std::endl;
+            // load the existing data and generate
+            std::ifstream in_file(file_name, std::ios::in);
+            std::string line_str;
             std::stringstream ss_param;
             std::string arr[4];
-            getline(in_file, line_str);
+            bool end_of_file = false;
 
-            if (line_str.find("end")!=std::string::npos)
+            std::cout << "start to solve" << std::endl;
+            for(int k = 0; k < iters; ++k)
             {
-                break;
-            }
-            else
-            {
-                ss_param.clear();
-                ss_param.str(line_str); 
-                for (int j = 0; j < 4; ++j)
+                // load one from csv
+                std::stringstream ss_param;
+                std::string arr[4];
+                getline(in_file, line_str);
+
+                if (line_str.find("end")!=std::string::npos)
                 {
-                    getline(ss_param, line_str, ',');
-                    arr[j] = line_str;
+                    break;
                 }
-                std::cout << "FRONT CAR: " << arr[0] << ", " << arr[3] << std::endl;
-                dw0 = stof(arr[0]);
-                int dck = dp_model->get_dist_idx(stof(arr[0]));
-                int i = stoi(arr[3]);
+                else
+                {
+                    ss_param.clear();
+                    ss_param.str(line_str); 
+                    for (int j = 0; j < 4; ++j)
+                    {
+                        getline(ss_param, line_str, ',');
+                        arr[j] = line_str;
+                    }
+                    std::cout << "FRONT CAR: " << arr[0] << ", " << arr[3] << std::endl;
+                    dc0 = stof(arr[0]);
+                    int dck = dp_model->get_dist_idx(stof(arr[0]));
+                    int i = stoi(arr[3]);
 
-                ak = gpu_solver.solve(true, 0, attr[0], attr[1], dw0, intention);
-                
-                dp_model->phy_model(attr, dp_model->a.list[ak]);
-                std::cout << "OUTPUT:" << attr[0] << ", " << attr[1] << ", " << dp_model->a.list[ak] << std::endl;
+                    ak = cpu_solver.solve(k, attr[0], attr[1], dc0, intention);
+                    
+                    dp_model->phy_model(attr, dp_model->a.list[ak]);
+                    std::cout << "OUTPUT: d=" << attr[0] << ", v=" << attr[1] << ", " << dp_model->a.list[ak] << std::endl;
+                }
+            }
+        }
+    }
+
+    if (solver == GPU_SOLVER)
+    {
+        GPUSolver gpu_solver(dp_model, block_size);
+
+        std::string file_name = "./output/front_car_data.csv";
+        // read from raw driving data
+        if (FILE *file = fopen(file_name.c_str(), "r"))
+        {
+            // if exist, load from the existing one.
+            fclose(file);
+
+            std::cout << "loading " << file_name << std::endl;
+            // load the existing data and generate
+            std::ifstream in_file(file_name, std::ios::in);
+            std::string line_str;
+            std::stringstream ss_param;
+            std::string arr[4];
+            bool end_of_file = false;
+
+            std::cout << "start to solve" << std::endl;
+            for(int k = 0; k < iters; ++k)
+            {
+                // load one from csv
+                std::stringstream ss_param;
+                std::string arr[4];
+                getline(in_file, line_str);
+
+                if (line_str.find("end")!=std::string::npos)
+                {
+                    break;
+                }
+                else
+                {
+                    ss_param.clear();
+                    ss_param.str(line_str); 
+                    for (int j = 0; j < 4; ++j)
+                    {
+                        getline(ss_param, line_str, ',');
+                        arr[j] = line_str;
+                    }
+                    std::cout << "FRONT CAR: " << arr[0] << ", " << arr[3] << std::endl;
+                    dc0 = stof(arr[0]);
+                    int dck = dp_model->get_dist_idx(stof(arr[0]));
+                    int i = stoi(arr[3]);
+
+                    ak = gpu_solver.solve(k, attr[0], attr[1], dc0, intention);
+                    
+                    dp_model->phy_model(attr, dp_model->a.list[ak]);
+                    std::cout << "OUTPUT:" << attr[0] << ", " << attr[1] << ", " << dp_model->a.list[ak] << std::endl;
+                }
             }
         }
     }
