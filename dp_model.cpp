@@ -43,6 +43,7 @@ int get_param_val(XMLElement* elmt_root, const char* tag)
 //initial function
 DPModel::DPModel(int pred_steps, int running_steps)
 {
+    std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
     tinyxml2::XMLDocument doc_xml;
     XMLError err_xml = doc_xml.LoadFile("config.xml");
 
@@ -71,6 +72,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
         // the time that the red light will end
         rl_end = rl_start + 30;
     }
+
     t_tcc = 3;
     // mass of the vehicle
     m = 1500;
@@ -90,8 +92,8 @@ DPModel::DPModel(int pred_steps, int running_steps)
     N_total = N_pred + N_run -1;
     dt = 2;
     
-    // int n_v = 32;
-    int n_v = 16;
+    int n_v = 32;
+    // int n_v = 16;
     int n_a = 32;
 
     v.min = .0;
@@ -133,7 +135,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     prob_table = new float[N_total*w.n*n_p]{};
 
     check_driving_data();
-    std::cout << "transition probability generated" << std::endl;
+    // std::cout << "transition probability generated" << std::endl;
     
     return;
 }
@@ -171,13 +173,13 @@ DPModel::~DPModel(void)
 int DPModel::discretize(Set *in)
 {
     // std::cout << "get variable" << std::endl;
-    std::cout << "lower bound " << in->min;
-    std::cout << ", upper bound " << in->max << std::endl;
+    // std::cout << "lower bound " << in->min;
+    // std::cout << ", upper bound " << in->max << std::endl;
     in->list = new float[in->n];
     for (int i = 0;i < in->n; ++i)
         in->list[i] = in->min + (in->max - in->min)/(in->n-1) * i;
 
-    std::cout << "number: " << in->n << std::endl;  
+    // std::cout << "number: " << in->n << std::endl;  
     std::cout << "list: ";
     for(int i = 0;i < in->n; ++i)
         std::cout << in->list[i] << ", ";
@@ -216,7 +218,7 @@ int DPModel::state_trans()
         }
     }
     // out_file.close();
-    if (true)
+    if (debug)
     {
         std::string filename = "tran_full";
         int dim[] = {1, x.n, u.n};
@@ -318,7 +320,7 @@ int DPModel::running_cost_init()
 
     float cost_min = 1e30, cost_max = 0;
 
-    std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
+    // std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
 
     float *running_cost_sample = new float[v.n*a.n];
     for (int xk = 0; xk < x.n; ++xk)
@@ -505,7 +507,7 @@ float DPModel::terminal_cost(int dk0, int dk, int vk)
     float d_target = d0x + N_pred * dt * v.max;
     float v_target = v.max;
 
-    float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
+    float term1 = 0;//0.5*m*(v_target*v_target - vx*vx)*0.95;
     float term2 = (d_target - dx)*783;
     float term3 = m*g*0*0.95;
     return term1 + term2 + term3;
@@ -517,7 +519,7 @@ int DPModel::check_driving_data()
     bool raw_data_exist = false;
     std::vector<std::string> files;
     search_files(&files, "w2w_mat");
-    int valid_p = 0;
+    // int valid_p = 0;
 
     // load pre-processed transition probability matrices
     // Only load the first file.
@@ -546,10 +548,10 @@ int DPModel::check_driving_data()
                 {
                     getline(ss_param, line_str, ',');
                     prob_table[idx] = std::stof(line_str);
-                    if (prob_table[idx] > 0)
-                        ++valid_p;
+                    // if (prob_table[idx] > 0)
+                    //     ++valid_p;
                 }
-                std::cout << "probability matrix loaded and prepared" << std::endl;
+                // std::cout << "probability matrix loaded and prepared" << std::endl;
             }
         }
     }
@@ -707,8 +709,8 @@ int DPModel::check_driving_data()
                             else
                             {
                                 prob_table[idx] = float(cnt_mat[idx])/float(sum);
-                                if (prob_table[idx] > 0)
-                                    ++valid_p;
+                                // if (prob_table[idx] > 0)
+                                //     ++valid_p;
                             }
                         }
                     }
@@ -740,7 +742,7 @@ int DPModel::check_driving_data()
         }
         
     }
-    std::cout << "non-zero probability: " << valid_p << std::endl;
+    // std::cout << "non-zero probability: " << valid_p << std::endl;
     
     if(true)
     {

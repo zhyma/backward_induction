@@ -21,7 +21,7 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
 
     value = new float[(N+1)*n_x*n_w]{};
     // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
-    //     value[i] = 1e20;
+    //     value[i] = 1e30;
     action = new int[N*n_x_s*n_w_s]{};
     // for (int i = 0; i < N*n_x_s*n_w_s; ++i)
     //     action[i] = -1;
@@ -76,9 +76,11 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         float v = value[v_idx];
         sum += p*v;
-        // if (p > 0 && xk == 0 && uk==0)
+        // if (p > 0 && xk == 0)
         // {
-        //     std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", " << v << "," << sum << std::endl;
+        //     if (uk == 0)
+        //         std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", v=" << v << "," << sum << std::endl;
+        //     // std::cout << "value: " << v << std::endl;
         // }
     }
     // float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
@@ -90,6 +92,10 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
 
 int CPUSolver::estimate_one_step(int k0, int k)
 {
+    // std::ofstream out_file;
+    // out_file.open("output/one_step_test.csv", std::ios_base::app);
+    // out_file << std::setiosflags(std::ios::fixed) << std::setprecision(2);
+
     if (k==N)
     {
         // calculate the terminal cost at N=10
@@ -107,6 +113,8 @@ int CPUSolver::estimate_one_step(int k0, int k)
     }
     else if((k >= 0) and (k < N))
     {
+        // out_file << "k=" << k << std::endl;
+
         // calculate the running cost
         // searching backward, search for the transition probability one step before, then calculate the min
         // generate probability estimation for intermediate steps
@@ -130,9 +138,19 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 if (idx_min >= 0)
                 {
                     value[k*n_x*n_w + xk*n_w + wk] = q[idx_min];
-                    //action[k*n_x*n_w + xk*n_w + wk] = model->u_set.list[min.index];
                     action[k*n_x_s*n_w_s + xk*n_w_s + wk] = idx_min;
                 }
+                else 
+                    std::cout << "idx_min error?";
+                // if (wk == 1)
+                // {
+                //     out_file << "d=" << model->d.list[xk/n_v];
+                //     out_file << " v=" << model->v.list[xk%n_v] << std::endl;
+                //     out_file << " q=";
+                //     for (int i =0; i < n_u; ++i)
+                //         out_file << q[i] << ", ";
+                //     out_file << std::endl << " min idx=" << idx_min << std::endl;
+                // }
             }
         }
     }
@@ -140,12 +158,14 @@ int CPUSolver::estimate_one_step(int k0, int k)
     {
         std::cout << "Error! k="<< k <<" is out of the boundary!" << std::endl;
     }
+    // out_file.close();
     return 0;
 }
 
 int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 {
     int dk0 = model->get_dist_idx(d0);
+    int vk0 = model->get_velc_idx(v0);
     int dck0 = model->get_dist_idx(dc0);
     get_subset(k0, dk0, dck0);
     std::cout << "extract subset done." << std::endl;
@@ -153,8 +173,7 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     // for (int k = N; k >= 9; k--)
         estimate_one_step(k0, k);
     
-    int vk0 = model->get_velc_idx(v0);
-    int idx = (dck0*model->v.n + vk0)*n_w_s + intention;
+    int idx = (dk0*model->v.n + vk0)*n_w_s + intention;
 
     return action[idx];
 }

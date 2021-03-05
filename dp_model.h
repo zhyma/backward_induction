@@ -33,7 +33,7 @@ class DPModel
 {
     public:
 
-        bool save_transition;
+        bool debug = false;
         int iter;
         // predict 10 steps forward
         int N_pred = 10;

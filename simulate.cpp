@@ -21,14 +21,14 @@ float one_iter(int solver, bool log, DPModel * dp_model)
     // front car starting position
     float dc0 = 80.0;
     // front car starting intention
-    int intention = 0;
+    int intention = 1;
 
     // int dk0 = dp_model->get_dist_idx(d0) * dp_model->v.n;
     int dk0 = dp_model->get_dist_idx(d0);
     // int dwk0 = dp_model->get_dist_idx(dc0) * 2 + 0;
     int dck0 = dp_model->get_dist_idx(dc0);
 
-    std::cout << "dck0 " << dck0 << std::endl;
+    // std::cout << "dck0 " << dck0 << std::endl;
 
     if (solver == GPU_SOLVER)
     {
@@ -65,7 +65,7 @@ float one_iter(int solver, bool log, DPModel * dp_model)
         start = std::clock();
  
         int a = cpu_solver.solve(0, d0, v0, dc0, intention);
-        std::cout << "best action: " << dp_model->v.list[a] << std::endl;
+        std::cout << "best action: " << dp_model->a.list[a] << std::endl;
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << std::endl << "CPU time: " << duration << " s" << std::endl;
         
@@ -82,9 +82,10 @@ float one_iter(int solver, bool log, DPModel * dp_model)
         // show potential action for different starting velocity
         for (int i = 0; i < dp_model->v.n; ++i)
         {
-            int idx = (dck0*dp_model->v.n + i)*cpu_solver.n_w_s + 1;
-            std::cout << cpu_solver.action[idx] << std::endl;
+            int idx = (dk0*dp_model->v.n + i)*cpu_solver.n_w_s + intention;
+            std::cout << "for v=" << dp_model->v.list[i] << ", a=" << dp_model->a.list[cpu_solver.action[idx]] << "; ";
         }
+        std::cout << std::endl;
 
     }
 
@@ -149,7 +150,7 @@ int run_iters(int iters, int solver, DPModel * dp_model)
                     ak = cpu_solver.solve(k, attr[0], attr[1], dc0, intention);
                     
                     dp_model->phy_model(attr, dp_model->a.list[ak]);
-                    std::cout << "OUTPUT: d=" << attr[0] << ", v=" << attr[1] << ", " << dp_model->a.list[ak] << std::endl;
+                    std::cout << "OUTPUT: d=" << attr[0] << ", v=" << attr[1] << ", a=" << dp_model->a.list[ak] << std::endl;
                 }
             }
         }
