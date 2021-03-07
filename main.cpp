@@ -14,22 +14,15 @@ int main(int argc, char *argv[])
     {
         modeStr.assign(argv[1], strlen(argv[1]));
     }
-    else
-        modeStr = "compare";
 
-    if (modeStr == "one_step" || modeStr == "n_step"|| modeStr == "compare")
+    if (modeStr == "one_step" || modeStr == "n_step")
     {
         int pred_steps = 10;
         // int run_steps = 10;
         int run_steps = 10;
 
         DPModel dp_model(pred_steps, run_steps);
-        if (modeStr == "compare")
-        {
-            std::cout << "run solver comparison for one step" << std::endl;
-            one_iter(COMPARE, true, &dp_model);
-        }
-        else if (modeStr == "one_step")
+        if (modeStr == "one_step")
         {
             // run one step
             std::cout << "run simulation for one step" << std::endl;
@@ -38,12 +31,12 @@ int main(int argc, char *argv[])
                 std::string solverStr = "";
                 solverStr.assign(argv[2], strlen(argv[2]));
                 if (solverStr == "cpu")
-                    one_iter(CPU_SOLVER, true, &dp_model);
+                    one_step(CPU_SOLVER, true, &dp_model);
                 else if(solverStr == "gpu")
-                    one_iter(GPU_SOLVER, true, &dp_model);
+                    one_step(GPU_SOLVER, true, &dp_model);
             }
             else
-                one_iter(CPU_SOLVER, true, &dp_model);
+                one_step(CPU_SOLVER, true, &dp_model);
         }
         else if (modeStr == "n_step")
         { 
@@ -52,9 +45,9 @@ int main(int argc, char *argv[])
             int pred_steps = 10;
             // int run_steps = 10;
             int run_steps = 10;
+            int trials = 3;
 
-            DPModel dp_model(pred_steps, run_steps);
-            run_iters(run_steps, CPU_SOLVER, &dp_model);
+            run_trials(trials, run_steps, CPU_SOLVER, &dp_model);
         }
     }
     

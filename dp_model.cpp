@@ -102,6 +102,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     discretize(&v);
 
     a.min = -8.0;
+    // a.min = -4.0;
     a.max = 2.0;
     a.n = n_a;
     discretize(&a);
@@ -109,8 +110,13 @@ DPModel::DPModel(int pred_steps, int running_steps)
     int n_d = 353;
     d.n = n_d;
     d.list = new float[d.n];
+    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_t-1));
     for (int i = 0; i < d.n; ++i)
+    {
         d.list[i] = float(i * v.max * N_pred * dt/(n_t-1));
+        // std::cout << "@" << i << ": " << d.list[i] << ", ";
+    }
+    std::cout << std::endl;
     d.min = d.list[0];
     d.max = d.list[d.n-1];
 
@@ -265,7 +271,7 @@ int DPModel::phy_model(float *attr, float ax)
     return 0;
 }
 
-// dx, vx, ax is the given value
+// dx, vx is given by xk, ax is the given by uk
 int DPModel::phy_model(int xk, int uk)
 {
     // dx, vx, ax, d_, v_ are value; xk, wk, uk are index
@@ -282,8 +288,6 @@ int DPModel::phy_model(int xk, int uk)
 // By given a value x, find the index of 
 int DPModel::val_to_idx(float val, struct Set *ref)
 {
-    // long long int idx = 0;
-    // idx = (long long int) round((val - ref->bound[0])/((ref->bound[1]-ref->bound[0])/(ref->n-1)));
     int idx = 0;
     idx = round((val - ref->min)/((ref->max - ref->min)/(ref->n-1)));
     // make sure it will not be out of boundary because of float accuracy
@@ -313,7 +317,7 @@ int DPModel::running_cost_init()
     // N_x * N_w * N_u
     // long long int temp1 = N_total * x.n, temp2 = w.n*u.n;
     int idx = x.n * w.n * u.n;
-    std::cout << idx << std::endl;
+    // std::cout << idx << std::endl;
     r_cost = new float[idx]{};
     r_mask = new unsigned long long int[idx]{};
     idx = 0;
@@ -507,7 +511,7 @@ float DPModel::terminal_cost(int dk0, int dk, int vk)
     float d_target = d0x + N_pred * dt * v.max;
     float v_target = v.max;
 
-    float term1 = 0;//0.5*m*(v_target*v_target - vx*vx)*0.95;
+    float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
     float term2 = (d_target - dx)*783;
     float term3 = m*g*0*0.95;
     return term1 + term2 + term3;

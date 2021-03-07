@@ -68,6 +68,16 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     int idx = xk*n_u + uk;
     xk_ = trans[idx];
 
+    // to test state transition
+    // if (k0 == 3 && k==4 && xk == 143 && uk == 3 && wk==0)
+    // {
+    //     std::cout << "d=" << model->d.list[xk/n_v];
+    //     std::cout << ", v=" << model->v.list[xk%n_v];
+    //     std::cout << ", a=" << model->a.list[uk];
+    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
+    //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+    // }
+
     for (int dwk = 0; dwk < n_p; ++dwk)
     {
         // p*V_{k+1}
@@ -76,6 +86,7 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         float v = value[v_idx];
         sum += p*v;
+        // // to test transition probability (use deterministic data)
         // if (p > 0 && xk == 0)
         // {
         //     if (uk == 0)
@@ -83,9 +94,9 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         //     // std::cout << "value: " << v << std::endl;
         // }
     }
-    // float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    // l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
-    float l = 0;
+    float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
+    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
+    // float l = 0;
     
     return l + sum;
 }
@@ -164,6 +175,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
 
 int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 {
+    std::cout << "solver started" << std::endl;
     int dk0 = model->get_dist_idx(d0);
     int vk0 = model->get_velc_idx(v0);
     int dck0 = model->get_dist_idx(dc0);

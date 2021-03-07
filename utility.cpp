@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 template<typename T>
 int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
@@ -96,4 +97,90 @@ int result_to_file(std::string solver_type, int *dim, float *v, int * a)
     out_action.close();
 
     return 0;
+}
+
+DataLoader::DataLoader(std::string filename)
+{
+    if(FILE *file = fopen(filename.c_str(), "r"))
+    {
+        fclose(file);
+    }
+    else
+    {
+        std::cout << "ERROR! read file failed!" << std::endl;
+    }
+    
+    in_file.open(filename, std::ios::in);
+    bool end_of_file = false;
+}
+
+DataLoader::~DataLoader()
+{
+    in_file.close();
+}
+
+
+int DataLoader::read_state(float &dc, int &intention)
+{
+    std::string line_str;
+    std::stringstream ss_param;
+    std::string arr[4];
+
+    getline(in_file, line_str);
+    if (in_file.eof())
+    {
+        end_of_file = true;
+        return -1;
+    }
+    else if (line_str.find("end")!=std::string::npos)
+    {
+        return 0;
+    }
+    else
+    {
+        ss_param.clear();
+        ss_param.str(line_str); 
+        for (int j = 0; j < 4; ++j)
+        {
+            getline(ss_param, line_str, ',');
+            arr[j] = line_str;
+        }
+        dc = stof(arr[0]);
+        intention = stoi(arr[3]);
+    }
+
+    return true;
+}
+
+int DataLoader::next_trial()
+{
+    std::string line_str;
+
+    getline(in_file, line_str);
+    while( line_str.find("end")==std::string::npos )
+    {
+        getline(in_file, line_str);
+    }
+
+    return 0;
+}
+
+DataWriter::DataWriter(std::string filename)
+{
+    out_file.open(filename, std::ios::out);
+    out_file << std::setiosflags(std::ios::fixed) << std::setprecision(2);
+}
+
+template<typename T>
+int DataWriter::write(T data)
+{
+    out_file << data <<std::endl;
+}
+template int DataWriter::write(const char * data);
+template int DataWriter::write(float data);
+
+DataWriter::~DataWriter()
+{
+    // std::cout << "file handle released" << std::endl;
+    out_file.close();
 }
