@@ -121,7 +121,7 @@ int run_trials(int trials, int steps, int solver, DPModel * dp_model)
                 // load one from csv
                 if (load.read_state(dc, intention) > 0)
                 {
-                    std::cout << "FRONT CAR: " << dc << ", " << intention << std::endl;
+                    std::cout << "Front car: " << dc << ", " << intention << std::endl;
 
                     ak = cpu_solver.solve(k, attr[0], attr[1], dc0, intention);
                     

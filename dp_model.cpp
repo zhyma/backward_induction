@@ -47,31 +47,54 @@ DPModel::DPModel(int pred_steps, int running_steps)
     tinyxml2::XMLDocument doc_xml;
     XMLError err_xml = doc_xml.LoadFile("config.xml");
 
-    if(XML_SUCCESS==err_xml)
-    {
-        XMLElement* elmt_root = doc_xml.RootElement();
+    // if(XML_SUCCESS==err_xml)
+    // {
+    //     XMLElement* elmt_root = doc_xml.RootElement();
 
-        // Get the granulairty within a unit (discretizing to get states)
-        d2tl = get_param_val(elmt_root, "distance_to_trafiic_light");
-        std::cout << "distance to the traffic light: " << d2tl << std::endl;
+    //     // Get the granulairty within a unit (discretizing to get states)
+    //     d2tl = get_param_val(elmt_root, "distance_to_trafiic_light");
+    //     std::cout << "distance to the traffic light: " << d2tl << std::endl;
         
-        rl_start = get_param_val(elmt_root, "red_light_start");
-        std::cout << "red light starts at: " << rl_start << std::endl;
+    //     rl_start = get_param_val(elmt_root, "red_light_start");
+    //     std::cout << "red light starts at: " << rl_start << std::endl;
 
-        // the time that the red light will end
-        rl_end =get_param_val(elmt_root, "red_light_end");
-        std::cout << "red light ends at: " << rl_end << std::endl;
-    }
-    else
+    //     // the time that the red light will end
+    //     rl_end =get_param_val(elmt_root, "red_light_end");
+    //     std::cout << "red light ends at: " << rl_end << std::endl;
+    // }
+    // else
+    // {
+    //     std::cout << "config.xml read error" << std::endl;
+
+    //     d2tl = 240;
+    //     // the time that the red light will start
+    //     rl_start = 12;
+    //     // the time that the red light will end
+    //     rl_end = rl_start + 30;
+    // }
+    std::ifstream load_param;
+    load_param.open("./output/front_car_data.csv", std::ios::in);
+    std::string line_str;
+    std::stringstream ss_param;
+    float arr[3]={};
+    getline(load_param, line_str);
+    ss_param.clear();
+    ss_param.str(line_str); 
+    for (int i = 0; i < 3; ++i)
     {
-        std::cout << "config.xml read error" << std::endl;
-
-        d2tl = 240;
-        // the time that the red light will start
-        rl_start = 12;
-        // the time that the red light will end
-        rl_end = rl_start + 30;
+        getline(ss_param, line_str, ',');
+        int pos = line_str.find('=');
+        line_str.erase(0, pos+1);
+        arr[i] = stof(line_str);
     }
+
+    d2tl = arr[0];
+    rl_start = arr[1];
+    rl_end = arr[2];
+    std::cout << "distance to the right light: " << d2tl << std::endl;
+    std::cout << "time to the red light: " << rl_start << std::endl;
+    std::cout << "time to the next green light: " << rl_end << std::endl;
+    load_param.close();
 
     t_tcc = 3;
     // mass of the vehicle
@@ -362,7 +385,7 @@ int DPModel::running_cost_init()
                 float c = 0;
                 if (ax >= 0)
                 {
-                    c = 1.0/0.97*4.71 * (5*M_PI*r);
+                    c = (1.0/0.97)/4.71 * (5*M_PI*r);
                     if ((v.max-vx)/ax < dt)
                     {
                         // accelerate then reach the maximum speed
@@ -393,8 +416,10 @@ int DPModel::running_cost_init()
                         t2 = 0;
                     }
                 }
+                // velocity is changing
                 float g1 = c * (m*ax*vx*t1 + m*ax*ax*t1*t1/2 + 0.005*m*g*vx*t1 + 0.005*m*g*ax*t1*t1/2 + 0.09*POW4(vx+ax*t1)/(4*ax) );
-                float g2 = t2 * c * vx*(m*ax + 0.005*m*g + 0.09*vx*vx);
+                // constant velocity (min/max)
+                float g2 = c * vx*(m*ax + 0.005*m*g + 0.09*vx*vx) * t2;
                 float cost = g1 + g2;
                 
                 // // dt is always 2s. t is the actually time (from v->0 or v->v_max)
@@ -544,6 +569,8 @@ int DPModel::check_driving_data()
             else
             {
                 std::string line_str;
+                // ignore the first line (parameters)
+                getline(in_file, line_str);
                 getline(in_file, line_str);
                 std::stringstream ss_param;
                 ss_param.clear();

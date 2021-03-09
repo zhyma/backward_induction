@@ -146,6 +146,7 @@ def simulate(iter):
     print("%d, %d, %d"%(d2tl, rl_start, rl_end))
     with open('output/front_car_data.csv', mode='w') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
+        writer.writerow(['d2tl='+str(d2tl), 'rl_start='+str(rl_start), 'rl_end='+str(rl_end)])
         d_final = []
         for i in range(iter):
             t = 0
