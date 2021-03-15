@@ -43,7 +43,8 @@ int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
 
 template int mat_to_file(std::string file_name, int dim_len, int *dim, int *mat);
 template int mat_to_file(std::string file_name, int dim_len, int *dim, float *mat);
-template int mat_to_file(std::string file_name, int dim_len, int *dim, unsigned long long *mat);
+template int mat_to_file(std::string file_name, int dim_len, int *dim, long *mat);
+template int mat_to_file(std::string file_name, int dim_len, int *dim, unsigned long long int *mat);
 
 int result_to_file(std::string solver_type, int *dim, float *v, int * a)
 {
@@ -111,12 +112,27 @@ DataLoader::DataLoader(std::string filename)
     }
     
     in_file.open(filename, std::ios::in);
+
+    std::string line_str;
+    std::stringstream ss_param;
+    getline(in_file, line_str);
+    ss_param.clear();
+    ss_param.str(line_str); 
+    for (int i = 0; i < 3; ++i)
+    {
+        getline(ss_param, line_str, ',');
+        int pos = line_str.find('=');
+        line_str.erase(0, pos+1);
+        param[i] = stof(line_str);
+    }
+
     bool end_of_file = false;
 }
 
 DataLoader::~DataLoader()
 {
     in_file.close();
+    std::cout << "./output/front_car_data.csv closed" << std::endl;
 }
 
 

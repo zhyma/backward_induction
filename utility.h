@@ -18,6 +18,7 @@ class DataLoader
         int read_state(float &dc, int &intention);
         int next_trial();
         bool end_of_file = false;
+        float param[4]= {};
 
     private:
         std::ifstream in_file;

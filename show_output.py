@@ -98,6 +98,7 @@ def value(solver):
 
         fig.tight_layout()
         plt.savefig('fig/' + solver + '_value_t_'+str(k)+'.png')
+        # plt.show()
 
     print('done')
 

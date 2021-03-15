@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
             int pred_steps = 10;
             // int run_steps = 10;
             int run_steps = 10;
-            int trials = 3;
+            int trials = 1;
 
             run_trials(trials, run_steps, CPU_SOLVER, &dp_model);
         }

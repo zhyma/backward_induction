@@ -17,7 +17,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
     // vehicle starting position
     float d0 = 0;
     // vehicle starting velocity
-    float v0 = 15;
+    float v0 = 0;
     // front car starting position
     float dc0 = 80.0;
     // front car starting intention
@@ -34,6 +34,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
     {
         std::cout << "CPU solver, one step" << std::endl;
         CPUSolver cpu_solver(dp_model);
+        cpu_solver.debug = true;
         solver_type = "cpu";
 
         start = std::clock();
@@ -54,12 +55,11 @@ float one_step(int solver, bool log, DPModel * dp_model)
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
         }
         // show potential action for different starting velocity
-        for (int i = 0; i < dp_model->v.n; ++i)
-        {
-            int idx = (dk0*dp_model->v.n + i)*cpu_solver.n_w_s + intention;
-            std::cout << "for v=" << dp_model->v.list[i] << ", a=" << dp_model->a.list[cpu_solver.action[idx]] << "; ";
-        }
-        std::cout << std::endl;
+        // for (int i = 0; i < dp_model->v.n; ++i)
+        // {
+        //     int idx = (dk0*dp_model->v.n + i)*cpu_solver.n_w_s + (0+intention);
+        //     std::cout << "for v=" << dp_model->v.list[i] << ", a=" << dp_model->a.list[cpu_solver.action[idx]] << std::endl;
+        // }
 
     }
     else if (solver == GPU_SOLVER)
@@ -95,10 +95,8 @@ int run_trials(int trials, int steps, int solver, DPModel * dp_model)
 {
     float attr[2] = {.0, .0};
     int ak;
-    // float dc0 = 60.0;
     float dc0;
     int intention;
-    // int intention = 1;
     int dk0;
     int dwk0;
     int block_size = 32;
@@ -110,7 +108,6 @@ int run_trials(int trials, int steps, int solver, DPModel * dp_model)
         CPUSolver cpu_solver(dp_model);
         DataLoader load("./output/front_car_data.csv");
 
-        float dc = 0;
         int intention = 0;
 
         for (int i = 0; i < trials; ++i)
@@ -119,9 +116,9 @@ int run_trials(int trials, int steps, int solver, DPModel * dp_model)
             for(int k = 0; k < steps; ++k)
             {
                 // load one from csv
-                if (load.read_state(dc, intention) > 0)
+                if (load.read_state(dc0, intention) > 0)
                 {
-                    std::cout << "Front car: " << dc << ", " << intention << std::endl;
+                    std::cout << "Front car: " << dc0 << ", " << intention << std::endl;
 
                     ak = cpu_solver.solve(k, attr[0], attr[1], dc0, intention);
                     

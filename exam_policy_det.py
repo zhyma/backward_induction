@@ -4,16 +4,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def disturb_policy(car, a):
-    a_ = a + np.random.uniform(-8, 2, 1)
+    a_ = np.random.uniform(-8.0, 2.0)
     if a_ > 2:
         a_ = 2
     elif a_ < -8:
         a_ = -8
 
-    if car.v <= car.v_min and a_ < 0:
-        a_ = 0
-    elif car.v >= car.v_max and a_ > 0:
-        a_ = 0
+    # if car.v <= car.v_min and a_ < 0:
+    #     a_ = 0
+    # elif car.v >= car.v_max and a_ > 0:
+    #     a_ = 0
     return a_
 
 
@@ -37,6 +37,13 @@ class Vehicle():
         self.r = 0.3
         self.g = 9.8
         return
+
+    def reset(self):
+        self.t = 0
+        self.d = 0
+        self.v = 0
+        return
+
 
     def physical(self, a):
         # calculating the next state, but not to move one step forward
@@ -182,63 +189,58 @@ if __name__ == "__main__":
     all_cost_std = []
     all_cost_disturb = []
     
-    end_flag = False
-    while end_flag == False:
-        # skip the front car information at t=0
-        # line = traj.readstate()
-        if not line:
-            # end of file, exit
-            end_flag = True
-            break
-        
+    front_car_traj = []
+    ctrl_cmds = []
+    # line = traj.readstate()
+
+    for i in range(10):
+        front_car_traj.append(float(traj.readstate().split(',')[0]))
+        ctrl_cmds.append(float(ctrl.readstate().split('\n')[0]))
+
+    print(front_car_traj)
+    print(ctrl_cmds)
+
+    cnt = 0
+    for test in range(10000):
         # each trial contain 10 control steps
         cost2go_std = 0
         cost2go_disturb = 0
         
-        for i in range(10):
-            traj_state = traj.readstate().split(',')[0]
-            ctrl_state = ctrl.readstate()
-            if traj_state == '' or ctrl_state == '':
-                end_flag = True
-                break
-            elif i == 0:
-                trial_cnt += 1
-                print("Solving iteration %d"%(trial_cnt))
-            dc = float(traj_state)
-            a  = float(ctrl_state)
+        for i in range(10): 
+            dc = front_car_traj[i]
+            a  = ctrl_cmds[i]
             cost2go_std += gtr_std.running_cost(dc, a)
             if (gtr_std.constraint(dc, a)):
                 cost2go_std += 1e30
                 print("Optimal control is not valid, hits the constraint")
+            # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
             gtr_std.step_forward(a)
 
             a_disturb = disturb_policy(gtr_disturb, a)
-            print('d is %.2f, v is %.2f, disturbed a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
+            # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             cost2go_disturb += gtr_disturb.running_cost(dc, a_disturb)
             if (gtr_disturb.constraint(dc, a)):
                 cost2go_disturb += 1e30
             gtr_disturb.step_forward(a_disturb)
-            
-        print('"optimal control" gets %f'%(cost2go_std))
-        print('"distubed control" gets %f'%(cost2go_disturb))
-        
+
+            # print("")
 
         all_cost_std.append(cost2go_std)
         all_cost_disturb.append(cost2go_disturb)
+        gtr_std.reset()
+        gtr_disturb.reset()
 
-        ctrl.next_trial()
-        traj.next_trial()
+        if (cost2go_std > cost2go_disturb):
+            cnt += 1
 
-    sum_std = sum(all_cost_std)
-    sum_disturb = sum(all_cost_disturb)
-    print('Test %d trials'%(trial_cnt))
-    print('"optimal control" gets %f'%(sum_std))
-    print('"distubed control" gets %f'%(sum_disturb))
-    if sum_std > sum_disturb:
-        print('sum_std > sum_disturb')
-    elif sum_std == sum_disturb:
-        print('sum_std == sum_disturb')
-    else:
-        print('sum_std < sum_disturb')
+    print(cnt)
+    # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1]}, figsize=(12,9))
 
+    # ax1.hist(all_cost_std, 1000, alpha=0.5, label='std')
+    print("%.3e"%(all_cost_std[0]))
+    print("distubed mean: %.3e, std_dev: %.3e"%(np.mean(all_cost_disturb), np.std(all_cost_disturb)))
+    # plt.hist(all_cost_disturb, 10, alpha=0.5, label='disturbed')
+    # plt.legend(loc='upper right')
+    # plt.show()
+    
 

@@ -19,7 +19,7 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
 
     n_p = model->n_p; // 28
 
-    value = new float[(N+1)*n_x*n_w]{};
+    value = new long[(N+1)*n_x*n_w]{};
     // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
     //     value[i] = 1e30;
     action = new int[N*n_x_s*n_w_s]{};
@@ -42,34 +42,78 @@ CPUSolver::~CPUSolver()
     //     delete [] prob;
 }
 
-int CPUSolver::find_min(float *q, int cnt)
+int CPUSolver::find_min(long *q, int cnt)
 {
-    // int index = -1;
-    // float value = 1e20;
-    int index = 0;
-    float value = q[0];
-    for(int i = 0;i < cnt; ++i)
+    // int idx = -1;
+    // float val = 1e20;
+
+    // int idx = 0;
+    // float val = q[0];
+    // for(int i = 0;i < cnt; ++i)
+    // {
+    //     if(q[i] < val)
+    //     {
+    //         idx = i;
+    //         val = q[i];
+    //     }
+    // }
+    // return idx;
+
+    int idx = cnt-1;
+    long val = q[cnt-1];
+    for(int i = cnt-2;i >= 0; --i)
     {
-        if(q[i] < value)
+        if(q[i] < val)
         {
-            index = i;
-            value = q[i];
+            idx = i;
+            val = q[i];
         }
     }
-    return index;
+    return idx;
 }
 
-float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
+long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
 {
     int xk_ = 0;
     int wk_ = 0;
-    float sum = 0;
+    long sum = 0;
 
     int idx = xk*n_u + uk;
     xk_ = trans[idx];
 
-    // to test state transition
-    // if (k0 == 3 && k==4 && xk == 143 && uk == 3 && wk==0)
+    for (int dwk = 0; dwk < n_p; ++dwk)
+    {
+        // p*V_{k+1}
+        int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
+        double p = prob[p_idx];
+        int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
+        long v = value[v_idx];
+        double temp = double(v)*p;
+        sum += long (temp);
+        // // to test transition probability (use deterministic data)
+        // if (uk == 4 && xk == 50 && p > 0)
+        // {
+        //     std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
+        // }
+        if (k == 9 && k0 == 0 && xk == 192 && p > 0)
+        {
+            // std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
+            // std::cout << "at k: " << k << " detected dc': " << model->d.list[(wk0_debug+wk+dwk)/2] << ", i: " << (wk+dwk)%2;
+            std::cout << "xk=" << xk;
+            std::cout << ", wk=" << wk0_debug + wk;
+            std::cout << ", uk=" << uk;
+            std::cout << ", xk_=" << xk_;
+            std::cout << ", wk_=" << wk0_debug+wk+dwk;
+            std::cout << ", p=" << p << ", v=" << v << "," << std::endl;
+            // std::cout << ", d'=" << model->d.list[xk_/n_v];
+            // std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+        }
+    }
+    long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
+    // l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e20;
+
+    // // // to test state transition
+    // if (k0 == 0 && k>7 && xk == 143 && wk==191 && uk ==3)
     // {
     //     std::cout << "d=" << model->d.list[xk/n_v];
     //     std::cout << ", v=" << model->v.list[xk%n_v];
@@ -78,26 +122,38 @@ float CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
     // }
 
-    for (int dwk = 0; dwk < n_p; ++dwk)
+    // to test running_cost
+    // if (k0 == 0 && k>8 && xk == 143 && wk==191)
+    if (k == 9 && k0 == 0 && xk == 192 && wk0_debug+wk == 247)
     {
-        // p*V_{k+1}
-        int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
-        float p = prob[p_idx];
-        int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
-        float v = value[v_idx];
-        sum += p*v;
-        // // to test transition probability (use deterministic data)
-        // if (p > 0 && xk == 0)
-        // {
-        //     if (uk == 0)
-        //         std::cout << "at k: " << k << " detected wk: " << wk << ", dwk: " << dwk << ", v=" << v << "," << sum << std::endl;
-        //     // std::cout << "value: " << v << std::endl;
-        // }
+        std::cout << "k=" << k;
+        std::cout << ", d=" << model->d.list[xk/n_v];
+        std::cout << ", v=" << model->v.list[xk%n_v];
+        std::cout << ", a=" << model->a.list[uk];
+        std::cout << ", uk=" << uk; 
+        std::cout << ", d'=" << model->d.list[xk_/n_v];
+        std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+        std::cout << "running cost is: " << l;
+        std::cout << ", sum is: " << sum;
+        std::cout << ", q is: " << l+sum << std::endl << std::endl;
     }
-    float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e30;
-    // float l = 0;
     
+
+    // if (uk == 20 && xk == 3200 && k0 == 0 && wk == 2)
+    // {
+    //     std::cout << "r_mask: " << l << std::endl;
+    // }
+
+    // // // examine the running cost
+    // if (k0 == 0 && k==0 && xk==1 && wk==1)
+    // {
+    //     std::cout << "v=" << model->v.list[xk%n_v];
+    //     std::cout << ", a=" << model->a.list[uk];
+    //     std::cout << ", sum=" << sum;
+    //     std::cout << ", running_cost=" << l;
+    //     std::cout << ", q=" << l+sum << std::endl;
+    // }
+
     return l + sum;
 }
 
@@ -132,7 +188,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
 
         // a temporary buffer to save all the result of executing different u for a given xk, wk
         // std::cout << "working on step " << k << std::endl;
-        float *q = new float[n_u]{};
+        long *q = new long [n_u]{};
         for (int xk = 0; xk < n_x_s; ++xk)
         {
             for (int wk = 0; wk < n_w_s; ++wk)
@@ -142,6 +198,9 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 {
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     q[uk] = calc_q(k0, k, xk, wk, uk);
+                    if (xk==192 && wk0_debug + wk==247)
+                        std::cout << "q is: " << q[uk] << std::endl<< std::endl;
+
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
@@ -153,6 +212,11 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 }
                 else 
                     std::cout << "idx_min error?";
+                
+                if (xk==192 && wk0_debug + wk==247)
+                {
+                    std::cout << "value is: " << q[idx_min] << ", action is " << idx_min << std::endl;
+                }
                 // if (wk == 1)
                 // {
                 //     out_file << "d=" << model->d.list[xk/n_v];
@@ -175,28 +239,35 @@ int CPUSolver::estimate_one_step(int k0, int k)
 
 int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 {
-    std::cout << "solver started" << std::endl;
+    // std::cout << "solver started" << std::endl;
     int dk0 = model->get_dist_idx(d0);
     int vk0 = model->get_velc_idx(v0);
     int dck0 = model->get_dist_idx(dc0);
     get_subset(k0, dk0, dck0);
-    std::cout << "extract subset done." << std::endl;
-    for (int k = N; k >= 0; k--)
-    // for (int k = N; k >= 9; k--)
+    // std::cout << "extract subset done." << std::endl;
+    // for (int k = N; k >= 0; k--)
+    for (int k = N; k >= 8; k--)
         estimate_one_step(k0, k);
     
-    int idx = (dk0*model->v.n + vk0)*n_w_s + intention;
+    int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
 
-    return action[idx];
+    int ak = action[idx];
+
+    // std:: cout << "solver output: " << model->a.list[ak] << std::endl;
+    // apply action filter here
+    float a = model->action_filter(v0, ak);
+
+    return a;
 }
 
 int CPUSolver::get_subset(int k0, int dk0, int dck0)
 {
-    r_cost = new float[n_x_s*n_w_s*n_u]{};
-    r_mask = new unsigned long long int[n_x_s*n_w_s*n_u]{};
-    t_cost = new float[n_x]{};
+    r_cost = new long [n_x_s*n_w_s*n_u]{};
+    r_mask = new unsigned long long int [n_x_s*n_w_s*n_u]{};
+    t_cost = new long [n_x]{};
     trans = new int[n_x_s*n_u]{};
     prob = new float[N*n_w_s*n_p]{};
+    wk0_debug = dck0*2;
 
     // long long int idx = 0;
     int idx = 0;

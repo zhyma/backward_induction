@@ -5,6 +5,7 @@
 #include "dp_model.h"
 #include "utility.h"
 
+#define POW3(x) ((x)*(x)*(x))
 #define POW4(x) ((x)*(x)*(x)*(x))
 
 int search_files(std::vector<std::string> *files, std::string search_key)
@@ -47,54 +48,32 @@ DPModel::DPModel(int pred_steps, int running_steps)
     tinyxml2::XMLDocument doc_xml;
     XMLError err_xml = doc_xml.LoadFile("config.xml");
 
-    // if(XML_SUCCESS==err_xml)
+    // std::ifstream load_param;
+    // load_param.open("./output/front_car_data.csv", std::ios::in);
+    // std::string line_str;
+    // std::stringstream ss_param;
+    // float arr[3]={};
+    // getline(load_param, line_str);
+    // ss_param.clear();
+    // ss_param.str(line_str); 
+    // for (int i = 0; i < 3; ++i)
     // {
-    //     XMLElement* elmt_root = doc_xml.RootElement();
-
-    //     // Get the granulairty within a unit (discretizing to get states)
-    //     d2tl = get_param_val(elmt_root, "distance_to_trafiic_light");
-    //     std::cout << "distance to the traffic light: " << d2tl << std::endl;
-        
-    //     rl_start = get_param_val(elmt_root, "red_light_start");
-    //     std::cout << "red light starts at: " << rl_start << std::endl;
-
-    //     // the time that the red light will end
-    //     rl_end =get_param_val(elmt_root, "red_light_end");
-    //     std::cout << "red light ends at: " << rl_end << std::endl;
+    //     getline(ss_param, line_str, ',');
+    //     int pos = line_str.find('=');
+    //     line_str.erase(0, pos+1);
+    //     arr[i] = stof(line_str);
     // }
-    // else
-    // {
-    //     std::cout << "config.xml read error" << std::endl;
 
-    //     d2tl = 240;
-    //     // the time that the red light will start
-    //     rl_start = 12;
-    //     // the time that the red light will end
-    //     rl_end = rl_start + 30;
-    // }
-    std::ifstream load_param;
-    load_param.open("./output/front_car_data.csv", std::ios::in);
-    std::string line_str;
-    std::stringstream ss_param;
-    float arr[3]={};
-    getline(load_param, line_str);
-    ss_param.clear();
-    ss_param.str(line_str); 
-    for (int i = 0; i < 3; ++i)
-    {
-        getline(ss_param, line_str, ',');
-        int pos = line_str.find('=');
-        line_str.erase(0, pos+1);
-        arr[i] = stof(line_str);
-    }
+    DataLoader *load = new DataLoader("./output/front_car_data.csv");
 
-    d2tl = arr[0];
-    rl_start = arr[1];
-    rl_end = arr[2];
+    d2tl = load->param[0];
+    rl_start = load->param[1];
+    rl_end = load->param[2];
     std::cout << "distance to the right light: " << d2tl << std::endl;
     std::cout << "time to the red light: " << rl_start << std::endl;
     std::cout << "time to the next green light: " << rl_end << std::endl;
-    load_param.close();
+    delete load;
+    // load_param.close();
 
     t_tcc = 3;
     // mass of the vehicle
@@ -335,33 +314,49 @@ int DPModel::get_velc_idx(float velc)
     return idx;
 }
 
+bool DPModel::front_car_safe(float dx, float vx, float dcx)
+{
+    if (dx > dcx - vx*t_tcc)
+        return true;
+    else
+        return false;
+}
+
 int DPModel::running_cost_init()
 {
     // N_x * N_w * N_u
     // long long int temp1 = N_total * x.n, temp2 = w.n*u.n;
-    int idx = x.n * w.n * u.n;
+    int idx = 0;
     // std::cout << idx << std::endl;
-    r_cost = new float[idx]{};
-    r_mask = new unsigned long long int[idx]{};
-    idx = 0;
+    r_cost = new long [x.n * w.n * u.n]{};
+    r_mask = new unsigned long long int [x.n * w.n * u.n]{};
+    unsigned long long int ban_all_time;
+    for (int k = 0; k < N_total; ++k)
+        ban_all_time = ban_all_time | (1<<k);
+    std::cout << "ban_all_time = " << ban_all_time << std::endl;
+    bool apply_penalty = false;
 
-    float cost_min = 1e30, cost_max = 0;
+    long cost_min = 1e15, cost_max = 0;
 
     // std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
 
-    float *running_cost_sample = new float[v.n*a.n];
     for (int xk = 0; xk < x.n; ++xk)
     {
         for (int wk = 0; wk < w.n; ++wk)
         {
             float dx = d.list[xk/v.n], vx = v.list[xk%v.n];
-            float dcx = d.list[wk/2], ix = wk%2;
+            float dcx = d.list[wk/2], ix = wk%2;  
 
-            // std::cout << dx << ", " << vx << "," << dcx << "," << ix << std::endl;
+            // constraint: safety distance with the front car
+            if (front_car_safe(dx, vx, dcx))
+                apply_penalty = false;
+            else
+                apply_penalty = true;
 
+            float u_rlmax = vx*vx/(2*(d2tl-dx));
+            
             for (int uk = 0; uk < u.n; ++uk)
             {
-                // idx = k * (x.n*w.n*u.n) + xk*w.n*u.n + wk*u.n + uk;
                 idx = xk*w.n*u.n + wk*u.n + uk;
                 if (idx < 0)
                 {
@@ -371,137 +366,100 @@ int DPModel::running_cost_init()
                 // get the running cost
                 int ak = uk;
                 float ax = a.list[ak];
-                // tau_wheel
-                // float tan_t = 0;
-                float r = 0.3;
-                // float tau_wheel = (m*ax + 0.005*m*g + 0.09*vx*vx + m*g*tan_t)*r;
-
-                // // tau_motor, omega_motor
-                // float tau_motor = 0;
-                // float omega_motor = 0;
-                // float t_ratio = 0;
                 
                 float t1 = 0, t2 = 0;
                 float c = 0;
-                if (ax >= 0)
+                float vx_;
+                if (ax > 0)
                 {
-                    c = (1.0/0.97)/4.71 * (5*M_PI*r);
+                    c = (1.0/0.97)/4.71 * (5*M_PI);
                     if ((v.max-vx)/ax < dt)
                     {
                         // accelerate then reach the maximum speed
                         t1 = (v.max-vx)/ax;
                         t2 = dt-t1;
+                        vx_ = v.max;
                     }
                     else
                     {
                         // accelerate all the time
                         t1 = dt;
                         t2 = 0;
+                        vx_ = vx + ax*dt;
                     }
                     
                 }
+                else if (ax == 0)
+                {
+                    c = (1.0/0.97)/4.71 * (5.0*M_PI);
+                    t1 = 0;
+                    t2 = dt-t1;
+                    vx_ = vx;
+                }
                 else
                 {
-                    c = 0.97/4.71*0.5 * (5*M_PI*r);
-                    if (-vx/ax < dt)
+                    // ax < 0
+                    c = 0.97/4.71*0.5 * (5.0*M_PI);
+                    if (vx/(-ax) < dt)
                     {
                         // deccelrate then reach 0
-                        t1 = -vx/ax;
+                        t1 = vx/(-ax);
                         t2 = dt - t1;
+                        vx_ = v.min;
                     }
                     else
                     {
                         // deccelerate all the time
                         t1 = dt;
                         t2 = 0;
+                        vx_ = vx + ax*dt;
                     }
                 }
+                // integrals
                 // velocity is changing
-                float g1 = c * (m*ax*vx*t1 + m*ax*ax*t1*t1/2 + 0.005*m*g*vx*t1 + 0.005*m*g*ax*t1*t1/2 + 0.09*POW4(vx+ax*t1)/(4*ax) );
-                // constant velocity (min/max)
-                float g2 = c * vx*(m*ax + 0.005*m*g + 0.09*vx*vx) * t2;
-                float cost = g1 + g2;
-                
-                // // dt is always 2s. t is the actually time (from v->0 or v->v_max)
-                // if (ax < 0)
-                //     (-vx/ax > dt) ? (t = dt) : (t = -vx/ax);
-                // else if (ax > 0)
-                //     (((v.max-vx)/ax > dt)) ? (t=dt) : (t = (v.max-vx)/ax);
-                // else
-                //     t = dt;
-                // if (vx <= 20)
-                // {
-                //     t_ratio = 1/4.71;
-                //     omega_motor = 5 * M_PI * vx;
-                // }
-                // else
-                // {
-                //     t_ratio = 1/2.355;
-                //     omega_motor = 2.5 * M_PI * vx;
-                // }
-                // if (tau_wheel >=0)
-                //     tau_motor = tau_wheel * t_ratio;
-                // else
-                //     tau_motor = tau_wheel * t_ratio * 0.5;
+                float g1 = 0;
+                if (ax != 0)
+                    g1 = c * (m*ax*vx*t1 + 0.5*m*ax*ax*t1*t1 + 0.005*m*g*vx*t1 + 0.5*0.005*m*g*ax*t1*t1 + 0.09*POW4(vx+ax*t1)/(4*ax) );
                     
-                // float p_motor = omega_motor * tau_motor;
-                // float factor = 0;
-                // if (tau_motor < 0)
-                //     factor = 0.97;
-                // else
-                //     factor = 1/0.97;
-                // float cost =  factor * p_motor * t;
+                // constant velocity (min/max)
+                float g2 = c * (0.005*m*g*vx_ + 0.09*POW3(vx_)) * t2;
 
-                r_cost[idx] = cost;
-
-                if (xk/v.n==0 && wk == 0)
-                {
-                    running_cost_sample[(xk%v.n)*a.n + ak] = cost;
-                }
-
+                long cost = g1 + g2;
+                
                 if (cost > cost_max)
                     cost_max = cost;
                 if (cost < cost_min)
                     cost_min = cost;
 
-                // check at each time point whether 
-                for (int k = 0; k < N_total; ++k)
+                // test cost
+                cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
+                (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
+                
+                r_cost[idx] = cost;
+
+                if (apply_penalty == true)
+                    r_mask[idx] = ban_all_time;
+
+                // constraint: before reaching the red light, and the red light is on
+                if (dx < d2tl && apply_penalty == false)
                 {
-                    int constraint = 0;
-
-                    // constraint: speed limit
-                    if (vx + dt*ax > v.max)
+                    for (int k = 0; k < N_total; ++k)
                     {
-                        ++constraint;
-                    }
-
-                    // constraint: safety distance
-                    if (dx > dcx - vx*t_tcc)
-                    {
-                        ++constraint;
-                    }
-
-                    // constraint: before reaching the red light, and the red light is on
-                    if (dx < d2tl && k*dt > rl_start && k*dt < rl_end)
-                    {
-                        // int xk_ = phy_model(xk, uk);
-                        int xk_ = s_trans_table[xk*u.n + uk];
-                        float d_ = d.list[xk_/v.n], v_ = v.list[xk_%v.n];
-                        if (d_ < d2tl)
+                        if (k*dt > rl_start && k*dt < rl_end)
                         {
-                            if (v_*v_ > 2*std::abs(a.min)*(d2tl-d_+0.1))
-                                ++constraint;
-                        }
-                        else
-                        {
-                            if (v_*v_ > 2*std::abs(a.max)*(d2tl-d_+0.1))
-                                ++constraint;
-                        }
-                    }
-                    
-                    if (constraint > 0)
-                        r_mask[idx] |= 1<<k;
+                            // distance constraint
+                            // a.min is always <0
+                            if (vx*vx > 2.0*(-a.min)*(d2tl-dx+0.01))
+                                apply_penalty = true;
 
+                             // acceleration constraint
+                            if (ax > u_rlmax)
+                                apply_penalty = true;
+                        }
+                        
+                        if (apply_penalty)
+                            r_mask[idx] = r_mask[idx] | (1<<k);
+                    }
                 }
             }
         }
@@ -514,32 +472,30 @@ int DPModel::running_cost_init()
         filename = "full_r_mask";
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_mask);
     }
-    if (true)
-    {
-        std::string filename = "r_cost_va";
-        int dim[] = {1, v.n, a.n};
-        mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, running_cost_sample);
-    }
     std::cout << "the range of running cost: " << cost_min << ", " << cost_max << std::endl;
     return 0;
 }
 
-float DPModel::terminal_cost(int dk0, int dk, int vk)
+long DPModel::terminal_cost(int dk0, int dk, int vk)
 {
-    // x stands for value
-    // starting position
-    float d0x = d.list[dk0];
-    // ending position
-    float dx  = d.list[dk];
-    float vx  = v.list[vk];
+    // // x stands for value
+    // // starting position
+    // float d0x = d.list[dk0];
+    // // ending position
+    // float dx  = d.list[dk];
+    // float vx  = v.list[vk];
 
-    float d_target = d0x + N_pred * dt * v.max;
-    float v_target = v.max;
+    // float d_target = d0x + N_pred * dt * v.max;
+    // float v_target = v.max;
 
-    float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
-    float term2 = (d_target - dx)*783;
-    float term3 = m*g*0*0.95;
-    return term1 + term2 + term3;
+    // float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
+    // float term2 = (d_target - dx)*783;
+    // float term3 = m*g*0*0.95;// which is set to 0 for now
+    // return term1 + term2 + term3;
+
+    long dx = int(d.list[dk]);
+    long vx = int(v.list[vk]*100);
+    return dx*10000*1000 + vx*1000;
 }
 
 int DPModel::check_driving_data()
@@ -615,6 +571,10 @@ int DPModel::check_driving_data()
                 // load the existing data and generate
                 std::ifstream in_file(file_name, std::ios::in);
                 std::string line_str;
+
+                // skip the 1st line, which is the parameters
+                getline(in_file, line_str);
+
                 bool end_of_file = false;
                 while (end_of_file == false)
                 {
@@ -782,4 +742,28 @@ int DPModel::check_driving_data()
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob_table);
     }
     return 0;
+}
+
+int DPModel::action_filter(float v0, int a_idx)
+{
+    float a_out = a.list[a_idx];
+    int ak = a_idx;
+    if (v0+a_out*dt < v.min)
+    {
+        //from smallest to a larger one
+        for (; ak < a.n-1; ++ak)
+        {
+            if (v0 + a.list[ak+1]*dt > v.min)
+                break;
+        }
+    }
+    else if (v0 + a_out*dt > v.max)
+    {
+        for (; ak > 0; --ak)
+        {
+            if (v0 + a.list[ak-1]*dt < v.max)
+                break;
+        }
+    }
+    return ak;
 }

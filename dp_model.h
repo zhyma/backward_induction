@@ -54,10 +54,10 @@ class DPModel
         Set w;
 
         // Save cost-to-go as a matrix
-        float *r_cost;
+        long *r_cost;
         unsigned long long int *r_mask;
         // Save terminal cost as a matrix
-        float *t_cost;
+        long *t_cost;
         
         // save <x,w> -u-> x'
         int *s_trans_table;
@@ -66,12 +66,14 @@ class DPModel
         DPModel(int pred_steps, int running_steps);
         ~DPModel();
         // int terminal_cost_init(float d0);
-        float terminal_cost(int dk0, int dk, int vk);
+        long terminal_cost(int dk0, int dk, int vk);
         int get_dist_idx(float dist);
         int get_velc_idx(float velc);
         int get_subset(int k0, int dk0, int dck0);
         int get_subset_gpu(int k0, int dk0, int dck0);
         int phy_model(float *attr, float ax);
+
+        int action_filter(float v0, int a_idx);
 
     private:
         float dt=2;
@@ -89,6 +91,9 @@ class DPModel
         int discretize(Set *in);
         int state_trans();
         int running_cost_init();
+
+        //
+        bool front_car_safe(float dx, float vx, float dcx);
 
         // if you have multiple probability matrices
         float* p_mat;
