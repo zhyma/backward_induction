@@ -3,17 +3,21 @@ import numpy as numpy
 import matplotlib.pyplot as plt
 import numpy as np
 
+## For deterministic example (front call: 80, 110, 140, etc)
+## not using the energy, but encoded (d, v, a) as the running cost
+## remove constraint first
+
 def disturb_policy(car, a):
-    a_ = a + np.random.uniform(-8, 2, 1)
+    a_ = np.random.uniform(-8.0, 2.0)
     if a_ > 2:
         a_ = 2
     elif a_ < -8:
         a_ = -8
 
-    if car.v <= car.v_min and a_ < 0:
-        a_ = 0
-    elif car.v >= car.v_max and a_ > 0:
-        a_ = 0
+    # if car.v <= car.v_min and a_ < 0:
+    #     a_ = 0
+    # elif car.v >= car.v_max and a_ > 0:
+    #     a_ = 0
     return a_
 
 
@@ -43,6 +47,7 @@ class Vehicle():
         self.d = 0
         self.v = 0
         return
+
 
     def physical(self, a):
         # calculating the next state, but not to move one step forward
@@ -76,33 +81,10 @@ class Vehicle():
         v0 = self.v
         m = self.m
         g = self.g
-        if a > 0:
-            c = 1/0.97/4.71 * (5*np.pi*self.r)
-            if (self.v_max-v0)/a > self.dt:
-                t1 = (self.v_max-v0)/a
-                t2 = self.dt - t1
-            else:
-                t1 = self.dt
-                t2 = 0
-        elif a < 0:
-            # a < 0
-            c = 0.97/4.71 * 0.5 * (5*np.pi*self.r)
-            t1 = v0/(-a)
-            t2 = self.dt - t1
-        else:
-            # a == 0
-            c = 1/0.97/4.71 * (5*np.pi*self.r)
-            t1 = 0
-            t2 = self.dt
 
-        v1 = v0+a*t1
-
-        if a == 0:
-            g1 = 0
-        else:
-            g1 = c*(m*a*v0*t1+0.5*m*a**2*t1**2+0.005*m*g*v0*t1+0.5*0.005*m*g*a*t1**2+0.09*(v0+a*t1)**4/(4*a))
-        g2 = c*(m*a*v1 + 0.005*m*g*v1 + 0.09*v1**3)*t2
-        return g1+g2
+        #// cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
+        #// (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
+        return cost
 
     def constraint(self, dc, a):
         # if current state hits the constraint, apply penalty
@@ -140,12 +122,8 @@ class Vehicle():
         d = self.d
         d_target = 10*self.dt*self.v_max
 
-        eta1 = 0.95
-        eta2 = 0.95
-        t_factor = 783
-        term1 = 1/2*self.m*(self.v_max**2-v**2)*eta1
-        term2 = (d_target - d)*t_factor
-        term3 = self.m*self.g*0*eta2
+        #// long dx = int(d.list[dk]);
+        #// long vx = int(v.list[vk]*100);
         return term1+term2+term3
         
 
@@ -188,63 +166,58 @@ if __name__ == "__main__":
     all_cost_std = []
     all_cost_disturb = []
     
-    end_flag = False
-    while end_flag == False:
-        # skip the front car information at t=0
-        # line = traj.readstate()
-        if not line:
-            # end of file, exit
-            end_flag = True
-            break
-        
+    front_car_traj = []
+    ctrl_cmds = []
+    # line = traj.readstate()
+
+    for i in range(10):
+        front_car_traj.append(float(traj.readstate().split(',')[0]))
+        ctrl_cmds.append(float(ctrl.readstate().split('\n')[0]))
+
+    print(front_car_traj)
+    print(ctrl_cmds)
+
+    cnt = 0
+    for test in range(10000):
         # each trial contain 10 control steps
         cost2go_std = 0
         cost2go_disturb = 0
         
-        for i in range(10):
-            traj_state = traj.readstate().split(',')[0]
-            ctrl_state = ctrl.readstate()
-            if traj_state == '' or ctrl_state == '':
-                end_flag = True
-                break
-            elif i == 0:
-                trial_cnt += 1
-                print("Solving iteration %d"%(trial_cnt))
-            dc = float(traj_state)
-            a  = float(ctrl_state)
+        for i in range(10): 
+            dc = front_car_traj[i]
+            a  = ctrl_cmds[i]
             cost2go_std += gtr_std.running_cost(dc, a)
             if (gtr_std.constraint(dc, a)):
                 cost2go_std += 1e30
                 print("Optimal control is not valid, hits the constraint")
+            # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
             gtr_std.step_forward(a)
 
             a_disturb = disturb_policy(gtr_disturb, a)
-            print('d is %.2f, v is %.2f, disturbed a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
+            # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             cost2go_disturb += gtr_disturb.running_cost(dc, a_disturb)
             if (gtr_disturb.constraint(dc, a)):
                 cost2go_disturb += 1e30
             gtr_disturb.step_forward(a_disturb)
-            
-        print('"optimal control" gets %f'%(cost2go_std))
-        print('"distubed control" gets %f'%(cost2go_disturb))
-        
+
+            # print("")
 
         all_cost_std.append(cost2go_std)
         all_cost_disturb.append(cost2go_disturb)
+        gtr_std.reset()
+        gtr_disturb.reset()
 
-        ctrl.next_trial()
-        traj.next_trial()
+        if (cost2go_std > cost2go_disturb):
+            cnt += 1
 
-    sum_std = sum(all_cost_std)
-    sum_disturb = sum(all_cost_disturb)
-    print('Test %d trials'%(trial_cnt))
-    print('"optimal control" gets %f'%(sum_std))
-    print('"distubed control" gets %f'%(sum_disturb))
-    if sum_std > sum_disturb:
-        print('sum_std > sum_disturb')
-    elif sum_std == sum_disturb:
-        print('sum_std == sum_disturb')
-    else:
-        print('sum_std < sum_disturb')
+    print(cnt)
+    # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1]}, figsize=(12,9))
 
+    # ax1.hist(all_cost_std, 1000, alpha=0.5, label='std')
+    print("first cost2go: %.3e, min cost2go: %.3e"%(all_cost_std[0],min(all_cost_std)))
+    print("distubed mean: %.3e, min: %.3e"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
+    # plt.hist(all_cost_disturb, 10, alpha=0.5, label='disturbed')
+    # plt.legend(loc='upper right')
+    # plt.show()
+    
 

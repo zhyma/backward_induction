@@ -95,22 +95,22 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         // {
         //     std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
         // }
-        if (k == 9 && k0 == 0 && xk == 192 && p > 0)
-        {
-            // std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
-            // std::cout << "at k: " << k << " detected dc': " << model->d.list[(wk0_debug+wk+dwk)/2] << ", i: " << (wk+dwk)%2;
-            std::cout << "xk=" << xk;
-            std::cout << ", wk=" << wk0_debug + wk;
-            std::cout << ", uk=" << uk;
-            std::cout << ", xk_=" << xk_;
-            std::cout << ", wk_=" << wk0_debug+wk+dwk;
-            std::cout << ", p=" << p << ", v=" << v << "," << std::endl;
-            // std::cout << ", d'=" << model->d.list[xk_/n_v];
-            // std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
-        }
+        // if (k == 9 && k0 == 0 && xk == 192 && p > 0)
+        // {
+        //     // std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
+        //     // std::cout << "at k: " << k << " detected dc': " << model->d.list[(wk0_debug+wk+dwk)/2] << ", i: " << (wk+dwk)%2;
+        //     std::cout << "xk=" << xk;
+        //     std::cout << ", wk=" << wk0_debug + wk;
+        //     std::cout << ", uk=" << uk;
+        //     std::cout << ", xk_=" << xk_;
+        //     std::cout << ", wk_=" << wk0_debug+wk+dwk;
+        //     std::cout << ", p=" << p << ", v=" << v << "," << std::endl;
+        //     // std::cout << ", d'=" << model->d.list[xk_/n_v];
+        //     // std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+        // }
     }
     long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    // l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e20;
+    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e20;
 
     // // // to test state transition
     // if (k0 == 0 && k>7 && xk == 143 && wk==191 && uk ==3)
@@ -124,20 +124,19 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
 
     // to test running_cost
     // if (k0 == 0 && k>8 && xk == 143 && wk==191)
-    if (k == 9 && k0 == 0 && xk == 192 && wk0_debug+wk == 247)
-    {
-        std::cout << "k=" << k;
-        std::cout << ", d=" << model->d.list[xk/n_v];
-        std::cout << ", v=" << model->v.list[xk%n_v];
-        std::cout << ", a=" << model->a.list[uk];
-        std::cout << ", uk=" << uk; 
-        std::cout << ", d'=" << model->d.list[xk_/n_v];
-        std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
-        std::cout << "running cost is: " << l;
-        std::cout << ", sum is: " << sum;
-        std::cout << ", q is: " << l+sum << std::endl << std::endl;
-    }
-    
+    // if (k == 9 && k0 == 0 && xk == 192 && wk0_debug+wk == 247)
+    // {
+    //     std::cout << "k=" << k;
+    //     std::cout << ", d=" << model->d.list[xk/n_v];
+    //     std::cout << ", v=" << model->v.list[xk%n_v];
+    //     std::cout << ", a=" << model->a.list[uk];
+    //     std::cout << ", uk=" << uk; 
+    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
+    //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+    //     std::cout << "running cost is: " << l;
+    //     std::cout << ", sum is: " << sum;
+    //     std::cout << ", q is: " << l+sum << std::endl << std::endl;
+    // }
 
     // if (uk == 20 && xk == 3200 && k0 == 0 && wk == 2)
     // {
@@ -198,9 +197,8 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 {
                     // for each <x, u> (q in RL): l(x,u)+\sum P(z|x,u)V(z)
                     q[uk] = calc_q(k0, k, xk, wk, uk);
-                    if (xk==192 && wk0_debug + wk==247)
-                        std::cout << "q is: " << q[uk] << std::endl<< std::endl;
-
+                    // if (xk==192 && wk0_debug + wk==247)
+                    //     std::cout << "q is: " << q[uk] << std::endl<< std::endl;
                 }
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
@@ -213,10 +211,10 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 else 
                     std::cout << "idx_min error?";
                 
-                if (xk==192 && wk0_debug + wk==247)
-                {
-                    std::cout << "value is: " << q[idx_min] << ", action is " << idx_min << std::endl;
-                }
+                // if (xk==192 && wk0_debug + wk==247)
+                // {
+                //     std::cout << "value is: " << q[idx_min] << ", action is " << idx_min << std::endl;
+                // }
                 // if (wk == 1)
                 // {
                 //     out_file << "d=" << model->d.list[xk/n_v];
@@ -245,8 +243,8 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     int dck0 = model->get_dist_idx(dc0);
     get_subset(k0, dk0, dck0);
     // std::cout << "extract subset done." << std::endl;
-    // for (int k = N; k >= 0; k--)
-    for (int k = N; k >= 8; k--)
+    for (int k = N; k >= 0; k--)
+    // for (int k = N; k >= 8; k--)
         estimate_one_step(k0, k);
     
     int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);

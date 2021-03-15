@@ -3,6 +3,10 @@ import numpy as numpy
 import matplotlib.pyplot as plt
 import numpy as np
 
+## For deterministic example (front call: 80, 110, 140, etc)
+## for optimal control, it only run once
+## for disturbed policy, it run 10e6 times to get the average
+
 def disturb_policy(car, a):
     a_ = np.random.uniform(-8.0, 2.0)
     if a_ > 2:
@@ -78,7 +82,7 @@ class Vehicle():
         m = self.m
         g = self.g
         if a > 0:
-            c = 1/0.97/4.71 * (5*np.pi*self.r)
+            c = 1/0.97/4.71 * (5*np.pi)
             if (self.v_max-v0)/a > self.dt:
                 t1 = (self.v_max-v0)/a
                 t2 = self.dt - t1
@@ -87,12 +91,12 @@ class Vehicle():
                 t2 = 0
         elif a < 0:
             # a < 0
-            c = 0.97/4.71 * 0.5 * (5*np.pi*self.r)
+            c = 0.97/4.71 * 0.5 * (5*np.pi)
             t1 = v0/(-a)
             t2 = self.dt - t1
         else:
             # a == 0
-            c = 1/0.97/4.71 * (5*np.pi*self.r)
+            c = 1/0.97/4.71 * (5*np.pi)
             t1 = 0
             t2 = self.dt
 
@@ -237,8 +241,8 @@ if __name__ == "__main__":
     # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1]}, figsize=(12,9))
 
     # ax1.hist(all_cost_std, 1000, alpha=0.5, label='std')
-    print("%.3e"%(all_cost_std[0]))
-    print("distubed mean: %.3e, std_dev: %.3e"%(np.mean(all_cost_disturb), np.std(all_cost_disturb)))
+    print("first cost2go: %.3e, min cost2go: %.3e"%(all_cost_std[0],min(all_cost_std)))
+    print("distubed mean: %.3e, min: %.3e"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
     # plt.hist(all_cost_disturb, 10, alpha=0.5, label='disturbed')
     # plt.legend(loc='upper right')
     # plt.show()
