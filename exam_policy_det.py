@@ -2,23 +2,12 @@ import numpy as numpy
 
 import matplotlib.pyplot as plt
 import numpy as np
+import copy
+
 
 ## For deterministic example (front call: 80, 110, 140, etc)
 ## for optimal control, it only run once
 ## for disturbed policy, it run 10e6 times to get the average
-
-def disturb_policy(car, a):
-    a_ = np.random.uniform(-8.0, 2.0)
-    if a_ > 2:
-        a_ = 2
-    elif a_ < -8:
-        a_ = -8
-
-    # if car.v <= car.v_min and a_ < 0:
-    #     a_ = 0
-    # elif car.v >= car.v_max and a_ > 0:
-    #     a_ = 0
-    return a_
 
 
 class Vehicle():
@@ -37,10 +26,25 @@ class Vehicle():
         self.a_min = -8.0
         self.a_max = 2.0
 
+        self.a_list = self.discretize(a_min, a_max, 32)
+        self.v_list = self.discretize(v_min, v_max, 32)
+        self.d_list = []
+        n_d = 353
+        for i in range(n_d):
+            val = i*v_max*10*self.dt/(128-1)
+            self.d_list.append(val)
+
         self.m = 1500
         self.r = 0.3
         self.g = 9.8
         return
+
+    def discretize(self, min, max, cnt):
+        val_list = []
+        for i in range(cnt):
+            val = min + (max-min)/float(cnt-1)*i
+            val_list.append(val)
+        return val_list
 
     def reset(self):
         self.t = 0
@@ -76,6 +80,11 @@ class Vehicle():
             d_ = d + 0.5*(v+v_)*dt
 
         return d_, v_
+
+    def disturb_policy(self, a):
+        ak_ = int(np.random.randint(32))
+        a_ = self.a_list[ak_]
+        return a_
 
     def running_cost(self, dc, a):
         v0 = self.v
@@ -153,11 +162,28 @@ class Vehicle():
         term3 = self.m*self.g*0*eta2
         return term1+term2+term3
         
+    def find_closest(self, val, val_list):
+        if val <= val_list[0]:
+            return val_list[0]
+        elif val >= val_list[-1]:
+            return val_list[-1]
+        else:
+            for i in range(len(val_list)-1):
+                if val > val_list[i+1]:
+                    continue
+                else:
+                    sub1 = val - val_list[i]
+                    sub2 = val_list[i+1] - val
+                    if sub1 <= sub2:
+                        return val_list[i]
+                    else:
+                        return val_list[i+1]
+
 
     def step_forward(self, a):
         d_, v_ = self.physical(a)
-        self.d = d_
-        self.v = v_
+        self.d = self.find_closest(d_, self.d_list)
+        self.v = self.find_closest(v_,self.v_list)
         self.t += self.dt
         return d_, v_
 
@@ -204,34 +230,46 @@ if __name__ == "__main__":
     print(front_car_traj)
     print(ctrl_cmds)
 
+    min_disturb_cost =1e5
+    best_disturb_policy = []
+
     cnt = 0
-    for test in range(10000):
+    cost2go_std = 0
+    for i in range(10):
+        dc = front_car_traj[i]
+        a  = ctrl_cmds[i]
+        cost2go_std += gtr_std.running_cost(dc, a)
+        if (gtr_std.constraint(dc, a)):
+            cost2go_std += 1e30
+            print("Optimal control is not valid, hits the constraint")
+        # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
+        gtr_std.step_forward(a)
+
+
+    for test in range(1000*1000):
         # each trial contain 10 control steps
-        cost2go_std = 0
         cost2go_disturb = 0
+
+        disturb_policy_list = []
         
         for i in range(10): 
             dc = front_car_traj[i]
             a  = ctrl_cmds[i]
-            cost2go_std += gtr_std.running_cost(dc, a)
-            if (gtr_std.constraint(dc, a)):
-                cost2go_std += 1e30
-                print("Optimal control is not valid, hits the constraint")
-            # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
-            gtr_std.step_forward(a)
 
-            a_disturb = disturb_policy(gtr_disturb, a)
+            a_disturb = gtr_disturb.disturb_policy(a)
+            disturb_policy_list.append(a_disturb)
             # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             cost2go_disturb += gtr_disturb.running_cost(dc, a_disturb)
             if (gtr_disturb.constraint(dc, a)):
                 cost2go_disturb += 1e30
             gtr_disturb.step_forward(a_disturb)
 
-            # print("")
 
-        all_cost_std.append(cost2go_std)
+        if cost2go_disturb < min_disturb_cost:
+            min_disturb_cost = cost2go_disturb
+            best_disturb_policy = copy.deepcopy(disturb_policy_list)
+
         all_cost_disturb.append(cost2go_disturb)
-        gtr_std.reset()
         gtr_disturb.reset()
 
         if (cost2go_std > cost2go_disturb):
@@ -241,8 +279,10 @@ if __name__ == "__main__":
     # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 1]}, figsize=(12,9))
 
     # ax1.hist(all_cost_std, 1000, alpha=0.5, label='std')
-    print("first cost2go: %.3e, min cost2go: %.3e"%(all_cost_std[0],min(all_cost_std)))
+    print("cost2go: %.3e"%(cost2go_std))
     print("distubed mean: %.3e, min: %.3e"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
+    print("best disturbed policy is: ")
+    print(best_disturb_policy)
     # plt.hist(all_cost_disturb, 10, alpha=0.5, label='disturbed')
     # plt.legend(loc='upper right')
     # plt.show()

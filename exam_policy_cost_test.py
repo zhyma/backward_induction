@@ -2,6 +2,7 @@ import numpy as numpy
 
 import matplotlib.pyplot as plt
 import numpy as np
+import copy
 
 ## For deterministic example (front call: 80, 110, 140, etc)
 ## not using the energy, but encoded (d, v, a) as the running cost
@@ -177,11 +178,16 @@ if __name__ == "__main__":
     print(front_car_traj)
     print(ctrl_cmds)
 
+    min_disturb_cost =1e5
+    best_disturb_policy = []
+
     cnt = 0
     for test in range(10000):
         # each trial contain 10 control steps
         cost2go_std = 0
         cost2go_disturb = 0
+
+        disturb_policy = []
         
         for i in range(10): 
             dc = front_car_traj[i]
@@ -194,6 +200,7 @@ if __name__ == "__main__":
             gtr_std.step_forward(a)
 
             a_disturb = disturb_policy(gtr_disturb, a)
+            disturb_policy.append(a_disturb)
             # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             cost2go_disturb += gtr_disturb.running_cost(dc, a_disturb)
             if (gtr_disturb.constraint(dc, a)):
@@ -201,6 +208,10 @@ if __name__ == "__main__":
             gtr_disturb.step_forward(a_disturb)
 
             # print("")
+
+        if cost2go_disturb < min_disturb_cost:
+            min_disturb_cost = cost2go_disturb
+            best_disturb_policy = copy.deepcopy(disturb_policy)
 
         all_cost_std.append(cost2go_std)
         all_cost_disturb.append(cost2go_disturb)
@@ -216,6 +227,8 @@ if __name__ == "__main__":
     # ax1.hist(all_cost_std, 1000, alpha=0.5, label='std')
     print("first cost2go: %.3e, min cost2go: %.3e"%(all_cost_std[0],min(all_cost_std)))
     print("distubed mean: %.3e, min: %.3e"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
+    print("best policy is: ")
+    print(best_disturb_policy)
     # plt.hist(all_cost_disturb, 10, alpha=0.5, label='disturbed')
     # plt.legend(loc='upper right')
     # plt.show()

@@ -36,7 +36,7 @@ class CPUSolver
 
         // subset
         long *r_cost = NULL;
-        unsigned long long int *r_mask = NULL;
+        long *r_mask = NULL;
         long *t_cost = NULL;
         int *trans = NULL;
         float *prob = NULL;
@@ -47,6 +47,7 @@ class CPUSolver
         int get_subset(int k0, int dk0, int dck0);
 
         // for debug only
+        int xk0_debug = 0;
         int wk0_debug = 0;
 };
 

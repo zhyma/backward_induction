@@ -55,7 +55,7 @@ class DPModel
 
         // Save cost-to-go as a matrix
         long *r_cost;
-        unsigned long long int *r_mask;
+        long *r_mask;
         // Save terminal cost as a matrix
         long *t_cost;
         
@@ -101,6 +101,8 @@ class DPModel
 
         int val_to_idx(float val, Set *ref);
         int copy_p_mat();
+
+        bool test_set = false;
 
 };
 #endif // DP_MODEL_H_

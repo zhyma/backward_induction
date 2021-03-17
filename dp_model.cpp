@@ -44,6 +44,8 @@ int get_param_val(XMLElement* elmt_root, const char* tag)
 //initial function
 DPModel::DPModel(int pred_steps, int running_steps)
 {
+    test_set = true;
+
     std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
     tinyxml2::XMLDocument doc_xml;
     XMLError err_xml = doc_xml.LoadFile("config.xml");
@@ -329,8 +331,8 @@ int DPModel::running_cost_init()
     int idx = 0;
     // std::cout << idx << std::endl;
     r_cost = new long [x.n * w.n * u.n]{};
-    r_mask = new unsigned long long int [x.n * w.n * u.n]{};
-    unsigned long long int ban_all_time;
+    r_mask = new long [x.n * w.n * u.n]{};
+    long ban_all_time;
     for (int k = 0; k < N_total; ++k)
         ban_all_time = ban_all_time | (1<<k);
     std::cout << "ban_all_time = " << ban_all_time << std::endl;
@@ -431,9 +433,14 @@ int DPModel::running_cost_init()
                 if (cost < cost_min)
                     cost_min = cost;
 
-                // // test cost
-                // cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
-                // (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
+                // test cost, set to test set when initializing the dp model
+                // overwrite the running cost
+                // can disable constraint in calc_q
+                if (test_set == true)
+                {
+                    cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
+                    (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
+                }
                 
                 r_cost[idx] = cost;
 
@@ -478,24 +485,31 @@ int DPModel::running_cost_init()
 
 long DPModel::terminal_cost(int dk0, int dk, int vk)
 {
-    // x stands for value
-    // starting position
-    float d0x = d.list[dk0];
-    // ending position
-    float dx  = d.list[dk];
-    float vx  = v.list[vk];
+    if (test_set == true)
+    {
+        long dx = int(d.list[dk]);
+        long vx = int(v.list[vk]*100);
+        return dx*10000*1000 + vx*1000;
+    }
+    else
+    {
+        // x stands for value
+        // starting position
+        float d0x = d.list[dk0];
+        // ending position
+        float dx  = d.list[dk];
+        float vx  = v.list[vk];
 
-    float d_target = d0x + N_pred * dt * v.max;
-    float v_target = v.max;
+        float d_target = d0x + N_pred * dt * v.max;
+        float v_target = v.max;
 
-    float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
-    float term2 = (d_target - dx)*783;
-    float term3 = m*g*0*0.95;// which is set to 0 for now
-    return term1 + term2 + term3;
+        float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
+        float term2 = (d_target - dx)*783;
+        float term3 = m*g*0*0.95;// which is set to 0 for now
+        return long(term1 + term2 + term3);
+    }
 
-    // long dx = int(d.list[dk]);
-    // long vx = int(v.list[vk]*100);
-    // return dx*10000*1000 + vx*1000;
+
 }
 
 int DPModel::check_driving_data()

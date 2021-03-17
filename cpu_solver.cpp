@@ -95,14 +95,15 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         // {
         //     std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
         // }
-        // if (k == 9 && k0 == 0 && xk == 192 && p > 0)
+        // if (p > 0 && ((k == 8 && xk == 143)||(k == 9 && xk == 192)))
         // {
         //     // std::cout << "at k: " << k << " detected trans: " << wk0_debug + wk << " to " << wk0_debug + wk + dwk <<std::endl;
         //     // std::cout << "at k: " << k << " detected dc': " << model->d.list[(wk0_debug+wk+dwk)/2] << ", i: " << (wk+dwk)%2;
-        //     std::cout << "xk=" << xk;
+        //     std::cout << "at k: " << k;
+        //     std::cout << "xk=" << xk0_debug + xk;
         //     std::cout << ", wk=" << wk0_debug + wk;
         //     std::cout << ", uk=" << uk;
-        //     std::cout << ", xk_=" << xk_;
+        //     std::cout << ", xk_=" << xk0_debug + xk_;
         //     std::cout << ", wk_=" << wk0_debug+wk+dwk;
         //     std::cout << ", p=" << p << ", v=" << v << "," << std::endl;
         //     // std::cout << ", d'=" << model->d.list[xk_/n_v];
@@ -110,7 +111,8 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         // }
     }
     long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    l += float(r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k)) * 1e20;
+    // if (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k) > 0)
+    //     l += 1e20;
 
     // // // to test state transition
     // if (k0 == 0 && k>7 && xk == 143 && wk==191 && uk ==3)
@@ -261,10 +263,13 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 int CPUSolver::get_subset(int k0, int dk0, int dck0)
 {
     r_cost = new long [n_x_s*n_w_s*n_u]{};
-    r_mask = new unsigned long long int [n_x_s*n_w_s*n_u]{};
+    r_mask = new long [n_x_s*n_w_s*n_u]{};
     t_cost = new long [n_x]{};
     trans = new int[n_x_s*n_u]{};
     prob = new float[N*n_w_s*n_p]{};
+
+    // for debug only
+    xk0_debug = dk0*n_v;
     wk0_debug = dck0*2;
 
     // long long int idx = 0;
