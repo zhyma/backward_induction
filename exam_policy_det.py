@@ -163,10 +163,14 @@ class Vehicle():
         return term1+term2+term3
         
     def find_closest(self, val, val_list):
+        idx = 0
+        find_val = 0
         if val <= val_list[0]:
-            return val_list[0]
+            idx = 0
+            find_val = val_list[0]
         elif val >= val_list[-1]:
-            return val_list[-1]
+            idx = len(val_list)-1
+            find_val = val_list[-1]
         else:
             for i in range(len(val_list)-1):
                 if val > val_list[i+1]:
@@ -175,15 +179,20 @@ class Vehicle():
                     sub1 = val - val_list[i]
                     sub2 = val_list[i+1] - val
                     if sub1 <= sub2:
-                        return val_list[i]
+                        idx = i
+                        find_val = val_list[i]
+                        break
                     else:
-                        return val_list[i+1]
+                        idx = i+1
+                        find_val = val_list[i+1]
+                        break
+        return idx, find_val
 
 
     def step_forward(self, a):
         d_, v_ = self.physical(a)
-        self.d = self.find_closest(d_, self.d_list)
-        self.v = self.find_closest(v_,self.v_list)
+        _, self.d = self.find_closest(d_, self.d_list)
+        _, self.v = self.find_closest(v_,self.v_list)
         self.t += self.dt
         return d_, v_
 
@@ -203,7 +212,24 @@ class Load():
         return
 
 if __name__ == "__main__":
-    ctrl = Load('output/control.csv')
+    # ctrl = Load('output/control.csv')
+    action_filename = 'output/cpu_action.csv'
+    f_action = open(action_filename, 'r')
+    lines = f_action.readlines()
+    var = np.fromstring(lines[0], sep=',')[:-1]
+    lines = lines[1:]
+    N   = int(var[0])
+    n_x = int(var[1])
+    n_w = int(var[2])
+
+    action_list = []
+    for i in range(N):
+        action_list.append(lines[i].split(',')[:-1])
+
+    action_mat = np.array(action_list)
+    action_mat = action_mat.reshape((N, n_x, n_w))
+    print(action_mat.shape)
+
     traj = Load('output/front_car_data.csv')
     
     line = traj.readstate()
@@ -223,38 +249,70 @@ if __name__ == "__main__":
     ctrl_cmds = []
     # line = traj.readstate()
 
-    for i in range(10):
-        front_car_traj.append(float(traj.readstate().split(',')[0]))
-        ctrl_cmds.append(float(ctrl.readstate().split('\n')[0]))
+    for i in range(10+1):
+        traj_list = traj.readstate().split(',')
+        pos = float(traj_list[0])
+        dk, _ = gtr_std.find_closest(pos,gtr_std.d_list)
+        intention = int(traj_list[-1])
+        front_car_traj.append([dk, intention])
 
-    print(front_car_traj)
-    print(ctrl_cmds)
+    print([i[0]*2+i[1] for i in front_car_traj])
 
-    min_disturb_cost =1e5
-    best_disturb_policy = []
-
-    cnt = 0
     cost2go_std = 0
     for i in range(10):
-        dc = front_car_traj[i]
-        a  = ctrl_cmds[i]
+        dk, _ = gtr_std.find_closest(gtr_std.d, gtr_std.d_list)
+        vk, _ = gtr_std.find_closest(gtr_std.v, gtr_std.v_list)
+        xk = dk*32+vk
+        # read one front car state
+        dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_std.d_list)
+        dc =  gtr_std.d_list[dck]
+        intention = front_car_traj[i][1]
+        wk = dck*2+intention
+        # find the corresponding ctrl
+        ctrl_cmds.append(int(action_mat[i,xk,wk]))
+        a = gtr_std.a_list[ctrl_cmds[-1]]
+        print('%.2f, '%(a), end='')
+        # calculate one running cost
         cost2go_std += gtr_std.running_cost(dc, a)
         if (gtr_std.constraint(dc, a)):
             cost2go_std += 1e30
             print("Optimal control is not valid, hits the constraint")
-        # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
+        # walk one step
         gtr_std.step_forward(a)
 
+    print('')
+    # terminal cost
+    cost2go_std += gtr_std.terminal_cost()
+    print('cost to go: %.2f'%(cost2go_std))
 
-    for test in range(1000*1000):
+    # print(ctrl_cmds)
+
+    min_disturb_cost =1e5
+    # best_disturb_policy = []
+
+    cnt = 0
+    # cost2go_std = 0
+    # for i in range(10):
+    #     dc = front_car_traj[i]
+    #     a  = ctrl_cmds[i]
+    #     cost2go_std += gtr_std.running_cost(dc, a)
+    #     if (gtr_std.constraint(dc, a)):
+    #         cost2go_std += 1e30
+    #         print("Optimal control is not valid, hits the constraint")
+    #     # print('optimal: d is %.2f, v is %.2f, a is: %.2f'%(gtr_std.d, gtr_std.v, a))
+    #     gtr_std.step_forward(a)
+
+
+    for test in range(1000*1000*10):
         # each trial contain 10 control steps
         cost2go_disturb = 0
 
         disturb_policy_list = []
         
         for i in range(10): 
-            dc = front_car_traj[i]
-            a  = ctrl_cmds[i]
+            dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_disturb.d_list)
+            dc =  gtr_disturb.d_list[dck]
+            a = gtr_disturb.a_list[ctrl_cmds[-1]]
 
             a_disturb = gtr_disturb.disturb_policy(a)
             disturb_policy_list.append(a_disturb)

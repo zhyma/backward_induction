@@ -44,12 +44,15 @@ float one_step(int solver, bool log, DPModel * dp_model)
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << std::endl << "CPU time: " << duration << " s" << std::endl;
         
+        std::string filename;
         if (log)
         {
-            std::string filename = "cpu_value";
+            filename = "cpu_value";
             int v_dim[] = {cpu_solver.N+1, cpu_solver.n_x, cpu_solver.n_w};
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, cpu_solver.value);
-
+        }
+        if (true)
+        {
             filename = "cpu_action";
             int a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);

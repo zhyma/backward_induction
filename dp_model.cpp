@@ -299,6 +299,7 @@ int DPModel::val_to_idx(float val, struct Set *ref)
     // idx > ref->n - 1 ? idx = ref->n -1 : idx;
     idx < ref->min ? idx = -1 : idx;
     idx > ref->n - 1 ? idx = -1 : idx;
+
     return idx;
 }
 
@@ -374,7 +375,7 @@ int DPModel::running_cost_init()
                 float vx_;
                 if (ax > 0)
                 {
-                    c = (1.0/0.97)/4.71 * (5*M_PI);
+                    c = (1.0/0.97);
                     if ((v.max-vx)/ax < dt)
                     {
                         // accelerate then reach the maximum speed
@@ -393,7 +394,7 @@ int DPModel::running_cost_init()
                 }
                 else if (ax == 0)
                 {
-                    c = (1.0/0.97)/4.71 * (5.0*M_PI);
+                    c = (1.0/0.97);
                     t1 = 0;
                     t2 = dt-t1;
                     vx_ = vx;
@@ -401,7 +402,7 @@ int DPModel::running_cost_init()
                 else
                 {
                     // ax < 0
-                    c = 0.97/4.71*0.5 * (5.0*M_PI);
+                    c = 0.97*0.5;
                     if (vx/(-ax) < dt)
                     {
                         // deccelrate then reach 0
