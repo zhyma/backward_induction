@@ -7,17 +7,17 @@ import copy
 
 ## For deterministic example (front call: 80, 110, 140, etc)
 ## for optimal control, it only run once
-## for disturbed policy, it run 10e6 times to get the average
+## for disturbed policy
 
+## iterate all possible combination of control sequence (for N<=4 maybe?)
 
 class Vehicle():
-    def __init__(self, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max, N_pred):
+    def __init__(self, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max):
         self.d2tl = d2tl
         self.dt = dt
         self.rl_start = rl_start
         self.rl_end = rl_end
         self.t = 0
-        self.N = N_pred
         
         self.d = 0
         # boudnary of velocity is [0, v_bound]
@@ -82,9 +82,9 @@ class Vehicle():
 
         return d_, v_
 
-    def disturb_policy(self, a):
-        ak_ = int(np.random.randint(32))
-        a_ = self.a_list[ak_]
+    def disturb_policy(self, a, test):
+        # ak_ = int(np.random.randint(32))
+        # a_ = self.a_list[ak_]
         # if a_ < 0 and self.v < 1e-3:
         #     _, a_ = self.find_closest(-0.1, self.a_list)
         # if a_ > 0 and self.v >= self.v_max:
@@ -92,6 +92,7 @@ class Vehicle():
 
         # _, a_ = self.find_closest(0.5, self.a_list)
         # _, a_ = self.find_closest(0.5, self.a_list)
+        a_ = self.a_list[test]
         return a_
 
     def running_cost(self, dc, a):
@@ -170,7 +171,7 @@ class Vehicle():
         v = self.v
         d = self.d
         v_max = self.v_max
-        d_target = self.N*self.dt*self.v_max
+        d_target = 10*self.dt*self.v_max
 
         eta1 = 0.95
         eta2 = 0.95
@@ -256,8 +257,8 @@ if __name__ == "__main__":
     rl_start = float(param[1].split('=')[1])
     rl_end = float(param[2].split('=')[1])
     print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
-    gtr_std     = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2, N)
-    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2, N)
+    gtr_std     = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
+    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
     # count how many trials
     all_cost_disturb = []
     
@@ -306,7 +307,6 @@ if __name__ == "__main__":
     print("t_cost: %.2f"%(t_cost))
     cost2go_std += t_cost
     print('cost to go: %.2f (%.3e)'%(cost2go_std, cost2go_std))
-    print('%.2f, %.2f'%(gtr_std.d, gtr_std.v))
     print('policy is: ', end='')
     print(ctrl_cmds)
     print('\n')
@@ -315,10 +315,9 @@ if __name__ == "__main__":
     best_disturb_policy = []
 
     cnt = 0
-    valid_cnt = 0
-    invalid_cnt = 0
 
-    for test in range(1000*1000*10):
+    for test in range(32**N):
+    # for test in range(1):
         # each trial contain 10 control steps
         cost2go_disturb = 0
         disturb_policy_list = []
@@ -332,15 +331,19 @@ if __name__ == "__main__":
             dc =  gtr_disturb.d_list[dck]
             a = gtr_disturb.a_list[ctrl_cmds[i]]
 
-            a_disturb = gtr_disturb.disturb_policy(a)
+            local32 = int(test/(32**(i)))%32
+            # local32 = test_a[i]
+
+            # print(local32, end=', ')
+            a_disturb = gtr_disturb.disturb_policy(a,local32)
             disturb_policy_list.append(a_disturb)
             # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             r_cost = gtr_disturb.running_cost(dc, a_disturb)
             # print("action:%.2f, \nr_cost: %.2f"%(a_disturb, r_cost))
             cost2go_disturb += r_cost
             if (gtr_disturb.constraint(front_car_traj[i][0], a)):
-                # print("hit the constraint %.2f, %.2f, with a=%.2f"%(gtr_disturb.d, gtr_disturb.v,a_disturb))
-                # print("front car position %.2f"%(front_car_traj[i][0]))
+                print("hit the constraint %.2f, %.2f, with a=%.2f"%(gtr_disturb.d, gtr_disturb.v,a_disturb))
+                print("front car position %.2f"%(front_car_traj[i][0]))
                 cost2go_disturb += 1e30
                 # valid_ctrl = False
                 # break
@@ -349,7 +352,6 @@ if __name__ == "__main__":
         # print('; ', end='')
 
         if valid_ctrl == True:
-            valid_cnt += 1
             # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             t_cost = gtr_disturb.terminal_cost()
             cost2go_disturb += t_cost
@@ -359,17 +361,16 @@ if __name__ == "__main__":
                 min_disturb_cost = cost2go_disturb
                 best_disturb_policy = copy.deepcopy(disturb_policy_list)
 
+            if disturb_policy_list == [31,29,28]:
+                print(cost2go_disturb)
+
             all_cost_disturb.append(cost2go_disturb)
 
             if (cost2go_std > cost2go_disturb):
                 cnt += 1
-                break
-        else:
-            invalid_cnt += 1
         
 
-    print("There are %d cost2go is greater than optimal"%(cnt))
-    print("Find out %d valid control and %d invalid control"%(valid_cnt, invalid_cnt))
+    print(cnt)
 
     print("distubed mean: %.3e, min: %.2f"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
     print("best disturbed policy is: ")

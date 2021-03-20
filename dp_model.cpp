@@ -44,7 +44,7 @@ int get_param_val(XMLElement* elmt_root, const char* tag)
 //initial function
 DPModel::DPModel(int pred_steps, int running_steps)
 {
-    test_set = true;
+    test_set = false;
 
     std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
     tinyxml2::XMLDocument doc_xml;
@@ -117,7 +117,8 @@ DPModel::DPModel(int pred_steps, int running_steps)
     std::cout << "distance interval: " << (v.max * N_pred * dt/(n_t-1));
     for (int i = 0; i < d.n; ++i)
     {
-        d.list[i] = float(i * v.max * N_pred * dt/(n_t-1));
+        // d.list[i] = float(i * v.max * N_pred * dt/(n_t-1));
+        d.list[i] = float(i * v.max * 10 * dt/(n_t-1));
         // std::cout << "@" << i << ": " << d.list[i] << ", ";
     }
     std::cout << std::endl;
@@ -299,7 +300,34 @@ int DPModel::val_to_idx(float val, struct Set *ref)
     // idx > ref->n - 1 ? idx = ref->n -1 : idx;
     idx < ref->min ? idx = -1 : idx;
     idx > ref->n - 1 ? idx = -1 : idx;
-
+    // if (val <= ref->list[0])
+    //     idx = 0;
+    // else if (val >= ref->list[ref->n-1])
+    //     idx = ref->n-1;
+    // else
+    // {
+    //     for (int i = 0; i < ref->n-1; ++i)
+    //     {
+    //         if (val > ref->list[i+1])
+    //             continue;
+    //         else
+    //         {
+    //             float sub1 = val - ref->list[i];
+    //             float sub2 = ref->list[i+1] - val;
+    //             if (sub1<=sub2)
+    //             {
+    //                 idx = i;
+    //                 break;
+    //             }
+    //             else
+    //             {
+    //                 idx = i+1;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+    
     return idx;
 }
 
@@ -319,7 +347,8 @@ int DPModel::get_velc_idx(float velc)
 
 bool DPModel::front_car_safe(float dx, float vx, float dcx)
 {
-    if (dx > dcx - vx*t_tcc)
+    // if the front car is safe, return true, else return false
+    if (dx <= dcx - vx*t_tcc)
         return true;
     else
         return false;
@@ -351,6 +380,8 @@ int DPModel::running_cost_init()
             float dcx = d.list[wk/2], ix = wk%2;
 
             // constraint: safety distance with the front car
+            // true: the front car is safe
+            // false: apply penalty
             if (front_car_safe(dx, vx, dcx))
                 apply_penalty = false;
             else
@@ -376,7 +407,7 @@ int DPModel::running_cost_init()
                 if (ax > 0)
                 {
                     c = (1.0/0.97);
-                    if ((v.max-vx)/ax < dt)
+                    if (vx+ax*dt > v.max)
                     {
                         // accelerate then reach the maximum speed
                         t1 = (v.max-vx)/ax;
@@ -403,7 +434,7 @@ int DPModel::running_cost_init()
                 {
                     // ax < 0
                     c = 0.97*0.5;
-                    if (vx/(-ax) < dt)
+                    if ((-ax)*dt > vx)
                     {
                         // deccelrate then reach 0
                         t1 = vx/(-ax);
@@ -425,9 +456,9 @@ int DPModel::running_cost_init()
                     g1 = c * (m*ax*vx*t1 + 0.5*m*ax*ax*t1*t1 + 0.005*m*g*vx*t1 + 0.5*0.005*m*g*ax*t1*t1 + 0.09*POW4(vx+ax*t1)/(4*ax) );
                     
                 // constant velocity (min/max)
-                float g2 = c * (0.005*m*g*vx_ + 0.09*POW3(vx_)) * t2;
+                float g2 = c * (m*ax*vx_ + 0.005*m*g*vx_ + 0.09*POW3(vx_)) * t2;
 
-                long cost = long(g1 + g2);
+                long cost = long(round(g1 + g2));
                 
                 if (cost > cost_max)
                     cost_max = cost;
@@ -437,11 +468,11 @@ int DPModel::running_cost_init()
                 // test cost, set to test set when initializing the dp model
                 // overwrite the running cost
                 // can disable constraint in calc_q
-                if (test_set == true)
-                {
-                    cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
-                    (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
-                }
+                // if (test_set == true)
+                // {
+                //     cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
+                //     (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
+                // }
                 
                 r_cost[idx] = cost;
 
@@ -486,29 +517,31 @@ int DPModel::running_cost_init()
 
 long DPModel::terminal_cost(int dk0, int dk, int vk)
 {
-    if (test_set == true)
-    {
-        long dx = int(d.list[dk]);
-        long vx = int(v.list[vk]*100);
-        return dx*10000*1000 + vx*1000;
-    }
-    else
-    {
+    // if (test_set == true)
+    // {
+    //     long dx = int(d.list[dk]);
+    //     long vx = int(v.list[vk]*100);
+    //     return dx*10000*1000 + vx*1000;
+    // }
+    // else
+    // {
         // x stands for value
         // starting position
-        float d0x = d.list[dk0];
+        // float d0x = d.list[dk0];
         // ending position
         float dx  = d.list[dk];
         float vx  = v.list[vk];
 
-        float d_target = d0x + N_pred * dt * v.max;
+        // float d_target = d0x + N_pred * dt * v.max;
+        // float d_target = 10 * dt * v.max;
+        float d_target = N_pred * dt * v.max;
         float v_target = v.max;
 
         float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
         float term2 = (d_target - dx)*783;
         float term3 = m*g*0*0.95;// which is set to 0 for now
-        return long(term1 + term2 + term3);
-    }
+        return long(round(term1 + term2 + term3));
+    // }
 
 
 }

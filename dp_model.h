@@ -33,7 +33,7 @@ class DPModel
 {
     public:
 
-        bool debug = false;
+        bool debug = true;
         int iter;
         // predict 10 steps forward
         int N_pred = 10;
@@ -78,7 +78,7 @@ class DPModel
     private:
         float dt=2;
         // distance to the traffic light
-        int d2tl;
+        float d2tl;
         // the time that the red light will start
         int rl_start;
         // the time that the red light will end

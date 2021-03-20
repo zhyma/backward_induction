@@ -90,6 +90,18 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         long v = value[v_idx];
         double temp = double(v)*p;
         sum += long (temp);
+
+        // // if (k0 == 0 && k==1 && xk == 39 && p>0 && uk==28)
+        // if (k0 == 0 && k==0 && xk == 0 && p>0 && uk==31)
+        // {
+        //     std::cout << "u=" << uk << " (" << model->a.list[uk] << ")";
+        //     std::cout << ", wk=" << wk;
+        //     std::cout << ", dwk=" << dwk;
+        //     std::cout << ", p=" << p;
+        //     std::cout << ", v=" << v << std::endl;
+        // }
+
+
         // // to test transition probability (use deterministic data)
         // if (uk == 4 && xk == 50 && p > 0)
         // {
@@ -111,8 +123,21 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         // }
     }
     long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
-    // if (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k) > 0)
-    //     l += 1e20;
+
+    // // if (k0 == 0 && k==1 && xk == 39 && wk==23)
+    // if (k0 == 0 && k==0 && xk == 0 && wk==1)
+    // {
+    //     std::cout << "xk'=" << xk_;
+    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
+    //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+    //     std::cout << "u=" << uk;
+    //     std::cout << ", l=" << l;
+    //     std::cout << ", sum=" << sum << std::endl;
+    //     std::cout << ", cost to go=" << l+sum << std::endl << std::endl;
+    // }
+
+    if (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k) > 0)
+        l += 1e15;
 
     // // // to test state transition
     // if (k0 == 0 && k>7 && xk == 143 && wk==191 && uk ==3)
@@ -243,14 +268,18 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     int dk0 = model->get_dist_idx(d0);
     int vk0 = model->get_velc_idx(v0);
     int dck0 = model->get_dist_idx(dc0);
+    std::cout << "dk0 is: " << dk0 << std::endl;
+    std::cout << "dck0 is: " << dck0 << std::endl;
     get_subset(k0, dk0, dck0);
     // std::cout << "extract subset done." << std::endl;
     for (int k = N; k >= 0; k--)
     // for (int k = N; k >= 8; k--)
+    {
+        std::cout << "solve step " << k << std::endl;
         estimate_one_step(k0, k);
+    }
     
     int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
-
     int ak = action[idx];
 
     // std:: cout << "solver output: " << model->a.list[ak] << std::endl;
