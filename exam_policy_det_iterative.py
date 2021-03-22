@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
+import os
+import sys
+
 
 ## For deterministic example (front call: 80, 110, 140, etc)
 ## for optimal control, it only run once
@@ -12,14 +15,16 @@ import copy
 ## iterate all possible combination of control sequence (for N<=4 maybe?)
 
 class Vehicle():
-    def __init__(self, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max):
+    def __init__(self, N_pred, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max):
         self.d2tl = d2tl
         self.dt = dt
         self.rl_start = rl_start
         self.rl_end = rl_end
         self.t = 0
+        self.N_pred = N_pred
         
         self.d = 0
+        self.xk = 0
         # boudnary of velocity is [0, v_bound]
         self.v_min = 0.0
         self.v_max = 18.0
@@ -30,8 +35,8 @@ class Vehicle():
         self.a_list = self.discretize(a_min, a_max, 32)
         self.v_list = self.discretize(v_min, v_max, 32)
         self.d_list = []
-        n_d = 353
-        for i in range(n_d):
+        n_d_total = 353
+        for i in range(n_d_total):
             val = i*v_max*10*self.dt/(128-1)
             self.d_list.append(val)
 
@@ -50,6 +55,7 @@ class Vehicle():
     def reset(self):
         self.t = 0
         self.d = 0
+        self.xk = 0
         self.v = 0
         return
 
@@ -171,7 +177,7 @@ class Vehicle():
         v = self.v
         d = self.d
         v_max = self.v_max
-        d_target = 10*self.dt*self.v_max
+        d_target = self.N_pred*self.dt*self.v_max
 
         eta1 = 0.95
         eta2 = 0.95
@@ -210,9 +216,10 @@ class Vehicle():
 
     def step_forward(self, a):
         d_, v_ = self.physical(a)
-        _, self.d = self.find_closest(d_, self.d_list)
-        _, self.v = self.find_closest(v_,self.v_list)
+        dk, self.d = self.find_closest(d_, self.d_list)
+        vk, self.v = self.find_closest(v_,self.v_list)
         self.t += self.dt
+        self.xk = dk*32 + vk
         return d_, v_
 
 class Load():
@@ -229,6 +236,14 @@ class Load():
             if (not line) or ('end' in line):
                 break
         return
+
+def find_all(name, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            if name in f:
+                result.append(path + f)
+    return result
 
 if __name__ == "__main__":
     # ctrl = Load('output/control.csv')
@@ -249,7 +264,12 @@ if __name__ == "__main__":
     action_mat = action_mat.reshape((N, n_x, n_w))
     print(action_mat.shape)
 
-    traj = Load('output/front_car_data.csv')
+    curr_dir = os.getcwd() + '/output/'
+    files = find_all('front_car_data', curr_dir)
+    if len(files) < 1:
+        print('No files')
+        sys.exit(0)
+    traj = Load(files[0])
     
     line = traj.readstate()
     param = line.split(',')
@@ -257,8 +277,8 @@ if __name__ == "__main__":
     rl_start = float(param[1].split('=')[1])
     rl_end = float(param[2].split('=')[1])
     print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
-    gtr_std     = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
-    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
+    gtr_std     = Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
+    gtr_disturb = Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
     # count how many trials
     all_cost_disturb = []
     
@@ -285,7 +305,7 @@ if __name__ == "__main__":
         dck, dc = gtr_std.find_closest(front_car_traj[i][0],gtr_std.d_list)
         # dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_std.d_list)
         intention = front_car_traj[i][1]
-        wk = (dck-dck0)*2+intention
+        wk = dck*2+intention
         # find the corresponding ctrl
         ctrl_cmds.append(int(action_mat[i,xk,wk]))
         a = gtr_std.a_list[ctrl_cmds[-1]]
@@ -325,7 +345,7 @@ if __name__ == "__main__":
         valid_ctrl = True
         
 
-        # test_a = [31,31,29,28]
+        # test_a = [31,28,28,28]
         for i in range(N): 
             dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_disturb.d_list)
             dc =  gtr_disturb.d_list[dck]
@@ -341,19 +361,22 @@ if __name__ == "__main__":
             r_cost = gtr_disturb.running_cost(dc, a_disturb)
             # print("action:%.2f, \nr_cost: %.2f"%(a_disturb, r_cost))
             cost2go_disturb += r_cost
-            if (gtr_disturb.constraint(front_car_traj[i][0], a)):
-                print("hit the constraint %.2f, %.2f, with a=%.2f"%(gtr_disturb.d, gtr_disturb.v,a_disturb))
-                print("front car position %.2f"%(front_car_traj[i][0]))
+            _, front_car_state_val = gtr_disturb.find_closest(front_car_traj[i][0], gtr_disturb.d_list)
+            if (gtr_disturb.constraint(front_car_state_val, a)):
+                # print("hit the constraint %.2f, %.2f, with a=%.2f"%(gtr_disturb.d, gtr_disturb.v,a_disturb))
+                # print("front car position %.2f"%(front_car_traj[i][0]))
                 cost2go_disturb += 1e30
                 # valid_ctrl = False
                 # break
             gtr_disturb.step_forward(a_disturb)
+            # print("xk' is: %d"%(gtr_disturb.xk))
         
         # print('; ', end='')
 
         if valid_ctrl == True:
             # print('disturbed: d is %.2f, v is %.2f, a is: %.2f'%(gtr_disturb.d, gtr_disturb.v, a_disturb))
             t_cost = gtr_disturb.terminal_cost()
+            # print('t_cost: %.2f'%(t_cost))
             cost2go_disturb += t_cost
             # print("t_cost: %.2f"%(t_cost))
             # print("cost to go is %.2f\n"%(cost2go_disturb))
@@ -361,8 +384,8 @@ if __name__ == "__main__":
                 min_disturb_cost = cost2go_disturb
                 best_disturb_policy = copy.deepcopy(disturb_policy_list)
 
-            if disturb_policy_list == [31,29,28]:
-                print(cost2go_disturb)
+            # if disturb_policy_list == [30,29,28,28]:
+                # print(cost2go_disturb)
 
             all_cost_disturb.append(cost2go_disturb)
 
@@ -373,7 +396,9 @@ if __name__ == "__main__":
     print(cnt)
 
     print("distubed mean: %.3e, min: %.2f"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
-    print("best disturbed policy is: ")
+    print("best disturbed policy is: ", end='')
     print(best_disturb_policy)
-    
+    for i in best_disturb_policy:
+        print(gtr_disturb.find_closest(i, gtr_disturb.a_list))
+
 

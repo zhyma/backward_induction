@@ -17,7 +17,7 @@ if __name__ == "__main__":
     lines = lines[1:]
 
     N   = int(param[0])
-    n_t = int(param[1])
+    n_d = int(param[1])
     n_v = int(param[2])
 
     mat = np.fromstring(lines[0], sep=',')[:-1]
@@ -25,10 +25,10 @@ if __name__ == "__main__":
     # n, bins, patches = ax2.hist(mat, 100, density=False)
 
     # d = [-8.0, 2.0]
-    # n_t = int(128)
+    # n_d = int(128)
     # d_list = []
-    # for i in range(n_t):
-    #     d_list.append(str('%.1f' % (d[0] + (d[1]-d[0])/(n_t-1)*i)))
+    # for i in range(n_d):
+    #     d_list.append(str('%.1f' % (d[0] + (d[1]-d[0])/(n_d-1)*i)))
 
     v = [.0, 18.0]
     n_v = int(16)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #     if mat[i] < 1e-3 and mat[i] > -1e-3:
     #         mat[i] = np.nan
     # mat = np.ma.masked_invalid(mat)
-    mat = mat.reshape(n_t, n_v)
+    mat = mat.reshape(n_d, n_v)
     # mat1 = mat[... , :25]
     # mat2 = mat[... , 25:]
 

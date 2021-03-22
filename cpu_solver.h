@@ -32,7 +32,8 @@ class CPUSolver
         int n_v;
 
         int n_p;
-        int n_t;
+        int n_d;
+        int n_dc;
 
         // subset
         long *r_cost = NULL;

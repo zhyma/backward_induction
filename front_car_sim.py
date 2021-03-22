@@ -152,8 +152,8 @@ def simulate(iter):
             t = 0
             # d = 54 + np.random.uniform(0, 60, 1)
             # v = np.random.uniform(0,18,1)
-            d = 20
-            v = 15
+            d = 5
+            v = 5
             
             dt = 2
             
@@ -211,7 +211,7 @@ def statistics():
 
 if __name__ == "__main__":
     # n = 10**6
-    n = 10**4
+    n = 10**2
     states = []
     simulate(n)
     mat = np.array(states)

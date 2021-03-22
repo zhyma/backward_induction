@@ -9,12 +9,13 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
 
     N = model->N_pred;
     n_v = model->v.n;
-    n_t = model->n_t; // 128
+    n_d = model->n_d; // 128
+    n_dc = model->n_dc; // 185
 
-    n_x = n_t * n_v; // 128*32
-    n_x_s = (n_t-model->max_last_step) * n_v; // 115*32
-    n_w = n_t * 2; // 128*2
-    n_w_s = (n_t-model->max_last_step) * 2; // 115*2
+    n_x = n_d * n_v; // 128*32
+    n_x_s = (n_d-model->max_last_step) * n_v; // 115*32
+    n_w = n_dc * 2; // 185*2
+    n_w_s = (n_dc-model->max_last_step) * 2; // (185-13)*2
     n_u = model->u.n;
 
     n_p = model->n_p; // 28
@@ -91,10 +92,15 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
         double temp = double(v)*p;
         sum += long (temp);
 
-        // // if (k0 == 0 && k==1 && xk == 39 && p>0 && uk==28)
-        // if (k0 == 0 && k==0 && xk == 0 && p>0 && uk==31)
+        // if (k0 == 0 && k==1 && xk == 39 && p>0 && uk==28)
+        // if ((k0 == 0 && k==3 && xk == 303 && p>0 && uk==28) || \
+        //     (k0 == 0 && k==2 && xk == 139 && p>0 && uk==28) || \
+        //     (k0 == 0 && k==1 && xk == 303 && p>0 && uk==29) || \
+        //     (k0 == 0 && k==0 && xk == 303 && p>0 && uk==30))
+        // if (k0 == 0 && k==7 && xk == 68 && p>0 && uk==24)
         // {
         //     std::cout << "u=" << uk << " (" << model->a.list[uk] << ")";
+        //     std::cout << "xk_=" << xk_ << " (" << model->d.list[xk_/n_v] << "," << model->v.list[xk_%n_v] << ")";
         //     std::cout << ", wk=" << wk;
         //     std::cout << ", dwk=" << dwk;
         //     std::cout << ", p=" << p;
@@ -124,20 +130,39 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     }
     long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
 
-    // // if (k0 == 0 && k==1 && xk == 39 && wk==23)
-    // if (k0 == 0 && k==0 && xk == 0 && wk==1)
+    // if (k0 == 0 && k==0 && xk == 0 && uk==24)
+    // // // // if ((k0 == 0 && k==3 && xk == 303 && wk==39 && uk==28) || \
+    // // // //     (k0 == 0 && k==2 && xk == 139 && wk==33 && uk==28) || \
+    // // // //     (k0 == 0 && k==1 && xk == 38 && wk==25 && uk==29) || \
+    // // // //     (k0 == 0 && k==0 && xk == 0 && wk==19 && uk==30))
     // {
-    //     std::cout << "xk'=" << xk_;
+    //     std::cout << "xk'=" << xk_ << ", ";
     //     std::cout << ", d'=" << model->d.list[xk_/n_v];
     //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
     //     std::cout << "u=" << uk;
     //     std::cout << ", l=" << l;
     //     std::cout << ", sum=" << sum << std::endl;
+    //     std::cout << "mask: " << r_mask[xk*n_w_s*n_u + wk*n_u + uk] << std:: endl;
     //     std::cout << ", cost to go=" << l+sum << std::endl << std::endl;
     // }
 
-    if (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & 1<<(k0+k) > 0)
-        l += 1e15;
+    if (k == 6 && xk == 32 && wk == 185 && uk==28)
+    {
+        std::cout << "k=" << k;
+        std::cout << ", d=" << model->d.list[xk/n_v];
+        std::cout << ", v=" << model->v.list[xk%n_v];
+        std::cout << ", a=" << model->a.list[uk];
+        std::cout << ", uk=" << uk; 
+        std::cout << ", d'=" << model->d.list[xk_/n_v];
+        std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+        std::cout << "running cost is: " << l;
+        std::cout << ", rmask is: " << r_mask[xk*n_w_s*n_u + wk*n_u + uk];
+        std::cout << ", sum is: " << sum;
+        std::cout << ", q is: " << l+sum << std::endl << std::endl;
+    }
+
+    if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
+        l = 1e15;
 
     // // // to test state transition
     // if (k0 == 0 && k>7 && xk == 143 && wk==191 && uk ==3)
@@ -151,7 +176,7 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
 
     // to test running_cost
     // if (k0 == 0 && k>8 && xk == 143 && wk==191)
-    // if (k == 9 && k0 == 0 && xk == 192 && wk0_debug+wk == 247)
+    // if (k == 6 && xk == 32 && wk == 185 && uk==28)
     // {
     //     std::cout << "k=" << k;
     //     std::cout << ", d=" << model->d.list[xk/n_v];
@@ -171,7 +196,7 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     // }
 
     // // // examine the running cost
-    // if (k0 == 0 && k==0 && xk==1 && wk==1)
+    // if (k0 == 0 && k==3 && xk==139 && wk==39)
     // {
     //     std::cout << "v=" << model->v.list[xk%n_v];
     //     std::cout << ", a=" << model->a.list[uk];
@@ -278,6 +303,11 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
         std::cout << "solve step " << k << std::endl;
         estimate_one_step(k0, k);
     }
+
+    std::cout << "xk'=" << 563 << ", ";
+    std::cout << ", d'=" << model->d.list[563/n_v];
+    std::cout << ", v'=" << model->v.list[563%n_v] << std::endl;
+        
     
     int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
     int ak = action[idx];
@@ -380,7 +410,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
-    for (int dk = 0; dk < n_t; ++dk)
+    for (int dk = 0; dk < n_d; ++dk)
     {
         for (int vk = 0; vk < n_v; ++vk)
         {
@@ -392,7 +422,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     if (debug)
     {
         std::string filename = "t_cost_dv";
-        int dim[] = {1, n_t, n_v};
+        int dim[] = {1, n_d, n_v};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, t_cost);
     }
     // std::cout << "generate terminal cost" << std::endl;

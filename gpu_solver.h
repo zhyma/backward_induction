@@ -64,7 +64,7 @@ class GPUSolver
         int n_v;
 
         int n_p, n_p_default;
-        int n_t;
+        int n_d;
 
         BIData<float> r_cost;
         BIData<unsigned long long int> r_mask;

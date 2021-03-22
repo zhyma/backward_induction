@@ -66,7 +66,17 @@ DPModel::DPModel(int pred_steps, int running_steps)
     //     arr[i] = stof(line_str);
     // }
 
-    DataLoader *load = new DataLoader("./output/front_car_data.csv");
+    std::vector<std::string> files;
+    search_files(&files, "front_car_data");
+
+    if (files.size() < 1)
+    {
+        std::cout << "ERROR! Neither has raw driving data, nor transition probability matrix" << std::endl;
+        return;
+    }
+
+    std::string file_name = "./output/" + files[0];
+    DataLoader *load = new DataLoader(file_name);
 
     d2tl = load->param[0];
     rl_start = load->param[1];
@@ -81,7 +91,8 @@ DPModel::DPModel(int pred_steps, int running_steps)
     // mass of the vehicle
     m = 1500;
     // Maximum sample points could travel during 10-prediction-step
-    n_t = 128;
+    n_d = 128;
+    n_dc = 185;
     // At prediction step 9, the farest position can be reach is 114 (count from 0)
     // There are 14 possible next steps: 0,1,2,...,13
     max_last_step = 13;
@@ -111,14 +122,14 @@ DPModel::DPModel(int pred_steps, int running_steps)
     a.n = n_a;
     discretize(&a);
 
-    int n_d = 353;
-    d.n = n_d;
+    int n_d_total = 353;
+    d.n = n_d_total;
     d.list = new float[d.n];
-    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_t-1));
+    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1));
     for (int i = 0; i < d.n; ++i)
     {
-        // d.list[i] = float(i * v.max * N_pred * dt/(n_t-1));
-        d.list[i] = float(i * v.max * 10 * dt/(n_t-1));
+        // d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
+        d.list[i] = float(i * v.max * 10 * dt/(n_d-1));
         // std::cout << "@" << i << ": " << d.list[i] << ", ";
     }
     std::cout << std::endl;
@@ -347,11 +358,18 @@ int DPModel::get_velc_idx(float velc)
 
 bool DPModel::front_car_safe(float dx, float vx, float dcx)
 {
+    // if ( dx > 28 && dx < 29 && vx > 8 && vx < 9 && dcx > 52 && dcx < 58)
+    // {
+    //     std::cout << "front car at: " << dcx ;
+    //     std::cout << ", dx=" << dx ;
+    //     std::cout << ", vx=" << vx ;
+    //     std::cout << ", dx - (dcx - vx*t_tcc)=" << (dx - (dcx - vx*t_tcc)) << std::endl ;
+    // }
     // if the front car is safe, return true, else return false
-    if (dx <= dcx - vx*t_tcc)
-        return true;
-    else
+    if (dx > dcx - vx*t_tcc)
         return false;
+    else
+        return true;
 }
 
 int DPModel::running_cost_init()
@@ -362,7 +380,7 @@ int DPModel::running_cost_init()
     // std::cout << idx << std::endl;
     r_cost = new long [x.n * w.n * u.n]{};
     r_mask = new long [x.n * w.n * u.n]{};
-    long ban_all_time;
+    long ban_all_time = 0;
     for (int k = 0; k < N_total; ++k)
         ban_all_time = ban_all_time | (1<<k);
     std::cout << "ban_all_time = " << ban_all_time << std::endl;
@@ -376,6 +394,7 @@ int DPModel::running_cost_init()
     {
         for (int wk = 0; wk < w.n; ++wk)
         {
+            apply_penalty = false;
             float dx = d.list[xk/v.n], vx = v.list[xk%v.n];
             float dcx = d.list[wk/2], ix = wk%2;
 
@@ -387,7 +406,11 @@ int DPModel::running_cost_init()
             else
                 apply_penalty = true;
 
-            float u_rlmax = vx*vx/(2*(d2tl-dx));
+            if (xk == 32 && wk == 185)
+                std::cout << "the penalty is: " << apply_penalty << std::endl;
+
+            // // Seems that this shouldn't exist
+            // float u_rlmax = -vx*vx/(2*(d2tl-dx+0.001));
             
             for (int uk = 0; uk < u.n; ++uk)
             {
@@ -479,7 +502,7 @@ int DPModel::running_cost_init()
                 if (apply_penalty == true)
                     r_mask[idx] = ban_all_time;
 
-                // constraint: before reaching the red light, and the red light is on
+                // //constraint: before reaching the red light, and the red light is on
                 if (dx < d2tl && apply_penalty == false)
                 {
                     for (int k = 0; k < N_total; ++k)
@@ -491,8 +514,13 @@ int DPModel::running_cost_init()
                             if (vx*vx > 2.0*(-a.min)*(d2tl-dx+0.01))
                                 apply_penalty = true;
 
-                             // acceleration constraint
-                            if (ax > u_rlmax)
+                            // //acceleration constraint (Seems should not exist)
+                            // if (ax > u_rlmax)
+                            //     apply_penalty = true;
+                            float attr[2] = {dx, vx};
+                            float ax = u.list[uk];
+                            phy_model(attr, ax);
+                            if (attr[0] > d2tl)
                                 apply_penalty = true;
                         }
                         

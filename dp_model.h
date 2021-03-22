@@ -40,7 +40,10 @@ class DPModel
         // run the controller 10 times
         int N_run = 10;
         int N_total = N_pred + N_run - 1;
-        int n_t = 128;
+        // the number of sampling point along the ego car's trajectory
+        int n_d = 128;
+        //  the number of sampling point along the front car's trajectory
+        int n_dc = 185;
         int max_last_step = 13;
         int n_p = 28;
         int n_p_gpu = 32;

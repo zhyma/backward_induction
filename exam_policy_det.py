@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
+import os
+import sys
 
 ## For deterministic example (front call: 80, 110, 140, etc)
 ## for optimal control, it only run once
@@ -30,8 +32,8 @@ class Vehicle():
         self.a_list = self.discretize(a_min, a_max, 32)
         self.v_list = self.discretize(v_min, v_max, 32)
         self.d_list = []
-        n_d = 353
-        for i in range(n_d):
+        n_d_total = 353
+        for i in range(n_d_total):
             val = i*v_max*10*self.dt/(128-1)
             self.d_list.append(val)
 
@@ -52,7 +54,6 @@ class Vehicle():
         self.d = 0
         self.v = 0
         return
-
 
     def physical(self, a):
         # calculating the next state, but not to move one step forward
@@ -229,6 +230,14 @@ class Load():
                 break
         return
 
+def find_all(name, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            if name in f:
+                result.append(path + f)
+    return result
+
 if __name__ == "__main__":
     # ctrl = Load('output/control.csv')
     action_filename = 'output/cpu_action.csv'
@@ -248,7 +257,12 @@ if __name__ == "__main__":
     action_mat = action_mat.reshape((N, n_x, n_w))
     print(action_mat.shape)
 
-    traj = Load('output/front_car_data.csv')
+    curr_dir = os.getcwd() + '/output/'
+    files = find_all('front_car_data', curr_dir)
+    if len(files) < 1:
+        print('No files')
+        sys.exit(0)
+    traj = Load(files[0])
     
     line = traj.readstate()
     param = line.split(',')
@@ -274,8 +288,6 @@ if __name__ == "__main__":
     print([i[0] for i in front_car_traj])
 
     cost2go_std = 0
-    dc0 = front_car_traj[0][0]
-    dck0, _ = gtr_std.find_closest(dc0, gtr_std.d_list)
     for i in range(N):
         dk, _ = gtr_std.find_closest(gtr_std.d, gtr_std.d_list)
         vk, _ = gtr_std.find_closest(gtr_std.v, gtr_std.v_list)
@@ -284,7 +296,7 @@ if __name__ == "__main__":
         dck, dc = gtr_std.find_closest(front_car_traj[i][0],gtr_std.d_list)
         # dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_std.d_list)
         intention = front_car_traj[i][1]
-        wk = (dck-dck0)*2+intention
+        wk = dck*2+intention
         # find the corresponding ctrl
         ctrl_cmds.append(int(action_mat[i,xk,wk]))
         a = gtr_std.a_list[ctrl_cmds[-1]]
@@ -318,13 +330,13 @@ if __name__ == "__main__":
     valid_cnt = 0
     invalid_cnt = 0
 
-    for test in range(1000*1000*10):
+    iter = 1000*1000*10
+    for test in range(iter):
         # each trial contain 10 control steps
         cost2go_disturb = 0
         disturb_policy_list = []
         gtr_disturb.reset()
         valid_ctrl = True
-        
 
         # test_a = [31,31,29,28]
         for i in range(N): 
@@ -338,7 +350,8 @@ if __name__ == "__main__":
             r_cost = gtr_disturb.running_cost(dc, a_disturb)
             # print("action:%.2f, \nr_cost: %.2f"%(a_disturb, r_cost))
             cost2go_disturb += r_cost
-            if (gtr_disturb.constraint(front_car_traj[i][0], a)):
+            _, front_car_state_val = gtr_disturb.find_closest(front_car_traj[i][0], gtr_disturb.d_list)
+            if (gtr_disturb.constraint(front_car_state_val, a)):
                 # print("hit the constraint %.2f, %.2f, with a=%.2f"%(gtr_disturb.d, gtr_disturb.v,a_disturb))
                 # print("front car position %.2f"%(front_car_traj[i][0]))
                 cost2go_disturb += 1e30
@@ -366,6 +379,9 @@ if __name__ == "__main__":
                 break
         else:
             invalid_cnt += 1
+
+        if test%(iter/10)==0:
+            print(f"{test/(iter/10):.0f}0%...")
         
 
     print("There are %d cost2go is greater than optimal"%(cnt))
@@ -374,5 +390,8 @@ if __name__ == "__main__":
     print("distubed mean: %.3e, min: %.2f"%(np.mean(all_cost_disturb), min(all_cost_disturb)))
     print("best disturbed policy is: ")
     print(best_disturb_policy)
-    
+    for i in best_disturb_policy:
+        a, _ = gtr_disturb.find_closest(i, gtr_disturb.a_list)
+        print(a,end=', ')
+    print('\n')
 

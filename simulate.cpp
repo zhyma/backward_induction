@@ -8,18 +8,14 @@ float one_step(int solver, bool log, DPModel * dp_model)
     std::string solver_type;
     
     std::cout << "creating a new DP model is done" << std::endl;
-    // int N_pred = dp_model->N_pred;
-    // int n_x = dp_model->x.n;
-    // int n_w = dp_model->w.n;
-    // int n_u = dp_model->u.n;
-
+    
     int k = 0;
     // vehicle starting position
     float d0 = 0;
     // vehicle starting velocity
     float v0 = 0;
     // front car starting position
-    float dc0 = 80.0;
+    float dc0 = 0.0;
     // front car starting intention
     int intention = 1;
 
@@ -40,7 +36,6 @@ float one_step(int solver, bool log, DPModel * dp_model)
         start = std::clock();
  
         int a = cpu_solver.solve(0, d0, v0, dc0, intention);
-        std::cout << "best action: " << dp_model->a.list[a] << std::endl;
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
         std::cout << std::endl << "CPU time: " << duration << " s" << std::endl;
         
@@ -57,6 +52,8 @@ float one_step(int solver, bool log, DPModel * dp_model)
             int a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
         }
+
+
         // show potential action for different starting velocity
         // for (int i = 0; i < dp_model->v.n; ++i)
         // {

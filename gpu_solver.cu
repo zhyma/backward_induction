@@ -10,13 +10,13 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
 
     N = model->N_pred;
     n_v = model->v.n;
-    n_t = model->n_t; // 128
+    n_d = model->n_d; // 128
 
     // s stands for searching range
-    n_x = n_t * n_v; // 128*32
-    n_x_s = (n_t-model->max_last_step) * n_v; // 115*32
-    n_w = (n_t - model->max_last_step+15)*2; //130*2
-    n_w_s = (n_t-model->max_last_step) * 2; //115*2
+    n_x = n_d * n_v; // 128*32
+    n_x_s = (n_d-model->max_last_step) * n_v; // 115*32
+    n_w = (n_d - model->max_last_step+15)*2; //130*2
+    n_w_s = (n_d-model->max_last_step) * 2; //115*2
     n_u = model->u.n;
 
     n_p_default = model->n_p; // 28
@@ -284,7 +284,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
-    for (int dk = 0; dk < n_t; ++dk)
+    for (int dk = 0; dk < n_d; ++dk)
     {
         for (int vk = 0; vk < n_v; ++vk)
         {
