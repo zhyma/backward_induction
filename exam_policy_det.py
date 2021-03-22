@@ -157,11 +157,15 @@ class Vehicle():
         # traffic light condition
         if d < d2tl and t > self.rl_start and t < self.rl_end:
             # check before the red light, if not enough to brake
-            if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
+            # if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
+            if (v**2) > 2.0*(-a_min)*(d2tl-d+0.01):
                 penalty = True
             # if in front of a red light, check the acceleration
-            u_rlmax = 0.5*v**2/(d2tl-d)
-            if a > u_rlmax:
+            # u_rlmax = 0.5*v**2/(d2tl-d)
+            # if a > u_rlmax:
+            #     penalty = True
+            d_, _ = self.physical(a)
+            if d_ > d2tl:
                 penalty = True
 
         return penalty

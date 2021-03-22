@@ -30,7 +30,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
     {
         std::cout << "CPU solver, one step" << std::endl;
         CPUSolver cpu_solver(dp_model);
-        cpu_solver.debug = true;
+        cpu_solver.debug = false;
         solver_type = "cpu";
 
         start = std::clock();

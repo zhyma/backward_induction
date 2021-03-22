@@ -146,20 +146,20 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     //     std::cout << ", cost to go=" << l+sum << std::endl << std::endl;
     // }
 
-    if (k == 6 && xk == 32 && wk == 185 && uk==28)
-    {
-        std::cout << "k=" << k;
-        std::cout << ", d=" << model->d.list[xk/n_v];
-        std::cout << ", v=" << model->v.list[xk%n_v];
-        std::cout << ", a=" << model->a.list[uk];
-        std::cout << ", uk=" << uk; 
-        std::cout << ", d'=" << model->d.list[xk_/n_v];
-        std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
-        std::cout << "running cost is: " << l;
-        std::cout << ", rmask is: " << r_mask[xk*n_w_s*n_u + wk*n_u + uk];
-        std::cout << ", sum is: " << sum;
-        std::cout << ", q is: " << l+sum << std::endl << std::endl;
-    }
+    // if (k == 6 && xk == 32 && wk == 185 && uk==28)
+    // {
+    //     std::cout << "k=" << k;
+    //     std::cout << ", d=" << model->d.list[xk/n_v];
+    //     std::cout << ", v=" << model->v.list[xk%n_v];
+    //     std::cout << ", a=" << model->a.list[uk];
+    //     std::cout << ", uk=" << uk; 
+    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
+    //     std::cout << ", v'=" << model->v.list[xk_%n_v] << std::endl;
+    //     std::cout << "running cost is: " << l;
+    //     std::cout << ", rmask is: " << r_mask[xk*n_w_s*n_u + wk*n_u + uk];
+    //     std::cout << ", sum is: " << sum;
+    //     std::cout << ", q is: " << l+sum << std::endl << std::endl;
+    // }
 
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = 1e15;
@@ -304,9 +304,9 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
         estimate_one_step(k0, k);
     }
 
-    std::cout << "xk'=" << 563 << ", ";
-    std::cout << ", d'=" << model->d.list[563/n_v];
-    std::cout << ", v'=" << model->v.list[563%n_v] << std::endl;
+    // std::cout << "xk'=" << 563 << ", ";
+    // std::cout << ", d'=" << model->d.list[563/n_v];
+    // std::cout << ", v'=" << model->v.list[563%n_v] << std::endl;
         
     
     int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
