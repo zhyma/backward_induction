@@ -31,24 +31,24 @@ int search_files(std::vector<std::string> *files, std::string search_key)
     return cnt;
 }
 
-int get_param_val(XMLElement* elmt_root, const char* tag)
-{
-    int param_val;
-    const char* param_char = elmt_root->FirstChildElement(tag)->GetText();
-    std::stringstream strValue;
-    strValue << param_char;
-    strValue >> param_val;
-    return param_val;
-}
+// int get_param_val(XMLElement* elmt_root, const char* tag)
+// {
+//     int param_val;
+//     const char* param_char = elmt_root->FirstChildElement(tag)->GetText();
+//     std::stringstream strValue;
+//     strValue << param_char;
+//     strValue >> param_val;
+//     return param_val;
+// }
 
 //initial function
 DPModel::DPModel(int pred_steps, int running_steps)
 {
     test_set = false;
 
-    std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
-    tinyxml2::XMLDocument doc_xml;
-    XMLError err_xml = doc_xml.LoadFile("config.xml");
+    // std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
+    // tinyxml2::XMLDocument doc_xml;
+    // XMLError err_xml = doc_xml.LoadFile("config.xml");
 
     // std::ifstream load_param;
     // load_param.open("./output/front_car_data.csv", std::ios::in);
@@ -108,7 +108,6 @@ DPModel::DPModel(int pred_steps, int running_steps)
     dt = 2;
     
     int n_v = 32;
-    // int n_v = 16;
     int n_a = 32;
 
     v.min = .0;
@@ -116,8 +115,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     v.n = n_v;
     discretize(&v);
 
-    a.min = -8.0;
-    // a.min = -4.0;
+    a.min = -4.0;
     a.max = 2.0;
     a.n = n_a;
     discretize(&a);
@@ -363,10 +361,10 @@ bool DPModel::front_car_safe(float dx, float vx, float dcx)
     //     std::cout << "front car at: " << dcx ;
     //     std::cout << ", dx=" << dx ;
     //     std::cout << ", vx=" << vx ;
-    //     std::cout << ", dx - (dcx - vx*t_tcc)=" << (dx - (dcx - vx*t_tcc)) << std::endl ;
+    //     std::cout << ", dx - (dcx - vx*t_tcc - 3)=" << (dx - (dcx - vx*t_tcc - 3)) << std::endl ;
     // }
     // if the front car is safe, return true, else return false
-    if (dx > dcx - vx*t_tcc)
+    if (dx > dcx - vx*t_tcc - 3)
         return false;
     else
         return true;
@@ -811,7 +809,7 @@ int DPModel::check_driving_data()
     }
     // std::cout << "non-zero probability: " << valid_p << std::endl;
     
-    if(true)
+    if(debug)
     {
         std::string filename = "prob_full";
         int dim[] = {N_total, w.n, n_p};

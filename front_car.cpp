@@ -157,7 +157,7 @@ int fc_n_step_sim(int iter)
     float d2tl = 240;
     float dt = 2;
     float v_bound[] = {.0, 18.0};
-    float a_bound[] = {-8.0, 2.0};
+    float a_bound[] = {-4.0, 2.0};
     // initializing here to make sure random numbers are truely random.
     FCar gtr(d2tl, dt, v_bound, a_bound);
 

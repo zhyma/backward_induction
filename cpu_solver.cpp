@@ -293,14 +293,14 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     int dk0 = model->get_dist_idx(d0);
     int vk0 = model->get_velc_idx(v0);
     int dck0 = model->get_dist_idx(dc0);
-    std::cout << "dk0 is: " << dk0 << std::endl;
-    std::cout << "dck0 is: " << dck0 << std::endl;
+    // std::cout << "dk0 is: " << dk0 << std::endl;
+    // std::cout << "dck0 is: " << dck0 << std::endl;
     get_subset(k0, dk0, dck0);
     // std::cout << "extract subset done." << std::endl;
     for (int k = N; k >= 0; k--)
     // for (int k = N; k >= 8; k--)
     {
-        std::cout << "solve step " << k << std::endl;
+        // std::cout << "solve step " << k << std::endl;
         estimate_one_step(k0, k);
     }
 

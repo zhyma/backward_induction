@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     {
         // int pred_steps = 10;
         int pred_steps = 10;
-        int run_steps = 10;
+        int run_steps = 1;
 
         DPModel dp_model(pred_steps, run_steps);
         if (modeStr == "one_step")

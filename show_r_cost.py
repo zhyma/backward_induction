@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # n, bins, patches = ax2.hist(mat, 100, density=False)
 
-    a = [-8.0, 2.0]
+    a = [-4.0, 2.0]
     n_a = int(32)
     a_list = []
     for i in range(n_a):

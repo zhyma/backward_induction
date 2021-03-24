@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def disturb_policy(car, a):
-    a_ = a + np.random.uniform(-8, 2, 1)
+    a_ = a + np.random.uniform(-4, 2, 1)
     if a_ > 2:
         a_ = 2
-    elif a_ < -8:
-        a_ = -8
+    elif a_ < -4:
+        a_ = -4
 
     if car.v <= car.v_min and a_ < 0:
         a_ = 0
@@ -30,7 +30,7 @@ class Vehicle():
         self.v_min = 0.0
         self.v_max = 18.0
         self.v = 0
-        self.a_min = -8.0
+        self.a_min = -4.0
         self.a_max = 2.0
 
         self.m = 1500
@@ -181,8 +181,8 @@ if __name__ == "__main__":
     rl_start = float(param[1].split('=')[1])
     rl_end = float(param[2].split('=')[1])
     print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
-    gtr_std = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
-    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2)
+    gtr_std = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -4, 2)
+    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -4, 2)
     # count how many trials
     trial_cnt = 0
     all_cost_std = []

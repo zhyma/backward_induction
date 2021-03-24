@@ -3,20 +3,27 @@
     <!--An XML must have a single root -->
 
     <!--240 -->
-    <distance_to_trafiic_light>
-        1000
-    </distance_to_trafiic_light>
+    <v_max>
+        18
+    </v_max>
 
     <!--12 -->
-    <red_light_start>
-        30
-    </red_light_start>
+    <a_max>
+        2
+    </a_max>
 
     <!--42 -->
-    <red_light_end>
-        80
-    </red_light_end>
+    <a_min>
+        -4
+    </a_min>
 
-    <front_car_starting_position>
-    </front_car_starting_position>
+    <!--time to collision ()-->
+    <tcc>
+        3
+    </tcc>
+
+    <!--minimum safety distance (m)-->
+    <tcc>
+        3
+    </tcc>
 </config>

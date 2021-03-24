@@ -11,9 +11,8 @@ import sys
 ## for optimal control, it only run once
 ## for disturbed policy, it run 10e6 times to get the average
 
-
 class Vehicle():
-    def __init__(self, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max, N_pred):
+    def __init__(self, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max, N_pred, d0, v0):
         self.d2tl = d2tl
         self.dt = dt
         self.rl_start = rl_start
@@ -21,12 +20,14 @@ class Vehicle():
         self.t = 0
         self.N = N_pred
         
-        self.d = 0
+        self.d0 = d0
+        self.d = d0
         # boudnary of velocity is [0, v_bound]
         self.v_min = 0.0
         self.v_max = 18.0
-        self.v = 0
-        self.a_min = -8.0
+        self.v0 = v0
+        self.v = v0
+        self.a_min = -4.0
         self.a_max = 2.0
 
         self.a_list = self.discretize(a_min, a_max, 32)
@@ -51,8 +52,8 @@ class Vehicle():
 
     def reset(self):
         self.t = 0
-        self.d = 0
-        self.v = 0
+        self.d = self.d0
+        self.v = self.v0
         return
 
     def physical(self, a):
@@ -242,6 +243,22 @@ def find_all(name, path):
                 result.append(path + f)
     return result
 
+def get_v0(xk, wk):
+    f = open('output/cpu_value.csv','r') 
+    lines = f.readlines()
+
+    dim = np.fromstring(lines[0], sep=',')
+    N   = int(dim[0])
+    n_x = int(dim[1])
+    n_w = int(dim[2])
+
+    # only need the data at k = 0
+    mat = np.fromstring(lines[1], sep=',')[:-1]
+
+    mat = mat.reshape(n_x,n_w)
+
+    return mat[xk,wk]
+
 if __name__ == "__main__":
     # ctrl = Load('output/control.csv')
     action_filename = 'output/cpu_action.csv'
@@ -274,8 +291,8 @@ if __name__ == "__main__":
     rl_start = float(param[1].split('=')[1])
     rl_end = float(param[2].split('=')[1])
     print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
-    gtr_std     = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2, N)
-    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -8, 2, N)
+    gtr_std     = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, N, d0=0, v0=0)
+    gtr_disturb = Vehicle(d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, N, d0=0, v0=0)
     # count how many trials
     all_cost_disturb = []
     
@@ -292,7 +309,10 @@ if __name__ == "__main__":
     print([i[0] for i in front_car_traj])
 
     cost2go_std = 0
+    xk0 = 0
+    wk0 = 0
     for i in range(N):
+        print('d=%.2f, v=%.2f, '%(gtr_std.d, gtr_std.v), end='')
         dk, _ = gtr_std.find_closest(gtr_std.d, gtr_std.d_list)
         vk, _ = gtr_std.find_closest(gtr_std.v, gtr_std.v_list)
         xk = dk*32+vk
@@ -301,10 +321,13 @@ if __name__ == "__main__":
         # dck, _ = gtr_std.find_closest(front_car_traj[i][0], gtr_std.d_list)
         intention = front_car_traj[i][1]
         wk = dck*2+intention
+        if i == 0:
+            xk0 = xk
+            wk0 = wk
         # find the corresponding ctrl
         ctrl_cmds.append(int(action_mat[i,xk,wk]))
         a = gtr_std.a_list[ctrl_cmds[-1]]
-        print('%.2f, '%(a), end='')
+        print('a=%.2f, '%(a), end='')
         # calculate one running cost
         r_cost = gtr_std.running_cost(dc, a)
         cost2go_std += r_cost
@@ -325,7 +348,14 @@ if __name__ == "__main__":
     print('%.2f, %.2f'%(gtr_std.d, gtr_std.v))
     print('policy is: ', end='')
     print(ctrl_cmds)
+
+    ## find the corresponding value
+    print("xk0 = %d, wk0 = %d"%(xk0, wk0))
+    v_e = get_v0(xk0, wk0)
+    print('Expect value is: %.2f'%(v_e))
     print('\n')
+
+    ## start to simulate with disturbed policy
 
     min_disturb_cost =1e20
     best_disturb_policy = []

@@ -14,7 +14,7 @@ class FCar
         float d2tl = 0;
         float dt = 2;
         float v_bound[2] = {0, 18.0};
-        float a_bound[2] = {-8, 2};
+        float a_bound[2] = {-4, 2};
         
         float d = 0;
         float v = 0;
