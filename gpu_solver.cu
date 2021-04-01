@@ -284,22 +284,35 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
-    for (int dk = 0; dk < n_d; ++dk)
-    {
-        for (int vk = 0; vk < n_v; ++vk)
-        {
+    // for (int dk = 0; dk < n_d; ++dk)
+    // {
+    //     for (int vk = 0; vk < n_v; ++vk)
+    //     {
             
-            // t_cost[idx] = model->terminal_cost(dk0, dk, vk);
-            float t_cost = model->terminal_cost(dk0, dk, vk);
-            int xk = (dk*n_v+vk);
-            for (int wk = 0; wk < n_w; ++wk)
-            {
-                idx = N*n_x*n_w + xk * n_w + wk;
-                // if (wk < n_w_s)
-                value.cpu[idx] = t_cost;
-                // else
-                //     value[idx] = 0;
-            }
+    //         // t_cost[idx] = model->terminal_cost(dk0, dk, vk);
+    //         float t_cost = model->terminal_cost(dk0, dk, vk, uk);
+    //         int xk = (dk*n_v+vk);
+    //         for (int wk = 0; wk < n_w; ++wk)
+    //         {
+    //             idx = N*n_x*n_w + xk * n_w + wk;
+    //             // if (wk < n_w_s)
+    //             value.cpu[idx] = t_cost;
+    //             // else
+    //             //     value[idx] = 0;
+    //         }
+    //     }
+    // }
+    for (int xk = 0; xk < n_x; ++xk)
+    {
+        // t_cost[idx] = model->terminal_cost(dk0, dk, vk);
+        for (int wk = 0; wk < n_w; ++wk)
+        {
+            float t_cost = model->terminal_cost(xk, wk);
+            idx = N*n_x*n_w + xk * n_w + wk;
+            // if (wk < n_w_s)
+            value.cpu[idx] = t_cost;
+            // else
+            //     value[idx] = 0;
         }
     }
     // std::cout << "place terminal cost into the value table" << std::endl;

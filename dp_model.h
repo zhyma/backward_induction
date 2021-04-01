@@ -1,6 +1,8 @@
 #ifndef DP_MODEL_H_
 #define DP_MODEL_H_
 
+#define PENALTY 1e15
+
 #include <iostream>
 #include <cmath>
 // #include <math.h>
@@ -69,7 +71,8 @@ class DPModel
         DPModel(int pred_steps, int running_steps);
         ~DPModel();
         // int terminal_cost_init(float d0);
-        long terminal_cost(int dk0, int dk, int vk);
+        // long terminal_cost(int dk0, int dk, int vk);
+        long terminal_cost(int xk, int wk);
         int get_dist_idx(float dist);
         int get_velc_idx(float velc);
         int get_subset(int k0, int dk0, int dck0);
@@ -97,6 +100,7 @@ class DPModel
 
         //
         bool front_car_safe(float dx, float vx, float dcx);
+        bool red_light_safe(int k, float dx, float vx, float ax);
 
         // if you have multiple probability matrices
         float* p_mat;

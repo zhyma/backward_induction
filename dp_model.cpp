@@ -356,18 +356,38 @@ int DPModel::get_velc_idx(float velc)
 
 bool DPModel::front_car_safe(float dx, float vx, float dcx)
 {
-    // if ( dx > 28 && dx < 29 && vx > 8 && vx < 9 && dcx > 52 && dcx < 58)
-    // {
-    //     std::cout << "front car at: " << dcx ;
-    //     std::cout << ", dx=" << dx ;
-    //     std::cout << ", vx=" << vx ;
-    //     std::cout << ", dx - (dcx - vx*t_tcc - 3)=" << (dx - (dcx - vx*t_tcc - 3)) << std::endl ;
-    // }
     // if the front car is safe, return true, else return false
     if (dx > dcx - vx*t_tcc - 3)
         return false;
     else
         return true;
+}
+
+
+bool DPModel::red_light_safe(int k, float dx, float vx, float ax)
+{
+    // if stop at the redlight is safe, return true, else return false
+    bool rl_safe = true;
+    if (k*dt > rl_start && k*dt < rl_end)
+    {
+        // distance constraint
+        // a.min is always <0
+        if (vx*vx > 2.0*(-a.min)*(d2tl-dx+0.01))
+            rl_safe = false;
+
+        // //acceleration constraint (Seems should not exist)
+        // if (ax > u_rlmax)
+        //     apply_penalty = true;
+        if (k != N_pred)
+        {
+            float attr[2] = {dx, vx};
+            float ax;
+            phy_model(attr, ax);
+            if (attr[0] > d2tl)
+                rl_safe = false;
+        }
+    }
+    return rl_safe;
 }
 
 int DPModel::running_cost_init()
@@ -403,9 +423,6 @@ int DPModel::running_cost_init()
                 apply_penalty = false;
             else
                 apply_penalty = true;
-
-            if (xk == 32 && wk == 185)
-                std::cout << "the penalty is: " << apply_penalty << std::endl;
 
             // // Seems that this shouldn't exist
             // float u_rlmax = -vx*vx/(2*(d2tl-dx+0.001));
@@ -505,24 +522,8 @@ int DPModel::running_cost_init()
                 {
                     for (int k = 0; k < N_total; ++k)
                     {
-                        if (k*dt > rl_start && k*dt < rl_end)
-                        {
-                            // distance constraint
-                            // a.min is always <0
-                            if (vx*vx > 2.0*(-a.min)*(d2tl-dx+0.01))
-                                apply_penalty = true;
-
-                            // //acceleration constraint (Seems should not exist)
-                            // if (ax > u_rlmax)
-                            //     apply_penalty = true;
-                            float attr[2] = {dx, vx};
-                            float ax = u.list[uk];
-                            phy_model(attr, ax);
-                            if (attr[0] > d2tl)
-                                apply_penalty = true;
-                        }
-                        
-                        if (apply_penalty)
+                        float ax = u.list[uk];
+                        if (!red_light_safe(k, dx, vx, ax))
                             r_mask[idx] = r_mask[idx] | (1<<k);
                     }
                 }
@@ -541,23 +542,29 @@ int DPModel::running_cost_init()
     return 0;
 }
 
-long DPModel::terminal_cost(int dk0, int dk, int vk)
+// long DPModel::terminal_cost(int dk0, int dk, int vk)
+long DPModel::terminal_cost(int xk, int wk)
 {
-    // if (test_set == true)
-    // {
-    //     long dx = int(d.list[dk]);
-    //     long vx = int(v.list[vk]*100);
-    //     return dx*10000*1000 + vx*1000;
-    // }
-    // else
-    // {
-        // x stands for value
-        // starting position
-        // float d0x = d.list[dk0];
-        // ending position
-        float dx  = d.list[dk];
-        float vx  = v.list[vk];
+    int dk = xk/n_d;
+    int vk = xk%n_d;
+    int dck = wk/2;
 
+    float dx  = d.list[dk];
+    float vx  = v.list[vk];
+    float dcx = d.list[dck];
+
+    bool t_penalty = false;
+    if (!front_car_safe(dx, vx, dcx))
+        t_penalty = true;
+    if (!red_light_safe(N_pred, dx, vx, 0))
+        t_penalty = true;
+
+    if (t_penalty)
+    {
+        return PENALTY;
+    }
+    else
+    {
         // float d_target = d0x + N_pred * dt * v.max;
         // float d_target = 10 * dt * v.max;
         float d_target = N_pred * dt * v.max;
@@ -567,9 +574,7 @@ long DPModel::terminal_cost(int dk0, int dk, int vk)
         float term2 = (d_target - dx)*783;
         float term3 = m*g*0*0.95;// which is set to 0 for now
         return long(round(term1 + term2 + term3));
-    // }
-
-
+    }
 }
 
 int DPModel::check_driving_data()

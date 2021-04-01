@@ -26,7 +26,7 @@ class CPUSolver
         int solve(int k0, float d0, float v0, float dc0, int intention);
         long * value;
         int * action;
-        bool debug = false;
+        bool debug = true;
         
     private:   
         int n_v;

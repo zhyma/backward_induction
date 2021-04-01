@@ -152,7 +152,7 @@ class Vehicle():
         penalty = False
 
         # safety distance with the front car
-        if d > dc-v*t_tcc:
+        if d > dc-v*t_tcc-3:
             penalty = True
 
         # traffic light condition
