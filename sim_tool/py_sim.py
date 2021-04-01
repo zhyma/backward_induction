@@ -135,16 +135,16 @@ class Vehicle():
         if d > dc-v*t_tcc -3:
             penalty = True
 
-        # traffic light condition
-        if d < d2tl and t > self.rl_start and t < self.rl_end:
-            # check before the red light, if not enough to brake
-            if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
-                penalty = True
-            # if in front of a red light, check the acceleration
-            if not k==self.N_pred:
-                d_, _ = self.physical(a)
-                if d_ > d2tl:
-                    penalty = True
+        # # traffic light condition
+        # if (not k==self.N_pred) and d < d2tl and t > self.rl_start and t < self.rl_end:
+        #     # check before the red light, if not enough to brake
+        #     if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
+        #         penalty = True
+        #     # if in front of a red light, check the acceleration
+        #     if not k==self.N_pred:
+        #         d_, _ = self.physical(a)
+        #         if d_ > d2tl:
+        #             penalty = True
 
         return penalty
             

@@ -123,7 +123,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     int n_d_total = 353;
     d.n = n_d_total;
     d.list = new float[d.n];
-    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1));
+    std::cout << "distance interval: " << (v.max * 10 * dt/(n_d-1));
     for (int i = 0; i < d.n; ++i)
     {
         // d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
@@ -399,12 +399,12 @@ int DPModel::running_cost_init()
     r_cost = new long [x.n * w.n * u.n]{};
     r_mask = new long [x.n * w.n * u.n]{};
     long ban_all_time = 0;
-    for (int k = 0; k < N_total; ++k)
+    for (int k = 1; k < N_total+1; ++k)
         ban_all_time = ban_all_time | (1<<k);
     std::cout << "ban_all_time = " << ban_all_time << std::endl;
     bool apply_penalty = false;
 
-    long cost_min = 1e15, cost_max = 0;
+    long cost_min = PENALTY, cost_max = 0;
 
     // std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
 
@@ -502,15 +502,6 @@ int DPModel::running_cost_init()
                     cost_max = cost;
                 if (cost < cost_min)
                     cost_min = cost;
-
-                // test cost, set to test set when initializing the dp model
-                // overwrite the running cost
-                // can disable constraint in calc_q
-                // if (test_set == true)
-                // {
-                //     cost = int(dx)*10000*1000 + int(vx*100)*1000;//int(dx)*10000000 + int(vx*100000);
-                //     (ax < 0) ? (cost += - int(ax*100)) : (cost += int(ax*100));
-                // }
                 
                 r_cost[idx] = cost;
 
@@ -520,7 +511,7 @@ int DPModel::running_cost_init()
                 // //constraint: before reaching the red light, and the red light is on
                 if (dx < d2tl && apply_penalty == false)
                 {
-                    for (int k = 0; k < N_total; ++k)
+                    for (int k = 1; k < N_total+1; ++k)
                     {
                         float ax = u.list[uk];
                         if (!red_light_safe(k, dx, vx, ax))
@@ -545,8 +536,8 @@ int DPModel::running_cost_init()
 // long DPModel::terminal_cost(int dk0, int dk, int vk)
 long DPModel::terminal_cost(int xk, int wk)
 {
-    int dk = xk/n_d;
-    int vk = xk%n_d;
+    int dk = xk/v.n;
+    int vk = xk%v.n;
     int dck = wk/2;
 
     float dx  = d.list[dk];

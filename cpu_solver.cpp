@@ -82,6 +82,17 @@ long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = PENALTY;
 
+    // if (k==3 && xk == 371 && wk==121 && uk==20)
+    // {
+    //     std::cout << "d=" << model->d.list[xk/n_v];
+    //     std::cout << ", v=" << model->v.list[xk%n_v];
+    //     std::cout << ", a=" << model->a.list[uk];
+    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
+    //     std::cout << ", v'=" << model->v.list[xk_%n_v];
+    //     std::cout << ", l=" << l;
+    //     std::cout << ", sum=" << sum << std::endl;
+    // }
+
     return l + sum;
 }
 
