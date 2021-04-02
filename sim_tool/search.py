@@ -21,7 +21,7 @@ def search_sto(N, action_mat, gtr, front_car_traj):
 
     return ctrl_cmds
 
-def search_disturb(N, gtr, front_car_traj):
+def iterate_action(N, gtr, front_car_traj):
     gtr.reset()
     min_cost =1e20
     best_policy = []
@@ -32,19 +32,32 @@ def search_disturb(N, gtr, front_car_traj):
         gtr.reset()
         valid_ctrl = True
 
-        for k in range(N): 
+        for k in range(N):
+            _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
             ak = int(i/(32**(k)))%32
-
             a = gtr.a_list[ak]
+
+            if k>0:
+                if gtr.rl_constraint(k, dc, a):
+                    valid_ctrl = False
+                    break
+                if gtr.dist_constraint(dc):
+                    valid_ctrl = False
+                    break
+
             policy_list.append(ak)
             r_cost = gtr.running_cost(a)
 
             cost2go += r_cost
             gtr.step_forward(a)
-            _, dc = gtr.find_closest(front_car_traj[k+1][0], gtr.d_list)
-            if (gtr.constraint(k, dc, a)):
-                valid_ctrl = False
-                break
+        
+        _, dc = gtr.find_closest(front_car_traj[N][0],gtr.d_list)
+        if gtr.rl_constraint(N, dc, gtr.a_min):
+            valid_ctrl = False
+            continue
+        if gtr.dist_constraint(dc):
+            valid_ctrl = False
+            continue
 
         if valid_ctrl == True:
             t_cost = gtr.terminal_cost()
@@ -60,27 +73,40 @@ def exam_policy(N, gtr, front_car_traj, policy):
     cost2go = 0
     valid_ctrl = True
 
-    _, dc = gtr.find_closest(front_car_traj[0][0],gtr.d_list)
+    
     for k in range(N):
-        # read one front car state
-        
-
+        _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
         # find the corresponding ctrl
         a = gtr.a_list[policy[k]]
         print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a), end='')
+        if k>0:
+            if gtr.rl_constraint(k, dc, a):
+                print('Optimal control is not valid, hits the red light constraint')
+                valid_ctrl = False
+                break
+            if gtr.dist_constraint(dc):
+                print('Optimal control is not valid, hits the distance constraint')
+                print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
+                    %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
+                valid_ctrl = False
+                break
         # calculate one running cost
         r_cost = gtr.running_cost(a)
         cost2go += r_cost
         print('r_cost: %.2f'%(r_cost))
         # walk one step
         gtr.step_forward(a)
-        _, dc = gtr.find_closest(front_car_traj[k+1][0],gtr.d_list)
-        if (gtr.constraint(k, dc, a)):
-            print('Optimal control is not valid, hits the constraint')
-            print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
-                %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
-            valid_ctrl = False
-            break
+
+    # examine the final state
+    _, dc = gtr.find_closest(front_car_traj[N][0],gtr.d_list)
+    if gtr.rl_constraint(N, dc, gtr.a_min):
+        print('Optimal control is not valid, hits the red light constraint')
+        valid_ctrl = False
+    if gtr.dist_constraint(dc):
+        print('Optimal control is not valid, hits the distance constraint')
+        print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
+            %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
+        valid_ctrl = False
 
     if valid_ctrl == True:
         # print('')

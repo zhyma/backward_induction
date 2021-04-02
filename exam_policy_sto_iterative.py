@@ -44,7 +44,7 @@ if __name__ == "__main__":
     sto_policy_1 = search_sto(N, data.action_mat, gtr_std, front_car_traj_1)
     print('----stochastic policy----')
     exam_policy(N, gtr_std, front_car_traj_1, sto_policy_1)
-    best_policy_1 = search_disturb(N, gtr_disturb, front_car_traj_1)
+    best_policy_1 = iterate_action(N, gtr_disturb, front_car_traj_1)
     print('----best policy----')
     exam_policy(N, gtr_disturb, front_car_traj_1, best_policy_1)
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     sto_policy_2 = search_sto(N, data.action_mat, gtr_std, front_car_traj_2)
     print('----stochastic policy----')
     exam_policy(N, gtr_std, front_car_traj_2, sto_policy_2)
-    best_policy_2 = search_disturb(N, gtr_disturb, front_car_traj_2)
+    best_policy_2 = iterate_action(N, gtr_disturb, front_car_traj_2)
     print('----best policy----')
     exam_policy(N, gtr_disturb, front_car_traj_2, best_policy_2)
     

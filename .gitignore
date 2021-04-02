@@ -1,5 +1,8 @@
 /build
-*.csv
+/output
+/fig
+/test_cases/front_car_data_with_rl.csv
+/test_cases/front_car_data_gl.csv
 *.png
 *.txt
 *.o

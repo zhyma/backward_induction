@@ -117,7 +117,21 @@ class Vehicle():
         g2 = c*(m*a*v1 + 0.005*m*g*v1 + 0.09*v1**3)*t2
         return g1+g2
 
-    def constraint(self, k, dc, a):
+    def dist_constraint(self, dc):
+        d = self.d
+        v = self.v
+        
+        t_tcc = 3
+
+        penalty = False
+
+        # safety distance with the front car
+        if d > dc-v*t_tcc -3:
+            penalty = True
+
+        return penalty
+
+    def rl_constraint(self, k, dc, a):
         # if current state hits the constraint, apply penalty
 
         d = self.d
@@ -127,24 +141,20 @@ class Vehicle():
         d2tl = self.d2tl
         t_tcc = 3
         a_min = self.a_min
-        a_max = self.a_max
 
         penalty = False
 
-        # safety distance with the front car
-        if d > dc-v*t_tcc -3:
-            penalty = True
-
-        # # traffic light condition
-        # if (not k==self.N_pred) and d < d2tl and t > self.rl_start and t < self.rl_end:
-        #     # check before the red light, if not enough to brake
-        #     if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
-        #         penalty = True
-        #     # if in front of a red light, check the acceleration
-        #     if not k==self.N_pred:
-        #         d_, _ = self.physical(a)
-        #         if d_ > d2tl:
-        #             penalty = True
+        # traffic light condition
+        if d < d2tl and t > self.rl_start and t < self.rl_end:
+            # check before the red light, if not enough to brake
+            if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
+                penalty = True
+            # if in front of a red light, check the acceleration
+            if k >= self.N_pred:
+                a = a_min
+            d_, v_ = self.physical(a)
+            if d2tl - d_ + 0.01 < 0.5*(v_**2)/(-a_min):
+                penalty = True
 
         return penalty
             

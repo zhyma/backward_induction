@@ -275,10 +275,10 @@ int DPModel::phy_model(float *attr, float ax)
         d_ = dx + 0.5*(vx+v_)*dt;
     }
 
-    d_ > d.max ? (d_ = d.max) : (d_ = d_);
-    d_ < d.min ? (d_ = d.min) : (d_ = d_);
-    v_ > v.max ? (v_ = v.max) : (v_ = v_);
-    v_ < v.min ? (v_ = v.min) : (v_ = v_);
+    // d_ > d.max ? (d_ = d.max) : (d_ = d_);
+    // d_ < d.min ? (d_ = d.min) : (d_ = d_);
+    // v_ > v.max ? (v_ = v.max) : (v_ = v_);
+    // v_ < v.min ? (v_ = v.min) : (v_ = v_);
 
     attr[0] = d_;
     attr[1] = v_;
@@ -378,14 +378,16 @@ bool DPModel::red_light_safe(int k, float dx, float vx, float ax)
         // //acceleration constraint (Seems should not exist)
         // if (ax > u_rlmax)
         //     apply_penalty = true;
-        if (k != N_pred)
-        {
-            float attr[2] = {dx, vx};
-            float ax;
-            phy_model(attr, ax);
-            if (attr[0] > d2tl)
-                rl_safe = false;
-        }
+        // if (k != N_pred)
+        // {
+        float attr[2] = {dx, vx};
+        float ax;
+        phy_model(attr, ax);
+        float dx_ = attr[0];
+        float vx_ = attr[1];
+        if (vx_*vx_ > 2.0*(-a.min)*(d2tl-dx_+0.01))
+            rl_safe = false;
+        // }
     }
     return rl_safe;
 }
@@ -547,7 +549,7 @@ long DPModel::terminal_cost(int xk, int wk)
     bool t_penalty = false;
     if (!front_car_safe(dx, vx, dcx))
         t_penalty = true;
-    if (!red_light_safe(N_pred, dx, vx, 0))
+    if (!red_light_safe(N_pred, dx, vx, v.min))
         t_penalty = true;
 
     if (t_penalty)
