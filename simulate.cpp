@@ -83,7 +83,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, gpu_solver.value.cpu);
 
             filename = "gpu_action";
-            int a_dim[] = {gpu_solver.N, gpu_solver.n_x, gpu_solver.n_w};
+            int a_dim[] = {gpu_solver.N, gpu_solver.n_x_s, gpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, gpu_solver.action.cpu);
         }
     }

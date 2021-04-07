@@ -54,7 +54,7 @@ def value(solver):
                     elif mats[k][i,j] < 1:
                         mats[k][i,j] = 0
                     else:
-                        if (k == 0) and j < n_w-15*2:
+                        if j < n_w-15*2:
                             diff_val.append(mats[k][i,j])
                             if mats[k][i,j] > max_val:
                                 max_val = mats[k][i,j]

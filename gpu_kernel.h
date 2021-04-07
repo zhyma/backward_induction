@@ -20,7 +20,7 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
 
 // Kernel function to calculate the control/action cost
 template <unsigned int blockSize>
-__global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_mask, int *t, float *p, float *v, double *q)
+__global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_mask, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
   __shared__ float sdata_sum[32];
@@ -88,7 +88,7 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
 };
 
 // Kernel function to find the control/action with the lowest cost (q-value)
-__global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, double *q, int *a)
+__global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *a)
 {
   __shared__ q_info sdata_q[32];
 
@@ -129,7 +129,7 @@ __global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, double *q, int 
     if (tid < s)
     {
       //find the min value and its idx.
-      if (sdata_q[tid].value > sdata_q[tid+s].value)
+      if (sdata_q[tid].value >= sdata_q[tid+s].value)
       {
         sdata_q[tid].index = sdata_q[tid+s].index;
         sdata_q[tid].value = sdata_q[tid+s].value;
