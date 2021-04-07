@@ -4,11 +4,11 @@
 struct q_info
 {
     int index;
-    float value;
+    long value;
 };
 
 template <unsigned int blockSize>
-__device__ void warpReduce(volatile float* sdata_sum, int tid)
+__device__ void warpReduce(volatile double* sdata_sum, int tid)
 {
   if (blockSize>=64) sdata_sum[tid] += sdata_sum[tid + 32];
   if (blockSize>=32) sdata_sum[tid] += sdata_sum[tid + 16];
@@ -20,10 +20,10 @@ __device__ void warpReduce(volatile float* sdata_sum, int tid)
 
 // Kernel function to calculate the control/action cost
 template <unsigned int blockSize>
-__global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, unsigned long long int *r_mask, int *t, float *p, float *v, float *q)
+__global__ void bi_q_kernel(int k0, int k, int n_v, long *r_cost, long *r_mask, int *t, float *p, long *v, long *q)
 {
   //max number of thread possible, some will not be used
-  __shared__ float sdata_sum[32];
+  __shared__ double sdata_sum[32];
 
   // <x, w> -u-> <x2, w2>
   // grid: 3D, <x,w,u>
@@ -57,10 +57,9 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, unsigned long
 
   while (i < n_p)
   {
-    // sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] \
-    //                 + p[p_offset+i+blockSize+tid]*v[v_offset+i+blockSize+tid];
-    // i += blockSize * 2;
-    sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] ;
+    // double pv = (double)p[p_offset+i+tid] * (double)v[v_offset+i+tid];
+    // sdata_sum[tid] += pv;
+    sdata_sum[tid] = i;
     i += blockSize;
   }
   __syncthreads();
@@ -80,13 +79,16 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, unsigned long
   {
     //indexes for q and running cost are accidentally the same
     int idx = xk*n_w_s*n_u + wk*n_u + uk;
-    float penalty = (r_mask[idx] & 1<<(k0+k)) * 1e30;
-    q[idx] = r_cost[idx] + penalty + sdata_sum[0];
+    // if ((r_mask[idx] & 1<<(k0+k)) > 0)
+    //   q[idx] = 1e15;
+    // else
+    //   q[idx] = r_cost[idx] + (long)sdata_sum[0];
+    q[idx] = r_cost[idx] + (long)sdata_sum[0];
   }
 };
 
 // Kernel function to find the control/action with the lowest cost (q-value)
-__global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *a)
+__global__ void bi_min_kernel(int k, int n_v, int n_u, long *v, long *q, int *a)
 {
   __shared__ q_info sdata_q[32];
 
@@ -127,7 +129,7 @@ __global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *
     if (tid < s)
     {
       //find the min value and its idx.
-      if (sdata_q[tid].value > sdata_q[tid+s].value)
+      if (sdata_q[tid].value >= sdata_q[tid+s].value)
       {
         sdata_q[tid].index = sdata_q[tid+s].index;
         sdata_q[tid].value = sdata_q[tid+s].value;

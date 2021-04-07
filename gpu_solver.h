@@ -48,6 +48,7 @@ class GPUSolver
 
         DPModel * model;
         int N;
+        int n_dc;
         int n_x, n_w, n_u;
         int n_x_s, n_w_s;
 
@@ -56,7 +57,7 @@ class GPUSolver
         int solve(int k0, float d0, float v0, float dc0, int intention);
         // float * value;
         // int * action;
-        BIData<float> value;
+        BIData<long> value;
         BIData<int> action;
 
     private:
@@ -66,11 +67,11 @@ class GPUSolver
         int n_p, n_p_default;
         int n_d;
 
-        BIData<float> r_cost;
-        BIData<unsigned long long int> r_mask;
+        BIData<long> r_cost;
+        BIData<long> r_mask;
         BIData<int> trans;
         BIData<float> prob;
-        BIData<float> q;
+        BIData<long> q;
 
         // find_min and calc_q are provided by gpu_kernel.h
         // estimate_one_step is integrated into solve()
