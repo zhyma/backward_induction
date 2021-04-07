@@ -47,6 +47,8 @@ def value(solver):
             mats.append(mat)
             for i in range(n_x):
                 for j in range(n_w):
+                    if mat[i,j] < 1:
+                        mat[i,j] = 0
                     if (mats1[k][i,j] > 1e10) and (mats2[k][i,j] > 1e10):
                         mats[k][i,j] = -1
 
@@ -67,7 +69,7 @@ def value(solver):
         if solver == 'compare':
             my_cmap.set_under('w')
             my_cmap.set_over('k')
-            c = ax1.pcolormesh(mat,cmap=my_cmap,vmin=1e-6,vmax=1)
+            c = ax1.pcolormesh(mat,cmap=my_cmap,vmin=0.1,vmax=1e10)
         else:
             m = mat[0,0]
             for i in range(n_x):

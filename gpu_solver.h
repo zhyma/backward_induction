@@ -17,11 +17,9 @@ class BIData
 
 		template <typename... T2>
 		int init(T2... args)
-		{   
-            // number of dimensions 
+		{    
 			dimc = sizeof...(args);
 			size = 1;
-            // size of each dimension
 			dimv = new int[dimc]{args...};
 			for (int i = 0; i < dimc; ++i)
 				size = size * dimv[i];
@@ -48,16 +46,13 @@ class GPUSolver
 
         DPModel * model;
         int N;
-        int n_dc;
         int n_x, n_w, n_u;
         int n_x_s, n_w_s;
-
-        bool debug = false;
 
         int solve(int k0, float d0, float v0, float dc0, int intention);
         // float * value;
         // int * action;
-        BIData<long> value;
+        BIData<float> value;
         BIData<int> action;
 
     private:
@@ -65,13 +60,13 @@ class GPUSolver
         int n_v;
 
         int n_p, n_p_default;
-        int n_d;
+        int n_d, n_dc;
 
-        BIData<long> r_cost;
+        BIData<float> r_cost;
         BIData<long> r_mask;
         BIData<int> trans;
         BIData<float> prob;
-        BIData<long> q;
+        BIData<double> q;
 
         // find_min and calc_q are provided by gpu_kernel.h
         // estimate_one_step is integrated into solve()
