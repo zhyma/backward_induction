@@ -41,6 +41,8 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
   int n_p = blockDim.x;
   int tid = threadIdx.x;
 
+  // Not a magic number, just too lazy to pass the "model->max_last_step"
+  // and the padded w next
   int n_x = n_x_s + 13*n_v;
   int n_w = n_w_s + 15*2;
 

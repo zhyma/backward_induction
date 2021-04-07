@@ -17,7 +17,16 @@ from sim_tool.search import *
 ## iterate all possible combination of control sequence (for N<=4 maybe?)
 
 if __name__ == "__main__":
-    data = Load()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'cpu':
+            solver_type = 'cpu'
+        elif sys.argv[1] == 'gpu':
+            solver_type = 'gpu'
+        else:
+            solver_type = 'cpu'
+    else:
+        solver_type = 'cpu'
+    data = Load(solver_type)
     N = data.N
     
     line = data.readstate()

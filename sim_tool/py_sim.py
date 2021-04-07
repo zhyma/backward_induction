@@ -209,8 +209,8 @@ class Vehicle():
         return d_, v_
 
 class Load():
-    def __init__(self):
-        action_filename = 'output/cpu_action.csv'
+    def __init__(self, solver_type):
+        action_filename = 'output/'+ solver_type +'_action.csv'
         f_action = open(action_filename, 'r')
         lines = f_action.readlines()
         var = np.fromstring(lines[0], sep=',')[:-1]
