@@ -7,7 +7,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
     double duration = 0;
     std::string solver_type;
     
-    std::cout << "creating a new DP model is done" << std::endl;
+    // std::cout << "creating a new DP model is done" << std::endl;
     
     int k = 0;
     // vehicle starting position
@@ -37,7 +37,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
  
         int a = cpu_solver.solve(0, d0, v0, dc0, intention);
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-        std::cout << std::endl << "CPU time: " << duration << " s" << std::endl;
+        std::cout << "CPU time: " << duration << " s" << std::endl;
         
         std::string filename;
         if (log)
@@ -74,7 +74,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
         
         gpu_solver.solve(k, d0, v0, dc0, intention);
         duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-        std::cout << std::endl << "GPU time: " << duration << " s" << std::endl;
+        std::cout << "GPU time: " << duration << " s" << std::endl;
 
         if (log)
         {

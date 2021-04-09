@@ -109,7 +109,9 @@ DataLoader::DataLoader(std::string filename)
     else
     {
         std::cout << "ERROR! read file failed!" << std::endl;
+        return;
     }
+    f_name = filename;
     
     in_file.open(filename, std::ios::in);
 
@@ -132,7 +134,7 @@ DataLoader::DataLoader(std::string filename)
 DataLoader::~DataLoader()
 {
     in_file.close();
-    std::cout << "./output/front_car_data.csv closed" << std::endl;
+    std::cout << f_name << " closed" << std::endl;
 }
 
 

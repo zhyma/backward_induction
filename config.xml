@@ -3,6 +3,10 @@
     <!--An XML must have a single root -->
 
     <!--240 -->
+    <prediction_steps>
+        4
+    </prediction_steps>
+
     <v_max>
         18
     </v_max>

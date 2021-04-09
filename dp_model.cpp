@@ -46,26 +46,6 @@ DPModel::DPModel(int pred_steps, int running_steps)
 {
     test_set = false;
 
-    // std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(2);
-    // tinyxml2::XMLDocument doc_xml;
-    // XMLError err_xml = doc_xml.LoadFile("config.xml");
-
-    // std::ifstream load_param;
-    // load_param.open("./output/front_car_data.csv", std::ios::in);
-    // std::string line_str;
-    // std::stringstream ss_param;
-    // float arr[3]={};
-    // getline(load_param, line_str);
-    // ss_param.clear();
-    // ss_param.str(line_str); 
-    // for (int i = 0; i < 3; ++i)
-    // {
-    //     getline(ss_param, line_str, ',');
-    //     int pos = line_str.find('=');
-    //     line_str.erase(0, pos+1);
-    //     arr[i] = stof(line_str);
-    // }
-
     std::vector<std::string> files;
     search_files(&files, "front_car_data");
 
@@ -81,9 +61,9 @@ DPModel::DPModel(int pred_steps, int running_steps)
     d2tl = load->param[0];
     rl_start = load->param[1];
     rl_end = load->param[2];
-    std::cout << "distance to the right light: " << d2tl << std::endl;
-    std::cout << "time to the red light: " << rl_start << std::endl;
-    std::cout << "time to the next green light: " << rl_end << std::endl;
+    // std::cout << "distance to the right light: " << d2tl << std::endl;
+    // std::cout << "time to the red light: " << rl_start << std::endl;
+    // std::cout << "time to the next green light: " << rl_end << std::endl;
     delete load;
     // load_param.close();
 
@@ -123,14 +103,14 @@ DPModel::DPModel(int pred_steps, int running_steps)
     int n_d_total = 353;
     d.n = n_d_total;
     d.list = new float[d.n];
-    std::cout << "distance interval: " << (v.max * 10 * dt/(n_d-1));
+    std::cout << "distance interval: " << (v.max * 10 * dt/(n_d-1)) << std::endl;
     for (int i = 0; i < d.n; ++i)
     {
         // d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
         d.list[i] = float(i * v.max * 10 * dt/(n_d-1));
         // std::cout << "@" << i << ": " << d.list[i] << ", ";
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
     d.min = d.list[0];
     d.max = d.list[d.n-1];
 
@@ -148,9 +128,9 @@ DPModel::DPModel(int pred_steps, int running_steps)
     
     // // // create <x,w> -u-> x' table here
     state_trans();
-    std::cout << "state transition generated" << std::endl;
+    // std::cout << "state transition generated" << std::endl;
     running_cost_init();
-    std::cout << "running cost generated" << std::endl;
+    // std::cout << "running cost generated" << std::endl;
 
     prob_table = new float[N_total*w.n*n_p]{};
 
@@ -200,10 +180,10 @@ int DPModel::discretize(Set *in)
         in->list[i] = in->min + (in->max - in->min)/(in->n-1) * i;
 
     // std::cout << "number: " << in->n << std::endl;  
-    std::cout << "list: ";
-    for(int i = 0;i < in->n; ++i)
-        std::cout << in->list[i] << ", ";
-    std::cout << std::endl;
+    // std::cout << "list: ";
+    // for(int i = 0;i < in->n; ++i)
+    //     std::cout << in->list[i] << ", ";
+    // std::cout << std::endl;
 
     return 0;
 }
@@ -403,7 +383,7 @@ int DPModel::running_cost_init()
     long ban_all_time = 0;
     for (int k = 1; k < N_total+1; ++k)
         ban_all_time = ban_all_time | (1<<k);
-    std::cout << "ban_all_time = " << ban_all_time << std::endl;
+    // std::cout << "ban_all_time = " << ban_all_time << std::endl;
     bool apply_penalty = false;
 
     long cost_min = PENALTY, cost_max = 0;
@@ -531,7 +511,7 @@ int DPModel::running_cost_init()
         filename = "full_r_mask";
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_mask);
     }
-    std::cout << "the range of running cost: " << cost_min << ", " << cost_max << std::endl;
+    // std::cout << "the range of running cost: " << cost_min << ", " << cost_max << std::endl;
     return 0;
 }
 
@@ -751,7 +731,7 @@ int DPModel::check_driving_data()
                     mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, cnt_mat);
                 }
 
-                std::cout << "dwk range is: " << dwk_min << ", " << dwk_max << std::endl;
+                // std::cout << "dwk range is: " << dwk_min << ", " << dwk_max << std::endl;
 
                 // w->w' samples collecting done, now convert to probabilities
                 for (int k = 0; k < N_total; ++k)
@@ -800,7 +780,7 @@ int DPModel::check_driving_data()
                     }
                 }
                 out_file.close();
-                std::cout << "idx: " << idx << std::endl;
+                // std::cout << "idx: " << idx << std::endl;
             }
         }
         

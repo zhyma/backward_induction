@@ -126,7 +126,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
         // generate probability estimation for intermediate steps
 
         // a temporary buffer to save all the result of executing different u for a given xk, wk
-        std::cout << "working on step " << k << std::endl;
+        // std::cout << "working on step " << k << std::endl;
         long *q = new long [n_u]{};
         for (int xk = 0; xk < n_x_s; ++xk)
         {
@@ -274,7 +274,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
             }
         }
     }
-    std::cout << "extract subset from running cost" << std::endl;
+    // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
     for (int xk = 0; xk < n_x; ++xk)
@@ -292,7 +292,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
         int dim[] = {1, n_x, n_w};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, t_cost);
     }
-    std::cout << "generate terminal cost" << std::endl;
+    // std::cout << "generate terminal cost" << std::endl;
 
     return 0;
 }

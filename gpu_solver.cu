@@ -69,9 +69,7 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     int dck0 = model->get_dist_idx(dc0);
 
     get_subset(k0, dk0, dck0);
-    std::cout << "extract subset done." << std::endl;
-
-    std::cout << value.size_b << std::endl; 
+    // std::cout << "extract subset done." << std::endl;
 
     // Set up parameters for parallel computing
     // For calculating q-value
@@ -148,7 +146,7 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 
 int GPUSolver::get_subset(int k0, int dk0, int dck0)
 {
-    std::cout << "get subset3" << std::endl;
+    // std::cout << "get subset" << std::endl;
 
     // long long int idx = 0;
     int idx = 0;
@@ -175,7 +173,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
         int dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans.cpu);
     }
-    std::cout << "extract subset from state transition" << std::endl;
+    // std::cout << "extract subset from state transition" << std::endl;
 
     //slicing transition probability (k,w,w')
     // k = k0+dk
@@ -207,7 +205,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
         int dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob.cpu);
     }
-    std::cout << "extract subset from transition probability" << std::endl;
+    // std::cout << "extract subset from transition probability" << std::endl;
 
 
     //slicing running_cost (k,x,w,u)
@@ -238,7 +236,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
             }
         }
     }
-    std::cout << "extract subset from running cost" << std::endl;
+    // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
     for (int xk = 0; xk < n_x; ++xk)
@@ -253,7 +251,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
             //     value[idx] = 0;
         }
     }
-    std::cout << "place terminal cost into the value table" << std::endl;
+    // std::cout << "place terminal cost into the value table" << std::endl;
 
     cudaMemcpy(value.gpu, value.cpu, value.size_b, cudaMemcpyHostToDevice);
     // Initialize "index" transition matrix <x,w> -u-> x'

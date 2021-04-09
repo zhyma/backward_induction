@@ -19,6 +19,7 @@ class DataLoader
         int next_trial();
         bool end_of_file = false;
         float param[4]= {};
+        std::string f_name;
 
     private:
         std::ifstream in_file;

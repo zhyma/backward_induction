@@ -18,7 +18,16 @@ from sim_tool.search import *
 ## iterate all possible combination of control sequence (for N<=4 maybe?)
 
 if __name__ == "__main__":
-    data = Load()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'cpu':
+            solver_type = 'cpu'
+        elif sys.argv[1] == 'gpu':
+            solver_type = 'gpu'
+        else:
+            solver_type = 'cpu'
+    else:
+        solver_type = 'cpu'
+    data = Load(solver_type)
     N = data.N
     
     line = data.readstate()
@@ -44,9 +53,9 @@ if __name__ == "__main__":
     sto_policy_1 = search_sto(N, data.action_mat, gtr_std, front_car_traj_1)
     print('----stochastic policy----')
     exam_policy(N, gtr_std, front_car_traj_1, sto_policy_1)
-    best_policy_1 = iterate_action(N, gtr_disturb, front_car_traj_1)
-    print('----best policy----')
-    exam_policy(N, gtr_disturb, front_car_traj_1, best_policy_1)
+    # best_policy_1 = iterate_action(N, gtr_disturb, front_car_traj_1)
+    # print('----best policy----')
+    # exam_policy(N, gtr_disturb, front_car_traj_1, best_policy_1)
 
     print('====case 2====')
 
@@ -68,11 +77,11 @@ if __name__ == "__main__":
     sto_policy_2 = search_sto(N, data.action_mat, gtr_std, front_car_traj_2)
     print('----stochastic policy----')
     exam_policy(N, gtr_std, front_car_traj_2, sto_policy_2)
-    best_policy_2 = iterate_action(N, gtr_disturb, front_car_traj_2)
-    print('----best policy----')
-    exam_policy(N, gtr_disturb, front_car_traj_2, best_policy_2)
+    # best_policy_2 = iterate_action(N, gtr_disturb, front_car_traj_2)
+    # print('----best policy----')
+    # exam_policy(N, gtr_disturb, front_car_traj_2, best_policy_2)
     
 
-    print('====crossover====')
-    exam_policy(N, gtr_disturb, front_car_traj_1, best_policy_2)
-    exam_policy(N, gtr_disturb, front_car_traj_2, best_policy_1)
+    # print('====crossover====')
+    # exam_policy(N, gtr_disturb, front_car_traj_1, best_policy_2)
+    # exam_policy(N, gtr_disturb, front_car_traj_2, best_policy_1)
