@@ -208,6 +208,14 @@ class Vehicle():
         self.xk = dk*32 + vk
         return d_, v_
 
+def find_all(name, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            if name in f:
+                result.append(path + f)
+    return result
+
 class Load():
     def __init__(self, solver_type):
         action_filename = 'output/'+ solver_type +'_action.csv'
@@ -229,21 +237,13 @@ class Load():
         print(self.action_mat.shape)
 
         curr_dir = os.getcwd() + '/output/'
-        files = self.find_all('front_car_data', curr_dir)
+        files = find_all('front_car_data', curr_dir)
         if len(files) < 1:
             print('No files')
             sys.exit(0)
 
         self.file = files[0]
         self.file_handle = open(files[0], 'r')
-
-    def find_all(self, name, path):
-        result = []
-        for root, dirs, files in os.walk(path):
-            for f in files:
-                if name in f:
-                    result.append(path + f)
-        return result
 
     def readstate(self):
         return self.file_handle.readline()

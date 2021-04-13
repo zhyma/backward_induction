@@ -17,8 +17,13 @@
         - "./build/dp_solver one_step gpu": solve the problem once by using GPU.
 
 - Historical front car behavior data should placed under "output" folder, with a prefix of "front_car_data". The code could adapt to any filename starting with that prefix. It will use the first one with the prefix founded in the "output" folder.
+
     It starts with road data (distance to the red light, time stamp red light starts, time stamp red light ends)
+
     Then follows by front car historical driving data. Each line contains d, v, a, intention.
+
+    The intentino is set to 0 if the front car is decelerating (a\<0)
+    
     One trajectory ends with a "end".
 
     ```
