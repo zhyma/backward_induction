@@ -4,7 +4,7 @@
 
     <!--240 -->
     <prediction_steps>
-        4
+        10
     </prediction_steps>
 
     <v_max>

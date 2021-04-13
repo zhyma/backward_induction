@@ -84,16 +84,12 @@ class Vehicle():
             # go as close as possible
             else:
                 upper = self.rl_constraint()
-                # upper = 2*(d2tl-3-d-v*dt)/(dt**2)
                 if upper <= a_min:
                     return a_min
                 lower = upper - 2
                 if lower <= a_min:
                     lower = a_min
                 mu = (upper+lower)/2
-                    # print("%f, %f, %f"%(lower, mu, upper))
-                
-        # print("%f, %f, %f"%(lower, mu, upper))
 
         sigma = 1
 
@@ -226,17 +222,13 @@ def simulate(d2tl, rl_start, iter):
                     # a, intention = -4, 0
 
 
-                # writer.writerow([format(gtr.d, '.2f'), format(gtr.v, '.2f'), format(a, '.2f'), intention])
+                writer.writerow([format(gtr.d, '.2f'), format(gtr.v, '.2f'), format(a, '.2f'), intention])
                 trip.append([gtr.d, gtr.v, a, intention, gtr.mode])
 
-                # print('at time %d, to red light:%.2f'%(t, d2tl-gtr.d))
-
                 d, v = gtr.sim_step(a)
-                # print("[%f, %f, %f, %d]"% (gtr.d, gtr.v, a, intention))
                     
             trajs.append(trip)
-            # writer.writerow(["end"])
-            # print('next traj')
+            writer.writerow(["end"])
             d_final.append(d)
             if i%(iter/10)==0:
                 print(f"{i/(iter/10):.0f}0%...")

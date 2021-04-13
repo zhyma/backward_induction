@@ -68,17 +68,17 @@ def iterate_action(N, gtr, front_car_traj):
 
     return best_policy
 
-def exam_policy(N, gtr, front_car_traj, policy):
+def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
     gtr.reset()
     cost2go = 0
     valid_ctrl = True
 
-    
     for k in range(N):
         _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
         # find the corresponding ctrl
         a = gtr.a_list[policy[k]]
-        print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a), end='')
+        if verbose:
+            print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a), end='')
         if k>0:
             if gtr.rl_constraint(k, dc, a):
                 print('Optimal control is not valid, hits the red light constraint')
@@ -93,7 +93,8 @@ def exam_policy(N, gtr, front_car_traj, policy):
         # calculate one running cost
         r_cost = gtr.running_cost(a)
         cost2go += r_cost
-        print('r_cost: %.2f'%(r_cost))
+        if verbose:
+            print('r_cost: %.2f'%(r_cost))
         # walk one step
         gtr.step_forward(a)
 
@@ -112,10 +113,11 @@ def exam_policy(N, gtr, front_car_traj, policy):
         # print('')
         # terminal cost
         t_cost = gtr.terminal_cost()
-        print('dc=%.2f, d=%.2f, v=%.2f, '%(dc, gtr.d, gtr.v), end='')
-        print("t_cost: %.2f"%(t_cost))
+        if verbose:
+            print('dc=%.2f, d=%.2f, v=%.2f, '%(dc, gtr.d, gtr.v), end='')
+            print("t_cost: %.2f"%(t_cost))
         cost2go += t_cost
-        print('cost to go: %.2f (%.3e)'%(cost2go, cost2go))
+        if verbose:
+            print('cost to go: %.2f (%.3e)'%(cost2go, cost2go))
         print('policy is: ', end='')
         print(policy)
-        print('\n')
