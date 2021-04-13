@@ -12,18 +12,19 @@ gs = 0.5
 a_step = 0.4
 
 class Vehicle():
-    def __init__(self, d2tl, dt, v_min, v_max, a_min, a_max):
+    def __init__(self, d2tl, rl_start, dt, v_min, v_max, a_min, a_max):
         self.d2tl = d2tl
-        self.rl_state = False
+        self.rl_start = rl_start
         self.dt = dt
         
         self.d = 0
+        self.t = 0
         # boudnary of velocity is [0, v_bound]
         self.v_min = 0.0
         self.v_max = 18.0
         self.a_min = -4.0
         self.a_max = 2.0
-        # mode 0: cruising, mode -1: to stop, mode 1: accelerate
+        # mode 1: accelerate to pass the red light, mode 0: decelerate to stop before the red light
         self.mode = 0
         self.a = 0
         self.intention = 1
@@ -36,7 +37,6 @@ class Vehicle():
         return
 
     def reset(self):
-        self.rl_state = False
         self.t = 0
         self.d = 0
         self.v = 0
@@ -45,59 +45,57 @@ class Vehicle():
         self.intention = 1
         return
 
-    def draw_a_number(self, upper_bound = 2):
+    def draw_a_number(self):
         lower = 0
         upper = 0
         mu = 0
         a = self.a
         a_min = self.a_min
         a_max = self.a_max
+        t = self.t
+        d2tl = self.d2tl
+        d = self.d
+        v = self.v
+        dt = self.dt
 
         # must accelerate
         if self.mode == 1:
-            if a <= 0:
+            if self.d > self.d2tl:
+                upper = 1
                 lower = 0
-                mu = gs
-                upper = gs*2
+                mu = (upper+lower)/2
             else:
-                mu = a + a_step
-                lower = mu - gs
-                upper = mu + gs
-                if lower < 0:
-                    lower = 0
-                if upper > a_max:
-                    upper = a_max
+                lower = 2*(d2tl+3-d-v*(rl_start-t))/((rl_start-t+0.00001)**2)
+                if lower >= a_max:
+                    return a_max
+                upper = a_max
+                mu = (upper+lower)/2
 
         # to stop (will brake)
         # There is a maximium acceleration (when decelerating)
-        elif self.mode == 0:
-            mu = 0
-            lower = mu - gs
-            upper = mu + gs
         else:
-            # mode == -1
-            upper = upper_bound
-            if a - a_step > upper_bound:
-                # need a brand new mu
-                lower = upper_bound - gs*2
-                if lower < a_min:
-                    lower = a_min
-                mu = (upper+lower)/2
-            elif a - a_step > a_min:
-                mu = a - a_step
-                lower = mu - gs
-                if lower < a_min:
-                    lower = a_min
+            if d2tl-d < 3:
+                if v < 0.1:
+                    self.v = 0
+                    return 0
+                elif v < -self.dt*a_min:
+                    return -v/self.dt
+                
+            # go as close as possible
             else:
-                lower = a_min
+                upper = self.rl_constraint()
+                # upper = 2*(d2tl-3-d-v*dt)/(dt**2)
+                if upper <= a_min:
+                    return a_min
+                lower = upper - 2
+                if lower <= a_min:
+                    lower = a_min
                 mu = (upper+lower)/2
-
+                    # print("%f, %f, %f"%(lower, mu, upper))
+                
         # print("%f, %f, %f"%(lower, mu, upper))
 
-        if upper < a_min+0.01:
-            return a_min
-
-        sigma = 0.3
+        sigma = 1
 
         # Truncated Gaussin distribution
         x = truncnorm((lower - mu) / sigma, (upper - mu) / sigma,\
@@ -111,34 +109,6 @@ class Vehicle():
             val = min + (max-min)/float(cnt-1)*i
             val_list.append(val)
         return val_list
-
-    def rl_constraint(self):
-        # if current state hits the constraint, apply penalty
-
-        d = self.d
-        v = self.v
-        
-        d2tl = self.d2tl
-        a_min = self.a_min
-
-        # traffic light condition
-        # if d < d2tl and self.rl_state:
-            # check before the red light, if not enough to brake
-        if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
-            # hit the constraint
-            return a_min
-        # if in front of a red light, check the acceleration
-        i = self.a_n-2
-        while i >= 0:
-            d_, v_ = self.physical(self.a_list[i])
-            if d2tl - d_ + 0.01 < 0.5*(v_**2)/(-a_min):
-                i -= 1
-                continue
-            else:
-                break
-
-        print('a upper bound:%.2f'%(self.a_list[i+1]))
-        return self.a_list[i+1]
 
     def physical(self, a):
         # calculating the next state, but not to move one step forward
@@ -168,39 +138,47 @@ class Vehicle():
 
         return d_, v_
 
+    def rl_constraint(self):
+        # if current state hits the constraint, apply penalty
+
+        d = self.d
+        v = self.v
+        
+        d2tl = self.d2tl
+        a_min = self.a_min
+
+        # traffic light condition
+        # if d < d2tl and self.rl_state:
+            # check before the red light, if not enough to brake
+        if d2tl - 3 - d + 0.01 < 0.5*(v**2)/(-a_min):
+            # hit the constraint
+            return a_min
+        # if in front of a red light, check the acceleration
+        i = self.a_n-2
+        while i >= 0:
+            d_, v_ = self.physical(self.a_list[i])
+            if d2tl -3 - d_ + 0.01 < 0.5*(v_**2)/(-a_min):
+                i -= 1
+                continue
+            else:
+                break
+
+        # print('a upper bound:%.2f'%(self.a_list[i+1]))
+        return self.a_list[i+1]
+
     def sim_step(self, a):
         d_, v_ = self.physical(a)
         self.d = d_
         self.v = v_
         self.a = a
+        self.t += self.dt
         return self.d, self.v
 
     def vehicle_ctrl(self):
         d = self.d
         v = self.v
 
-        if (self.rl_state and d < self.d2tl):
-            if v > 0.5:
-                a_upper = self.rl_constraint()
-                self.mode = -1
-                a = self.draw_a_number(a_upper)
-            else:
-                self.v = 0
-                a = 0
-        else:
-            # accelerating
-            if v < self.v_max - 3:
-                self.mode = 1
-                a = self.draw_a_number()
-            # cruising
-            else:
-                self.mode = 0
-                a = self.draw_a_number()
-        
-        if a > self.a_max:
-            a = self.a_max
-        if a < self.a_min:
-            a = self.a_min
+        a = self.draw_a_number()
 
         if v> 0.1 and a >= 0:
             self.intention = 1
@@ -210,18 +188,6 @@ class Vehicle():
         return a, self.intention
 
 def simulate(d2tl, rl_start, iter):
-    # root = ET.parse('config.xml').getroot()
-    # # distance to traffic light
-    # d2tl = int(root[0].text)
-    # # time to redlight
-    # rl_start = int(root[1].text)
-    # rl_end = int(root[2].text)
-
-    # # meters
-    # d2tl = 170
-    # # seconds
-    # rl_start = 8
-    # seconds
     rl_end = 60
 
     trajs = []
@@ -231,77 +197,64 @@ def simulate(d2tl, rl_start, iter):
         writer = csv.writer(csv_file, delimiter=',')
         writer.writerow(['d2tl='+str(d2tl), 'rl_start='+str(rl_start), 'rl_end='+str(rl_end)])
         d_final = []
+        dt = 2
+        gtr = Vehicle(d2tl, rl_start, dt, 0, 18, -4.0, 2.0)
         for i in range(iter):
-            t = 0
-            v = np.random.uniform(8,12,1)
+            v = np.random.uniform(6,12,1)
             # starting at a position that guarantees 
             d = v*3 + 3 + np.random.uniform(0, 20, 1)
             
-            dt = 2
-            
             # d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max
-            gtr = Vehicle(d2tl, dt, 0, 18, -4.0, 2.0)
+            gtr.reset()
             gtr.d = float(d)
             gtr.v = float(v)
             trip = []
+
+            if d > 45:
+                gtr.mode = 1
+            else:
+                gtr.mode = 0
+            
             for k in range(13):
-                if (t >= rl_start):
-                    gtr.rl_state = True
-                    # print("red  : ", end="")
                 
-                a, intention = gtr.vehicle_ctrl()
+                # a, intention = gtr.vehicle_ctrl()
+                if gtr.mode == 1:
+                    a, intention = gtr.vehicle_ctrl()
+                    # a, intention = 2, 1
+                else:
+                    a, intention = gtr.vehicle_ctrl()
+                    # a, intention = -4, 0
 
-                writer.writerow([format(gtr.d, '.2f'), format(gtr.v, '.2f'), format(a, '.2f'), intention])
-                trip.append([gtr.d, gtr.v, a, intention])
 
-                print('at time %d, to red light:%.2f'%(t, d2tl-gtr.d))
+                # writer.writerow([format(gtr.d, '.2f'), format(gtr.v, '.2f'), format(a, '.2f'), intention])
+                trip.append([gtr.d, gtr.v, a, intention, gtr.mode])
+
+                # print('at time %d, to red light:%.2f'%(t, d2tl-gtr.d))
 
                 d, v = gtr.sim_step(a)
-                t += dt
                 # print("[%f, %f, %f, %d]"% (gtr.d, gtr.v, a, intention))
                     
             trajs.append(trip)
-            writer.writerow(["end"])
-            print('next traj')
+            # writer.writerow(["end"])
+            # print('next traj')
             d_final.append(d)
             if i%(iter/10)==0:
                 print(f"{i/(iter/10):.0f}0%...")
     
     return trajs
 
-# def statistics():
-#      # position
-#     pos = []
-#     # distance between two states
-#     ds = []
-#     for i in range(mat.shape[0]):
-#         for j in range(mat.shape[1]-1):
-#             ds.append(mat[i,j+1,0] - mat[i,j,0])
-#             pos.append(mat[i,j,0])
-#         pos.append(mat[i,-1,0])
-
-#     print(max(ds), end=', ')
-#     print(min(ds))
-#     print(max(pos), end=', ')
-#     print(min(pos))
-#     fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
-
-#     # We can set the number of bins with the `bins` kwarg
-#     axs[0].hist(pos, bins=353)
-#     axs[1].hist(ds, bins=128)
-#     plt.show()
-
-
-
 if __name__ == "__main__":
     # n = 10**6
-    n = 3
-    d2tl = 170
-    rl_start = 2
+    n = 100
+    d2tl = 150
+    rl_start = 10
     trajs = simulate(d2tl, rl_start, n)
     for i in trajs:
         t = [x[0] for x in i]
-        plt.plot(list(range(len(t))), t, 'g', alpha=0.5)
+        if i[0][4] == 1:
+            plt.plot(list(range(len(t))), t, 'g', alpha=0.2)
+        else:
+            plt.plot(list(range(len(t))), t, 'r', alpha=0.2)
     
     plt.axline((rl_start/2, d2tl),slope=0, color='black', linestyle=':')
     plt.axline((rl_start/2, d2tl),slope=np.inf, color='black', linestyle=':')
