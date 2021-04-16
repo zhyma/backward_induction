@@ -3,6 +3,7 @@
 /fig
 /test_cases/front_car_data_with_rl.csv
 /test_cases/front_car_data_gl.csv
+/quantization_test/output
 *.png
 *.txt
 *.o
