@@ -212,7 +212,6 @@ def simulate(d2tl, rl_start, iter):
                 gtr.mode = 0
             
             for k in range(13):
-                
                 # a, intention = gtr.vehicle_ctrl()
                 if gtr.mode == 1:
                     a, intention = gtr.vehicle_ctrl()
@@ -250,8 +249,11 @@ if __name__ == "__main__":
     
     plt.axline((rl_start/2, d2tl),slope=0, color='black', linestyle=':')
     plt.axline((rl_start/2, d2tl),slope=np.inf, color='black', linestyle=':')
-    plt.xlabel('step')
-    plt.ylabel('distance (m)')
+    n_step = len(t)
+    plt.yticks(fontsize='x-large')
+    plt.xticks([i for i in range(n_step)], [str(i*2) for i in range(n_step)], fontsize='x-large')
+    plt.xlabel('Time (s)', fontsize='x-large')
+    plt.ylabel('Distance (m)', fontsize='x-large')
     plt.show()
     # statistics()
    
