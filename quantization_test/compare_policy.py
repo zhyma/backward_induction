@@ -38,9 +38,11 @@ if __name__ == "__main__":
     data = []
     mx5 = []
     for i in range(4):
-        data.append(Load(str(gran_type[i])))
+        data.append(Load('128_32_'+str(gran_type[i])))
 
     N = data[0].N
+    n_d_total = data[0].n_w//2
+    print(n_d_total)
     line = data[0].readstate()
     param = line.split(',')
     d2tl = float(param[0].split('=')[1])
@@ -49,7 +51,7 @@ if __name__ == "__main__":
     print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
 
     for i in range(4):
-        mx5.append(Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, gran_type[i]))
+        mx5.append(Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, n_d_total=n_d_total, n_d=128, n_a=gran_type[i]))
     
     # count how many trials
     

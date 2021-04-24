@@ -1,6 +1,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <math.h>
 
 #include "dp_model.h"
 #include "utility.h"
@@ -67,28 +68,28 @@ DPModel::DPModel(int pred_steps, int running_steps)
     delete load;
     // load_param.close();
 
-    t_tcc = 3;
-    // mass of the vehicle
-    m = 1500;
-    // Maximum sample points could travel during 10-prediction-step
-    n_d = 128;
-    n_dc = 185;
-    // At prediction step 9, the farest position can be reach is 114 (count from 0)
-    // There are 14 possible next steps: 0,1,2,...,13
-    max_last_step = 13;
-
-    // maximum sample points of the next step (w->w'), for gpu
-    n_p = 28;
-    // for gpu, at least 32.
-    n_p_gpu = 32;
-
     N_pred = pred_steps;
     N_run = running_steps;
     N_total = N_pred + N_run -1;
     dt = 2;
+
+    t_ttc = 3;
+    // mass of the vehicle
+    m = 1500;
+    // Maximum sample points could travel during 10-prediction-step
+    n_d = 256;//128
+    // At prediction step 9, the farest position can be reach is 114 (count from 0)
+    // There are 14 possible next steps: 0,1,2,...,13
+    max_last_step = (int)ceil(n_d/N_pred);//13
+    std::cout << "max last step is: " << max_last_step << std::endl;
+
+    // maximum sample points of the next step (w->w'), for gpu
+    n_p = (max_last_step+1)*2; //28
+    // for gpu, at least 32.
+    n_p_gpu = 32;
     
-    int n_v = 32;
-    int n_a = 32;
+    n_v = 128;
+    n_a = 128;
 
     v.min = .0;
     v.max = 18.0;
@@ -100,14 +101,14 @@ DPModel::DPModel(int pred_steps, int running_steps)
     a.n = n_a;
     discretize(&a);
 
-    int n_d_total = 353;
-    d.n = n_d_total;
+    n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
+    d.n = n_dc+5;
     d.list = new float[d.n];
-    std::cout << "distance interval: " << (v.max * 10 * dt/(n_d-1)) << std::endl;
+    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1)) << std::endl;
     for (int i = 0; i < d.n; ++i)
     {
         // d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
-        d.list[i] = float(i * v.max * 10 * dt/(n_d-1));
+        d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
         // std::cout << "@" << i << ": " << d.list[i] << ", ";
     }
     // std::cout << std::endl;
@@ -289,33 +290,6 @@ int DPModel::val_to_idx(float val, struct Set *ref)
     // idx > ref->n - 1 ? idx = ref->n -1 : idx;
     idx < ref->min ? idx = -1 : idx;
     idx > ref->n - 1 ? idx = -1 : idx;
-    // if (val <= ref->list[0])
-    //     idx = 0;
-    // else if (val >= ref->list[ref->n-1])
-    //     idx = ref->n-1;
-    // else
-    // {
-    //     for (int i = 0; i < ref->n-1; ++i)
-    //     {
-    //         if (val > ref->list[i+1])
-    //             continue;
-    //         else
-    //         {
-    //             float sub1 = val - ref->list[i];
-    //             float sub2 = ref->list[i+1] - val;
-    //             if (sub1<=sub2)
-    //             {
-    //                 idx = i;
-    //                 break;
-    //             }
-    //             else
-    //             {
-    //                 idx = i+1;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
     
     return idx;
 }
@@ -337,12 +311,11 @@ int DPModel::get_velc_idx(float velc)
 bool DPModel::front_car_safe(float dx, float vx, float dcx)
 {
     // if the front car is safe, return true, else return false
-    if (dx > dcx - vx*t_tcc - 3)
+    if (dx > dcx - vx*t_ttc - 3)
         return false;
     else
         return true;
 }
-
 
 bool DPModel::red_light_safe(int k, float dx, float vx, float ax)
 {
@@ -560,7 +533,7 @@ int DPModel::check_driving_data()
 
     // load pre-processed transition probability matrices
     // Only load the first file.
-    if (files.size() > 0)
+    if (files.size() > 0 && (new_prob == false))
     {
         std::string file_name = "./output/" + files[0];
 
@@ -763,24 +736,24 @@ int DPModel::check_driving_data()
 
                 std::cout << "generated a new transition probability matrix" << std::endl;
                 
-                // write to files to save w to w' matrices
-                std::ofstream out_file;
-                out_file.open(("./output/w2w_mat.csv"), std::ios::out);
+                // // write to files to save w to w' matrices
+                // std::ofstream out_file;
+                // out_file.open(("./output/w2w_mat.csv"), std::ios::out);
                 
-                int idx = 0;
-                for (int k = 0; k < N_total; ++k)
-                {
-                    for (int wk = 0; wk < w.n; ++wk)
-                    {
-                        for (int dwk = 0; dwk < n_p; ++dwk)
-                        {
-                            idx = k*w.n*n_p + wk*n_p + dwk;
-                            out_file << prob_table[idx] << ",";
-                        }
-                    }
-                }
-                out_file.close();
-                // std::cout << "idx: " << idx << std::endl;
+                // int idx = 0;
+                // for (int k = 0; k < N_total; ++k)
+                // {
+                //     for (int wk = 0; wk < w.n; ++wk)
+                //     {
+                //         for (int dwk = 0; dwk < n_p; ++dwk)
+                //         {
+                //             idx = k*w.n*n_p + wk*n_p + dwk;
+                //             out_file << prob_table[idx] << ",";
+                //         }
+                //     }
+                // }
+                // out_file.close();
+                // // std::cout << "idx: " << idx << std::endl;
             }
         }
         

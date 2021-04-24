@@ -121,12 +121,12 @@ class Vehicle():
         d = self.d
         v = self.v
         
-        t_tcc = 3
+        t_ttc = 3
 
         penalty = False
 
         # safety distance with the front car
-        if d > dc-v*t_tcc -3:
+        if d > dc-v*t_ttc -3:
             penalty = True
 
         return penalty
@@ -139,7 +139,7 @@ class Vehicle():
         
         t = self.t
         d2tl = self.d2tl
-        t_tcc = 3
+        t_ttc = 3
         a_min = self.a_min
 
         penalty = False

@@ -48,7 +48,10 @@ float one_step(int solver, bool log, DPModel * dp_model)
         }
         if (true)
         {
-            filename = "cpu_action";
+            filename += std::to_string(dp_model->n_d) + "_";
+            filename += std::to_string(dp_model->n_v) + "_";
+            filename += std::to_string(dp_model->n_a) + "_";
+            filename += "cpu_action";
             int a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
         }

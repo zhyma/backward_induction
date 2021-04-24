@@ -8,7 +8,7 @@ def search_sto(N, action_mat, gtr, front_car_traj):
     for i in range(N):
         dk, _ = gtr.find_closest(gtr.d, gtr.d_list)
         vk, _ = gtr.find_closest(gtr.v, gtr.v_list)
-        xk = dk*32+vk
+        xk = dk*len(gtr.v_list)+vk
         # read one front car state
         dck, _ = gtr.find_closest(front_car_traj[i][0],gtr.d_list)
         intention = front_car_traj[i][1]
@@ -74,22 +74,27 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
     valid_ctrl = True
 
     for k in range(N):
-        _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
+        # _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
+        dc = front_car_traj[k][0]
         # find the corresponding ctrl
         a = gtr.a_list[policy[k]]
         if verbose:
-            print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a), end='')
+            print('k=%d, dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(k, dc, gtr.d, gtr.v, a), end='')
         if k>0:
-            if gtr.rl_constraint(k, dc, a):
-                print('Optimal control is not valid, hits the red light constraint')
+            penalty, stage1, stage2 = gtr.rl_constraint(k, dc, a)
+            if penalty:
+                print('%d, red light constraint'%(k))
+                # print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a))
+                print('%.2f, %.2f'%(stage1, stage2))
                 valid_ctrl = False
-                break
-            if gtr.dist_constraint(dc):
-                print('Optimal control is not valid, hits the distance constraint')
-                print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
-                    %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
+
+            penalty, stage1 = gtr.dist_constraint(dc)
+            if penalty:
+                print('%d, distance constraint'%(k))
+                # print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a))
+                print('safety dist: %.2f'%(stage1))
                 valid_ctrl = False
-                break
+
         # calculate one running cost
         r_cost = gtr.running_cost(a)
         cost2go += r_cost
@@ -99,14 +104,20 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
         gtr.step_forward(a)
 
     # examine the final state
-    _, dc = gtr.find_closest(front_car_traj[N][0],gtr.d_list)
-    if gtr.rl_constraint(N, dc, gtr.a_min):
-        print('Optimal control is not valid, hits the red light constraint')
+    # _, dc = gtr.find_closest(front_car_traj[N][0],gtr.d_list)
+    dc = front_car_traj[k][0]
+    penalty, stage1, stage2 = gtr.rl_constraint(k, dc, a)
+    if penalty:
+        print('N, red light constraint')
+        # print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a))
+        print('%.2f, %.2f'%(stage1, stage2))
         valid_ctrl = False
-    if gtr.dist_constraint(dc):
-        print('Optimal control is not valid, hits the distance constraint')
-        print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
-            %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
+
+    penalty, stage1 = gtr.dist_constraint(dc)
+    if penalty:
+        print('N, distance constraint')
+        # print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a))
+        print('safety dist: %.2f'%(stage1))
         valid_ctrl = False
 
     if valid_ctrl == True:
@@ -119,7 +130,9 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
         cost2go += t_cost
         if verbose:
             print('cost to go: %.2f (%.3e)'%(cost2go, cost2go))
-        print('policy is: ', end='')
-        print(policy)
-
+            print('policy is: ', end='')
+            print(policy)
+    else:
+        cost2go = 1e15
+        print('====')
     return cost2go

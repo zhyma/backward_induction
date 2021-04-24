@@ -64,7 +64,10 @@ int main(int argc, char *argv[])
                     one_step(GPU_SOLVER, true, &dp_model);
             }
             else
-                one_step(CPU_SOLVER, true, &dp_model);
+            {
+                dp_model.new_prob = true;
+                one_step(CPU_SOLVER, false, &dp_model);
+            }
         }
         else if (modeStr == "n_step")
         { 

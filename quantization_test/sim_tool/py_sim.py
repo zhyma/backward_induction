@@ -1,9 +1,10 @@
 import numpy as np
 import sys
 import os
+from math import ceil
 
 class Vehicle():
-    def __init__(self, N_pred, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max, a_n):
+    def __init__(self, N_pred, d2tl, dt, rl_start, rl_end, v_min, v_max, a_min, a_max, n_d_total=172, n_d=128, n_v=32, n_a=32):
         self.d2tl = d2tl
         self.dt = dt
         self.rl_start = rl_start
@@ -14,18 +15,17 @@ class Vehicle():
         self.d = 0
         self.xk = 0
         # boudnary of velocity is [0, v_bound]
-        self.v_min = 0.0
-        self.v_max = 18.0
+        self.v_min = v_min
+        self.v_max = v_max
         self.v = 0
-        self.a_min = -4.0
-        self.a_max = 2.0
+        self.a_min = a_min
+        self.a_max = a_max
 
-        self.a_list = self.discretize(a_min, a_max, a_n)
-        self.v_list = self.discretize(v_min, v_max, a_n)
+        self.a_list = self.discretize(a_min, a_max, n_a)
+        self.v_list = self.discretize(v_min, v_max, n_v)
         self.d_list = []
-        n_d_total = 353
         for i in range(n_d_total):
-            val = i*v_max*10*self.dt/(128-1)
+            val = i*v_max*10*self.dt/(n_d-1)
             self.d_list.append(val)
 
         self.m = 1500
@@ -121,15 +121,17 @@ class Vehicle():
         d = self.d
         v = self.v
         
-        t_tcc = 3
+        t_ttc = 3
 
         penalty = False
+        stage1 = 0
 
         # safety distance with the front car
-        if d > dc-v*t_tcc -3:
+        if d > dc-v*t_ttc -3:
             penalty = True
+            stage1 = dc - d - v*t_ttc -3
 
-        return penalty
+        return penalty, stage1
 
     def rl_constraint(self, k, dc, a):
         # if current state hits the constraint, apply penalty
@@ -139,24 +141,28 @@ class Vehicle():
         
         t = self.t
         d2tl = self.d2tl
-        t_tcc = 3
+        t_ttc = 3
         a_min = self.a_min
 
         penalty = False
+        stage1 = 0
+        stage2 = 0
 
         # traffic light condition
         if d < d2tl and t > self.rl_start and t < self.rl_end:
             # check before the red light, if not enough to brake
-            if d2tl - d + 0.01 < 0.5*(v**2)/(-a_min):
+            stage1 = d2tl - d + 3 - 0.5*(v**2)/(-a_min)
+            if d2tl - d + 3 < 0.5*(v**2)/(-a_min):
                 penalty = True
             # if in front of a red light, check the acceleration
             if k >= self.N_pred:
                 a = a_min
             d_, v_ = self.physical(a)
-            if d2tl - d_ + 0.01 < 0.5*(v_**2)/(-a_min):
+            stage2 = d2tl - d_ + 3 - 0.5*(v_**2)/(-a_min)
+            if d2tl - d_ + 3 < 0.5*(v_**2)/(-a_min):
                 penalty = True
 
-        return penalty
+        return penalty, stage1, stage2
             
 
     def terminal_cost(self):
@@ -202,11 +208,14 @@ class Vehicle():
 
     def step_forward(self, a):
         d_, v_ = self.physical(a)
-        dk, self.d = self.find_closest(d_, self.d_list)
-        vk, self.v = self.find_closest(v_,self.v_list)
+        # dk, self.d = self.find_closest(d_, self.d_list)
+        # vk, self.v = self.find_closest(v_,self.v_list)
         self.t += self.dt
-        self.xk = dk*32 + vk
+        self.d = d_
+        self.v = v_
+        # self.xk = dk*32 + vk
         return d_, v_
+
 
 def find_all(name, path):
     result = []

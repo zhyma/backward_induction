@@ -36,6 +36,7 @@ class DPModel
     public:
 
         bool debug = false;
+        bool new_prob = false;
         int iter;
         // predict 10 steps forward
         int N_pred = 10;
@@ -44,6 +45,8 @@ class DPModel
         int N_total = N_pred + N_run - 1;
         // the number of sampling point along the ego car's trajectory
         int n_d = 128;
+        int n_v = 32;
+        int n_a = 32;
         //  the number of sampling point along the front car's trajectory
         int n_dc = 185;
         int max_last_step = 13;
@@ -89,7 +92,7 @@ class DPModel
         int rl_start;
         // the time that the red light will end
         int rl_end;
-        float t_tcc;
+        float t_ttc;
         // weight of the car
         float m = 1500;
         float g = 9.8;

@@ -86,7 +86,7 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
                 break
             if gtr.dist_constraint(dc):
                 print('Optimal control is not valid, hits the distance constraint')
-                print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
+                print('safety dist: dc-v*t_ttc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
                     %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
                 valid_ctrl = False
                 break
@@ -105,7 +105,7 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
         valid_ctrl = False
     if gtr.dist_constraint(dc):
         print('Optimal control is not valid, hits the distance constraint')
-        print('safety dist: dc-v*t_tcc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
+        print('safety dist: dc-v*t_ttc-3-d = %.2f-%.2f*3-3-%.2f = %.2f'\
             %(dc, gtr.v, gtr.d, dc-gtr.v*3-3-gtr.d))
         valid_ctrl = False
 
