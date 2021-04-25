@@ -25,7 +25,7 @@ using namespace tinyxml2;
 // move to physical model
 typedef struct Set
 {
-    int n;
+    long n;
     float *list;
     float min;
     float max;
@@ -68,14 +68,14 @@ class DPModel
         long *t_cost;
         
         // save <x,w> -u-> x'
-        int *s_trans_table;
+        long *s_trans_table;
         float *prob_table;
 
         DPModel(int pred_steps, int running_steps);
         ~DPModel();
         // int terminal_cost_init(float d0);
         // long terminal_cost(int dk0, int dk, int vk);
-        long terminal_cost(int xk, int wk);
+        long terminal_cost(long xk, long wk);
         int get_dist_idx(float dist);
         int get_velc_idx(float velc);
         int get_subset(int k0, int dk0, int dck0);

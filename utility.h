@@ -6,7 +6,7 @@
 #include <iomanip>
 
 template<typename T>
-int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat);
+int mat_to_file(std::string file_name, int dim_len, long *dim, T *mat);
 
 int result_to_file(std::string solver_type, int *dim, float *v, int * a);
 

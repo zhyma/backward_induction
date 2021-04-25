@@ -7,7 +7,7 @@
 #include <sstream>
 
 template<typename T>
-int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
+int mat_to_file(std::string file_name, int dim_len, long *dim, T *mat)
 {
     std::ofstream out_file;
     out_file.open("output/" + file_name + ".csv", std::ios::out);
@@ -20,7 +20,7 @@ int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
     out_file << std::endl;
 
     int k = dim[0];
-    int x = 1;
+    long x = 1;
     for(int i = 1; i < dim_len; ++i)
     {
         x = x * dim[i];
@@ -29,9 +29,9 @@ int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
     // usually the dim[0] is the time k
     for (int i = 0; i < k; ++i)
     {
-        for (int j = 0; j < x; ++j)
+        for (long j = 0; j < x; ++j)
         {
-            int idx = i * x + j;
+            long idx = i * x + j;
             out_file << mat[idx] << ",";
         }
         out_file << std::endl;
@@ -41,10 +41,10 @@ int mat_to_file(std::string file_name, int dim_len, int *dim, T *mat)
     return 0;
 }
 
-template int mat_to_file(std::string file_name, int dim_len, int *dim, int *mat);
-template int mat_to_file(std::string file_name, int dim_len, int *dim, float *mat);
-template int mat_to_file(std::string file_name, int dim_len, int *dim, long *mat);
-template int mat_to_file(std::string file_name, int dim_len, int *dim, unsigned long long int *mat);
+template int mat_to_file(std::string file_name, int dim_len, long *dim, int *mat);
+template int mat_to_file(std::string file_name, int dim_len, long *dim, float *mat);
+template int mat_to_file(std::string file_name, int dim_len, long *dim, long *mat);
+template int mat_to_file(std::string file_name, int dim_len, long *dim, unsigned long long int *mat);
 
 int result_to_file(std::string solver_type, int *dim, float *v, int * a)
 {

@@ -170,7 +170,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     if(false)
     {
         std::string filename = "partial_trans_gpu";
-        int dim[] = {1, n_x_s, n_u};
+        long dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans.cpu);
     }
     // std::cout << "extract subset from state transition" << std::endl;
@@ -202,7 +202,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     if(false)
     {
         std::string filename = "partial_prob_gpu";
-        int dim[] = {N, n_w_s, n_p};
+        long dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob.cpu);
     }
     // std::cout << "extract subset from transition probability" << std::endl;

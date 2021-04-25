@@ -43,7 +43,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
         if (log)
         {
             filename = "cpu_value";
-            int v_dim[] = {cpu_solver.N+1, cpu_solver.n_x, cpu_solver.n_w};
+            long v_dim[] = {cpu_solver.N+1, cpu_solver.n_x, cpu_solver.n_w};
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, cpu_solver.value);
         }
         if (true)
@@ -52,7 +52,7 @@ float one_step(int solver, bool log, DPModel * dp_model)
             filename += std::to_string(dp_model->n_v) + "_";
             filename += std::to_string(dp_model->n_a) + "_";
             filename += "cpu_action";
-            int a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
+            long a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
         }
 
@@ -82,11 +82,11 @@ float one_step(int solver, bool log, DPModel * dp_model)
         if (log)
         {
             std::string filename = "gpu_value";
-            int v_dim[] = {gpu_solver.N+1, gpu_solver.n_x, gpu_solver.n_w};
+            long v_dim[] = {gpu_solver.N+1, gpu_solver.n_x, gpu_solver.n_w};
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, gpu_solver.value.cpu);
 
             filename = "gpu_action";
-            int a_dim[] = {gpu_solver.N, gpu_solver.n_x_s, gpu_solver.n_w_s};
+            long a_dim[] = {gpu_solver.N, gpu_solver.n_x_s, gpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, gpu_solver.action.cpu);
         }
     }

@@ -58,13 +58,13 @@ int CPUSolver::find_min(long *q, int cnt)
     return idx;
 }
 
-long CPUSolver::calc_q(int k0, int k, int xk, int wk, int uk)
+long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
 {
-    int xk_ = 0;
-    int wk_ = 0;
+    long xk_ = 0;
+    long wk_ = 0;
     long sum = 0;
 
-    int idx = xk*n_u + uk;
+    long idx = xk*n_u + uk;
     xk_ = trans[idx];
 
     for (int dwk = 0; dwk < n_p; ++dwk)
@@ -108,11 +108,11 @@ int CPUSolver::estimate_one_step(int k0, int k)
         // initial value for V_N is V_N(x)=J_f(x), final cost
         // final step, no simulation/data is needed
 
-        for(int xk = 0; xk < n_x; ++xk)
+        for(long xk = 0; xk < n_x; ++xk)
         {
-            for (int wk = 0; wk < n_w; ++wk)
+            for (long wk = 0; wk < n_w; ++wk)
             {
-                int idx = k*n_x*n_w + xk*n_w + wk;
+                long idx = k*n_x*n_w + xk*n_w + wk;
                 value[idx] = t_cost[xk*n_w+wk];
             }
         }
@@ -128,9 +128,9 @@ int CPUSolver::estimate_one_step(int k0, int k)
         // a temporary buffer to save all the result of executing different u for a given xk, wk
         // std::cout << "working on step " << k << std::endl;
         long *q = new long [n_u]{};
-        for (int xk = 0; xk < n_x_s; ++xk)
+        for (long xk = 0; xk < n_x_s; ++xk)
         {
-            for (int wk = 0; wk < n_w_s; ++wk)
+            for (long wk = 0; wk < n_w_s; ++wk)
             {
                 // get a <x, w> pair first
                 for (int uk = 0; uk < n_u; ++uk)
@@ -176,7 +176,7 @@ int CPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
         estimate_one_step(k0, k);
     }
     
-    int idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
+    long idx = (dk0*model->v.n + vk0)*n_w_s + (0+intention);
     int ak = action[idx];
 
     // std:: cout << "solver output: " << model->a.list[ak] << std::endl;
@@ -191,7 +191,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     r_cost = new long [n_x_s*n_w_s*n_u]{};
     r_mask = new long [n_x_s*n_w_s*n_u]{};
     t_cost = new long [n_x*n_w]{};
-    trans = new int[n_x_s*n_u]{};
+    trans = new long[n_x_s*n_u]{};
     prob = new float[N*n_w_s*n_p]{};
 
     // for debug only
@@ -199,8 +199,8 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     wk0_debug = dck0*2;
 
     // long long int idx = 0;
-    int idx = 0;
-    int solver_idx = 0;
+    long idx = 0;
+    long solver_idx = 0;
 
     //slicing state transition (x,w,u)
     for (int dxk = 0; dxk < n_x_s; ++dxk)
@@ -220,7 +220,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     if (debug)
     {
         std::string filename = "cpu_tran_part";
-        int dim[] = {1, n_x_s, n_u};
+        long dim[] = {1, n_x_s, n_u};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, trans);
     }
     // std::cout << "extract subset from state transition" << std::endl;
@@ -231,9 +231,9 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     
     for (int k = 0; k < N; ++k)
     {
-        for (int dwk = 0; dwk < n_w_s; ++dwk)
+        for (long dwk = 0; dwk < n_w_s; ++dwk)
         {
-            for (int dwk_ = 0; dwk_ < n_p; ++dwk_)
+            for (long dwk_ = 0; dwk_ < n_p; ++dwk_)
             {
                 idx = (k0+k) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + dwk_;
                 solver_idx = k*n_w_s*n_p + dwk*n_p + dwk_;
@@ -244,7 +244,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     if (debug)
     {
         std::string filename = "cpu_prob_part";
-        int dim[] = {N, n_w_s, n_p};
+        long dim[] = {N, n_w_s, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob);
     }
     // std::cout << "extract subset from transition probability" << std::endl;
@@ -253,19 +253,19 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     // slicing running_cost (k,x,w,u)
     // k = k0+dk
     // xk = xk0 + dxk = dk0*n_v + dxk
-    for (int dxk = 0; dxk < n_x_s; ++dxk)
+    for (long dxk = 0; dxk < n_x_s; ++dxk)
     {
         // wk = 
-        for (int dwk = 0; dwk < n_w_s; ++dwk)
+        for (long dwk = 0; dwk < n_w_s; ++dwk)
         {
             for (int uk =0; uk < n_u; ++uk)
             {
                 // xk dimension: (d0+ddk)*n_v
                 // wk dimension: (dck0+ddck)*2
-                int temp1 = (dk0 * model->v.n + dxk) * model->w.n * model->u.n;
+                long temp1 = (dk0 * model->v.n + dxk) * model->w.n * model->u.n;
                 // uk dimension: uk
-                int temp2 = (dck0*2 + dwk) * model->u.n;
-                int temp3 = uk;
+                long temp2 = (dck0*2 + dwk) * model->u.n;
+                long temp3 = uk;
                 idx =  temp1 + temp2 + temp3;
 
                 solver_idx = dxk*n_w_s*n_u + dwk*n_u + uk;
@@ -277,9 +277,9 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
-    for (int xk = 0; xk < n_x; ++xk)
+    for (long xk = 0; xk < n_x; ++xk)
     {
-        for (int wk = 0; wk < n_w; ++wk)
+        for (long wk = 0; wk < n_w; ++wk)
         {
             idx = (xk*n_w + wk);
             t_cost[idx] = model->terminal_cost(xk, wk);
@@ -289,7 +289,7 @@ int CPUSolver::get_subset(int k0, int dk0, int dck0)
     if (debug)
     {
         std::string filename = "t_cost_dv";
-        int dim[] = {1, n_x, n_w};
+        long dim[] = {1, n_x, n_w};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, t_cost);
     }
     // std::cout << "generate terminal cost" << std::endl;

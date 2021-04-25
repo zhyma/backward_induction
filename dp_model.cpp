@@ -76,8 +76,12 @@ DPModel::DPModel(int pred_steps, int running_steps)
     t_ttc = 3;
     // mass of the vehicle
     m = 1500;
+
     // Maximum sample points could travel during 10-prediction-step
     n_d = 256;//128
+    n_v = 64;
+    n_a = 32;
+
     // At prediction step 9, the farest position can be reach is 114 (count from 0)
     // There are 14 possible next steps: 0,1,2,...,13
     max_last_step = (int)ceil(n_d/N_pred);//13
@@ -87,9 +91,6 @@ DPModel::DPModel(int pred_steps, int running_steps)
     n_p = (max_last_step+1)*2; //28
     // for gpu, at least 32.
     n_p_gpu = 32;
-    
-    n_v = 128;
-    n_a = 128;
 
     v.min = .0;
     v.max = 18.0;
@@ -197,17 +198,17 @@ int DPModel::state_trans()
 
     // float attr[2] = {.0, .0};
 
-    s_trans_table = new int[x.n * u.n]{};
-    for (int xk = 0; xk < x.n; ++xk)
+    s_trans_table = new long[x.n * u.n]{};
+    for (long xk = 0; xk < x.n; ++xk)
     {
         for (int uk = 0; uk < u.n; ++uk)
         {
             // attr[0] = d.list[xk/v.n];
             // attr[1] = v.list[xk%v.n];
             // out_file << "d=" << d.list[xk/v.n] << ", v=" << v.list[xk%v.n] << ", a=" << u.list[uk] << " -> d=" ;
-            int xk_ = phy_model(xk, uk);
+            long xk_ = phy_model(xk, uk);
             
-            int idx = xk*u.n + uk;
+            long idx = xk*u.n + uk;
             s_trans_table[idx] = xk_;
 
             // out_file << d.list[xk_/v.n] << ", v=" << v.list[xk_%v.n] << std::endl;
@@ -222,7 +223,7 @@ int DPModel::state_trans()
     if (debug)
     {
         std::string filename = "tran_full";
-        int dim[] = {1, x.n, u.n};
+        long dim[] = {1, x.n, u.n};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, s_trans_table);
         std::cout << "write transition to file" << std::endl;
     }
@@ -276,7 +277,7 @@ int DPModel::phy_model(int xk, int uk)
 
     int dk_ = val_to_idx(attr[0], &d);
     int vk_ = val_to_idx(attr[1], &v);
-    int xk_ = dk_*v.n+ vk_;
+    long xk_ = dk_*v.n+ vk_;
     return xk_;
 }
 
@@ -349,7 +350,7 @@ int DPModel::running_cost_init()
 {
     // N_x * N_w * N_u
     // long long int temp1 = N_total * x.n, temp2 = w.n*u.n;
-    int idx = 0;
+    long idx = 0;
     // std::cout << idx << std::endl;
     r_cost = new long [x.n * w.n * u.n]{};
     r_mask = new long [x.n * w.n * u.n]{};
@@ -363,9 +364,9 @@ int DPModel::running_cost_init()
 
     // std::cout << N_total << ", " << x.n << ", " << w.n << ", " << u.n << std::endl;
 
-    for (int xk = 0; xk < x.n; ++xk)
+    for (long xk = 0; xk < x.n; ++xk)
     {
-        for (int wk = 0; wk < w.n; ++wk)
+        for (long wk = 0; wk < w.n; ++wk)
         {
             apply_penalty = false;
             float dx = d.list[xk/v.n], vx = v.list[xk%v.n];
@@ -479,7 +480,7 @@ int DPModel::running_cost_init()
     if (false)
     {
         std::string filename = "full_r_cost";
-        int dim[] = {1, x.n, w.n, u.n};
+        long dim[] = {1, x.n, w.n, u.n};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_cost);
         filename = "full_r_mask";
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, r_mask);
@@ -489,7 +490,7 @@ int DPModel::running_cost_init()
 }
 
 // long DPModel::terminal_cost(int dk0, int dk, int vk)
-long DPModel::terminal_cost(int xk, int wk)
+long DPModel::terminal_cost(long xk, long wk)
 {
     int dk = xk/v.n;
     int vk = xk%v.n;
@@ -605,8 +606,8 @@ int DPModel::check_driving_data()
                 {
                     // temp for [d, v, a, i] s
                     int k = 0;
-                    int idx;
-                    int old_wk;
+                    long idx;
+                    long old_wk;
                     bool end_of_trial;
                     std::stringstream ss_param;
                     std::string arr[4];
@@ -672,7 +673,7 @@ int DPModel::check_driving_data()
                                 // std::cout << "load " << k << ",";
                                 int dck = val_to_idx(stof(arr[0]), &d);
                                 int i = stoi(arr[3]);
-                                int new_wk = dck*2 + i;
+                                long new_wk = dck*2 + i;
                                 // std::cout << new_wk << std::endl;
 
                                 // out of bound
@@ -700,7 +701,7 @@ int DPModel::check_driving_data()
                 if(false)
                 {
                     std::string filename = "count";
-                    int dim[] = {N_total, w.n, n_p};
+                    long dim[] = {N_total, w.n, n_p};
                     mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, cnt_mat);
                 }
 
@@ -709,17 +710,17 @@ int DPModel::check_driving_data()
                 // w->w' samples collecting done, now convert to probabilities
                 for (int k = 0; k < N_total; ++k)
                 {
-                    for (int wk = 0; wk < w.n; ++wk)
+                    for (long wk = 0; wk < w.n; ++wk)
                     {
                         int sum = 0;
                         for (int dwk = 0; dwk < n_p; ++dwk)
                         {
-                            int idx = k*w.n*n_p + wk*n_p + dwk;
+                            long idx = k*w.n*n_p + wk*n_p + dwk;
                             sum += cnt_mat[idx];
                         }
                         for (int dwk = 0; dwk < n_p; ++dwk)
                         {
-                            int idx = k*w.n*n_p + wk*n_p + dwk;
+                            long idx = k*w.n*n_p + wk*n_p + dwk;
                             if (sum == 0)
                                 prob_table[idx] = 0;
                             else
@@ -763,7 +764,7 @@ int DPModel::check_driving_data()
     if(debug)
     {
         std::string filename = "prob_full";
-        int dim[] = {N_total, w.n, n_p};
+        long dim[] = {N_total, w.n, n_p};
         mat_to_file(filename, sizeof(dim)/sizeof(dim[0]), dim, prob_table);
     }
     return 0;

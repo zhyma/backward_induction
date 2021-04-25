@@ -24,9 +24,9 @@ def acc_traj(gtr, idx_traj):
 
 if __name__ == "__main__":
 
-    n_d = 256
-    n_v = 128
-    n_a = 128
+    n_d = 128
+    n_v = 32
+    n_a = 32
 
     data = Load(str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu')
 

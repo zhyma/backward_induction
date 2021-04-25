@@ -20,8 +20,8 @@ class CPUSolver
         
         DPModel * model;
         int N;
-        int n_x,n_w,n_u;
-        int n_x_s, n_w_s;
+        long n_x,n_w,n_u;
+        long n_x_s, n_w_s;
         
         int solve(int k0, float d0, float v0, float dc0, int intention);
         long * value;
@@ -39,17 +39,17 @@ class CPUSolver
         long *r_cost = NULL;
         long *r_mask = NULL;
         long *t_cost = NULL;
-        int *trans = NULL;
+        long *trans = NULL;
         float *prob = NULL;
 
         int find_min(long *q, int cnt);
-        long calc_q(int k0, int k, int xk, int wk, int uk);
+        long calc_q(int k0, int k, long xk, long wk, int uk);
         int estimate_one_step(int k0, int k);
         int get_subset(int k0, int dk0, int dck0);
 
         // for debug only
-        int xk0_debug = 0;
-        int wk0_debug = 0;
+        long xk0_debug = 0;
+        long wk0_debug = 0;
 };
 
 #endif // CPU_SOLVER_H_
