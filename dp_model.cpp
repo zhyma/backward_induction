@@ -78,8 +78,8 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 256;//128
-    n_v = 64;
+    n_d = 128;//128
+    n_v = 32;
     n_a = 32;
 
     // At prediction step 9, the farest position can be reach is 114 (count from 0)

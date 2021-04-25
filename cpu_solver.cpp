@@ -20,7 +20,7 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
 
     n_p = model->n_p; // 28
 
-    value = new long[(N+1)*n_x*n_w]{};
+    value = new long[2*n_x*n_w]{};
     // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
     //     value[i] = 1e30;
     action = new int[N*n_x_s*n_w_s]{};
@@ -72,7 +72,7 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
         // p*V_{k+1}
         int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
         double p = prob[p_idx];
-        int v_idx = (k+1)*(n_x*n_w) + xk_*n_w + (wk+dwk);
+        int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         long v = value[v_idx];
         double temp = double(v)*p;
         sum += long (temp);
@@ -112,7 +112,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
         {
             for (long wk = 0; wk < n_w; ++wk)
             {
-                long idx = k*n_x*n_w + xk*n_w + wk;
+                long idx = (k%2)*n_x*n_w + xk*n_w + wk;
                 value[idx] = t_cost[xk*n_w+wk];
             }
         }
@@ -143,7 +143,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 int idx_min = find_min(q, n_u);
                 if (idx_min >= 0)
                 {
-                    value[k*n_x*n_w + xk*n_w + wk] = q[idx_min];
+                    value[(k%2)*n_x*n_w + xk*n_w + wk] = q[idx_min];
                     action[k*n_x_s*n_w_s + xk*n_w_s + wk] = idx_min;
                 }
                 else
