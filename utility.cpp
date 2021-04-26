@@ -43,6 +43,7 @@ int mat_to_file(std::string file_name, int dim_len, long *dim, T *mat)
 
 template int mat_to_file(std::string file_name, int dim_len, long *dim, int *mat);
 template int mat_to_file(std::string file_name, int dim_len, long *dim, float *mat);
+template int mat_to_file(std::string file_name, int dim_len, long *dim, double *mat);
 template int mat_to_file(std::string file_name, int dim_len, long *dim, long *mat);
 template int mat_to_file(std::string file_name, int dim_len, long *dim, unsigned long long int *mat);
 

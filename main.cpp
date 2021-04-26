@@ -66,38 +66,38 @@ int main(int argc, char *argv[])
             else
             {
                 dp_model.new_prob = true;
-                one_step(CPU_SOLVER, false, &dp_model);
+                one_step(CPU_SOLVER, true, &dp_model);
             }
         }
-        else if (modeStr == "n_step")
-        { 
-            // whole simulation
-            std::cout << "run simulation for n steps" << std::endl;
-            int pred_steps = 10;
-            // int run_steps = 10;
-            int run_steps = 10;
-            int trials = 1;
+        // else if (modeStr == "n_step")
+        // { 
+        //     // whole simulation
+        //     std::cout << "run simulation for n steps" << std::endl;
+        //     int pred_steps = 10;
+        //     // int run_steps = 10;
+        //     int run_steps = 10;
+        //     int trials = 1;
 
-            run_trials(trials, run_steps, CPU_SOLVER, &dp_model);
-        }
+        //     run_trials(trials, run_steps, CPU_SOLVER, &dp_model);
+        // }
     }
     
-    else if (modeStr == "gen_data")
-    {
-        // generate front car data
-        std::cout << "generate front car driving data" << std::endl;
-        int iter = 10;
-        if (argc > 2)
-        {
-            std::string val(argv[2]); 
-            iter = std::stoi(val);
-            if (iter <= 0)
-                iter = 10;
-        }
-        std::cout << "Simulate the front car for " << iter << " times" << std::endl;
+    // else if (modeStr == "gen_data")
+    // {
+    //     // generate front car data
+    //     std::cout << "generate front car driving data" << std::endl;
+    //     int iter = 10;
+    //     if (argc > 2)
+    //     {
+    //         std::string val(argv[2]); 
+    //         iter = std::stoi(val);
+    //         if (iter <= 0)
+    //             iter = 10;
+    //     }
+    //     std::cout << "Simulate the front car for " << iter << " times" << std::endl;
         
-        fc_n_step_sim(iter);
-    }
+    //     fc_n_step_sim(iter);
+    // }
 
     // std::cout << "done" << std::endl;
 

@@ -6,6 +6,9 @@
 #include "dp_model.h"
 #include "utility.h"
 
+#define PINGPONG 0
+#define FULL     1
+
 struct Min_index
 {
     int index;
@@ -15,7 +18,7 @@ struct Min_index
 class CPUSolver
 {
     public:
-        CPUSolver(DPModel * ptr_in);
+        CPUSolver(DPModel * ptr_in, bool save = false);
         ~CPUSolver();
         
         DPModel * model;
@@ -24,16 +27,20 @@ class CPUSolver
         long n_x_s, n_w_s;
         
         int solve(int k0, float d0, float v0, float dc0, int intention);
-        long * value;
+        float * value;
         int * action;
         bool debug = true;
         
-    private:   
+    private:
+        bool save_v = false;
+
         int n_v;
 
         int n_p;
         int n_d;
         int n_dc;
+
+        float * value_buffer;
 
         // subset
         long *r_cost = NULL;
@@ -42,7 +49,7 @@ class CPUSolver
         long *trans = NULL;
         float *prob = NULL;
 
-        int find_min(long *q, int cnt);
+        int find_min(float *q, int cnt);
         long calc_q(int k0, int k, long xk, long wk, int uk);
         int estimate_one_step(int k0, int k);
         int get_subset(int k0, int dk0, int dck0);

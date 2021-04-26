@@ -15,7 +15,5 @@
 #define COMPARE    2
 
 float one_step(int solver, bool log, DPModel * dp_model);
-int run_trials(int trials, int steps, int solver, DPModel * dp_model);
-int compare(CPUSolver * c_solver, GPUSolver * g_solver);
-
+// int run_trials(int trials, int steps, int solver, DPModel * dp_model);
 #endif

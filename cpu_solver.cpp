@@ -3,7 +3,7 @@
 #include <cstring>
 #include <algorithm>
 
-CPUSolver::CPUSolver(DPModel * ptr_in)
+CPUSolver::CPUSolver(DPModel * ptr_in, bool save)
 {
     model = ptr_in;
 
@@ -20,12 +20,20 @@ CPUSolver::CPUSolver(DPModel * ptr_in)
 
     n_p = model->n_p; // 28
 
-    value = new long[2*n_x*n_w]{};
+    value_buffer = new float[2*n_x*n_w]{};
     // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
     //     value[i] = 1e30;
     action = new int[N*n_x_s*n_w_s]{};
     // for (int i = 0; i < N*n_x_s*n_w_s; ++i)
     //     action[i] = -1;
+
+    if (save==true)
+    {
+        save_v = true;
+        value = new float[(N+1)*n_x*n_w];
+    }
+    else
+        save_v = false;
     return;
 }
 
@@ -43,10 +51,10 @@ CPUSolver::~CPUSolver()
     //     delete [] prob;
 }
 
-int CPUSolver::find_min(long *q, int cnt)
+int CPUSolver::find_min(float *q, int cnt)
 {
     int idx = cnt-1;
-    long val = q[cnt-1];
+    float val = q[cnt-1];
     for(int i = cnt-2;i >= 0; --i)
     {
         if(q[i] < val)
@@ -62,7 +70,7 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
 {
     long xk_ = 0;
     long wk_ = 0;
-    long sum = 0;
+    float sum = 0;
 
     long idx = xk*n_u + uk;
     xk_ = trans[idx];
@@ -71,27 +79,14 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
     {
         // p*V_{k+1}
         int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
-        double p = prob[p_idx];
         int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk);
-        long v = value[v_idx];
-        double temp = double(v)*p;
-        sum += long (temp);
+        float temp = value_buffer[v_idx]*prob[p_idx];
+        sum += temp;
     }
-    long l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
+    float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
 
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = PENALTY;
-
-    // if (k==3 && xk == 371 && wk==121 && uk==20)
-    // {
-    //     std::cout << "d=" << model->d.list[xk/n_v];
-    //     std::cout << ", v=" << model->v.list[xk%n_v];
-    //     std::cout << ", a=" << model->a.list[uk];
-    //     std::cout << ", d'=" << model->d.list[xk_/n_v];
-    //     std::cout << ", v'=" << model->v.list[xk_%n_v];
-    //     std::cout << ", l=" << l;
-    //     std::cout << ", sum=" << sum << std::endl;
-    // }
 
     return l + sum;
 }
@@ -112,9 +107,13 @@ int CPUSolver::estimate_one_step(int k0, int k)
         {
             for (long wk = 0; wk < n_w; ++wk)
             {
-                long idx = (k%2)*n_x*n_w + xk*n_w + wk;
-                value[idx] = t_cost[xk*n_w+wk];
+                value_buffer[(k%2)*n_x*n_w + xk*n_w + wk] = t_cost[xk*n_w+wk];
             }
+        }
+        if (save_v==true)
+        {
+            for(long i = 0; i < n_x*n_w; ++i)
+                value[k*n_x*n_w + i] = value_buffer[(k%2)*n_x*n_w + i];
         }
     }
     else if((k >= 0) and (k < N))
@@ -127,7 +126,7 @@ int CPUSolver::estimate_one_step(int k0, int k)
 
         // a temporary buffer to save all the result of executing different u for a given xk, wk
         // std::cout << "working on step " << k << std::endl;
-        long *q = new long [n_u]{};
+        float *q = new float [n_u]{};
         for (long xk = 0; xk < n_x_s; ++xk)
         {
             for (long wk = 0; wk < n_w_s; ++wk)
@@ -141,13 +140,19 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 // v = min[l(x,u)+\sum P(z|x,u)V(z)]
                 // find the minimium now.
                 int idx_min = find_min(q, n_u);
-                if (idx_min >= 0)
-                {
-                    value[(k%2)*n_x*n_w + xk*n_w + wk] = q[idx_min];
-                    action[k*n_x_s*n_w_s + xk*n_w_s + wk] = idx_min;
-                }
-                else
-                    std::cout << "idx_min error?" << std::endl;
+
+                value_buffer[(k%2)*n_x*n_w + xk*n_w + wk] = q[idx_min];
+                action[k*n_x_s*n_w_s + xk*n_w_s + wk] = idx_min;
+
+            }
+        }
+
+        if (save_v==true)
+        {
+            for (long xk = 0; xk < n_x_s; ++xk)
+            {
+                for (long wk = 0; wk < n_w_s; ++wk)
+                    value[k*n_x*n_w + xk*n_w + wk] = value_buffer[(k%2)*n_x*n_w + xk*n_w + wk];
             }
         }
     }

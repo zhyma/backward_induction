@@ -62,11 +62,8 @@ DPModel::DPModel(int pred_steps, int running_steps)
     d2tl = load->param[0];
     rl_start = load->param[1];
     rl_end = load->param[2];
-    // std::cout << "distance to the right light: " << d2tl << std::endl;
-    // std::cout << "time to the red light: " << rl_start << std::endl;
-    // std::cout << "time to the next green light: " << rl_end << std::endl;
+
     delete load;
-    // load_param.close();
 
     N_pred = pred_steps;
     N_run = running_steps;
@@ -78,7 +75,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 128;//128
+    n_d = 128;
     n_v = 32;
     n_a = 32;
 
