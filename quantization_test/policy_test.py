@@ -24,12 +24,12 @@ def acc_traj(gtr, idx_traj):
 
 if __name__ == "__main__":
 
-    n_d = 128
-    n_v = 32
+    n_d = 256
+    n_v = 64
     n_a = 32
 
-    # file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
-    file_name = '128_32_32_combined'
+    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    # file_name = 'gpu'
     data = Load(file_name)
 
     N = data.N

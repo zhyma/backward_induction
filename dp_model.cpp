@@ -75,13 +75,33 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 128;
+    n_d = 512;
     n_v = 32;
     n_a = 32;
 
-    // At prediction step 9, the farest position can be reach is 114 (count from 0)
-    // There are 14 possible next steps: 0,1,2,...,13
-    max_last_step = (int)ceil(n_d/N_pred);//13
+    if (n_d == 128)
+    {
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 13;
+        n_dc = 149;
+        d.n = 353;
+    }
+    else if (n_d == 256)
+    {
+        max_last_step = 25;
+        n_dc = 299;
+        d.n = 709;
+    }
+    if (n_d == 512)
+    {
+        max_last_step = 51;
+        n_dc = 597;
+        d.n = 1420;
+    }
+    // max_last_step = (int)ceil(n_d/N_pred);//13
+    // n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
+    // d.n = n_dc+5;
     std::cout << "max last step is: " << max_last_step << std::endl;
 
     // maximum sample points of the next step (w->w'), for gpu
@@ -99,8 +119,6 @@ DPModel::DPModel(int pred_steps, int running_steps)
     a.n = n_a;
     discretize(&a);
 
-    n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
-    d.n = n_dc+5;
     d.list = new float[d.n];
     std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1)) << std::endl;
     for (int i = 0; i < d.n; ++i)
