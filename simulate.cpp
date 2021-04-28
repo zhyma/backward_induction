@@ -42,9 +42,13 @@ float one_step(int solver, bool save_v, DPModel * dp_model)
         std::string filename;
         if (save_v)
         {
-            filename = "cpu_value";
+            filename = std::to_string(dp_model->n_d) + "_";
+            filename += std::to_string(dp_model->n_v) + "_";
+            filename += std::to_string(dp_model->n_a) + "_";
+            filename += "cpu_value";
             long v_dim[] = {cpu_solver.N+1, cpu_solver.n_x, cpu_solver.n_w};
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, cpu_solver.value);
+            std::cout << "saved value to: " << filename << std::endl;
         }
         if (true)
         {
@@ -54,6 +58,7 @@ float one_step(int solver, bool save_v, DPModel * dp_model)
             filename += "cpu_action";
             long a_dim[] = {cpu_solver.N, cpu_solver.n_x_s, cpu_solver.n_w_s};
             mat_to_file(filename, sizeof(a_dim)/sizeof(a_dim[0]), a_dim, cpu_solver.action);
+            std::cout << "saved action to: " << filename << std::endl;
         }
 
     }

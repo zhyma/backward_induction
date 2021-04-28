@@ -68,7 +68,7 @@ def iterate_action(N, gtr, front_car_traj):
 
     return best_policy
 
-def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
+def exam_policy(N, gtr, front_car_traj, policy, loose = False, verbose = True):
     gtr.reset()
     cost2go = 0
     valid_ctrl = True
@@ -120,19 +120,20 @@ def exam_policy(N, gtr, front_car_traj, policy, verbose = True):
         print('safety dist: %.2f'%(stage1))
         valid_ctrl = False
 
-    if valid_ctrl == True:
-        # print('')
-        # terminal cost
-        t_cost = gtr.terminal_cost()
-        if verbose:
-            print('dc=%.2f, d=%.2f, v=%.2f, '%(dc, gtr.d, gtr.v), end='')
-            print("t_cost: %.2f"%(t_cost))
-        cost2go += t_cost
-        if verbose:
-            print('cost to go: %.2f (%.3e)'%(cost2go, cost2go))
-            print('policy is: ', end='')
-            print(policy)
-    else:
+
+    t_cost = gtr.terminal_cost()
+    if verbose:
+        print('k=10, dc=%.2f, d=%.2f, v=%.2f, '%(dc, gtr.d, gtr.v), end='')
+        print("t_cost: %.2f"%(t_cost))
+    cost2go += t_cost
+    if verbose:
+        print('cost to go: %.2f (%.3e)'%(cost2go, cost2go))
+        # print('policy is: ', end='')
+        # print(policy)
+        print('----')
+
+    if valid_ctrl == False and loose == False:
         cost2go = 1e15
         print('====')
+
     return cost2go

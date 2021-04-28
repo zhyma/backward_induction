@@ -80,10 +80,9 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
         // p*V_{k+1}
         int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
         int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk);
-        float temp = value_buffer[v_idx]*prob[p_idx];
-        sum += temp;
+        sum += value_buffer[v_idx]*prob[p_idx];
     }
-    float l  = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
+    float l = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
 
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = PENALTY;

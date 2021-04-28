@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
                 std::string solverStr = "";
                 solverStr.assign(argv[2], strlen(argv[2]));
                 if (solverStr == "cpu")
-                    one_step(CPU_SOLVER, false, &dp_model);
+                    one_step(CPU_SOLVER, true, &dp_model);
                 else if(solverStr == "gpu")
                     one_step(GPU_SOLVER, false, &dp_model);
             }

@@ -75,10 +75,22 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 512;
+    n_d = 128;
     n_v = 32;
     n_a = 32;
 
+    if (n_d == 32)
+    {
+        max_last_step = 3;
+        n_dc = 37;
+        d.n = 87;
+    }
+    if (n_d == 64)
+    {
+        max_last_step = 6;
+        n_dc = 75;
+        d.n = 176;
+    }
     if (n_d == 128)
     {
         // At prediction step 9, the farest position can be reach is 114 (count from 0)
@@ -98,6 +110,12 @@ DPModel::DPModel(int pred_steps, int running_steps)
         max_last_step = 51;
         n_dc = 597;
         d.n = 1420;
+    }
+    if (n_d == 1024)
+    {
+        max_last_step = 102;
+        n_dc = 1195;
+        d.n = 2843;
     }
     // max_last_step = (int)ceil(n_d/N_pred);//13
     // n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
@@ -132,10 +150,12 @@ DPModel::DPModel(int pred_steps, int running_steps)
     d.max = d.list[d.n-1];
 
     // x=[d,v]
-    x.n = d.n*v.n;
+    // x.n = d.n*v.n;
+    x.n = n_d*v.n;
     x.list = new float[x.n]{};
 
-    w.n = d.n * 2;
+    // w.n = d.n * 2;
+    w.n = n_dc * 2;
     w.list = new float[w.n]{};
 
     u.n = a.n;
@@ -367,7 +387,7 @@ int DPModel::running_cost_init()
     // long long int temp1 = N_total * x.n, temp2 = w.n*u.n;
     long idx = 0;
     // std::cout << idx << std::endl;
-    r_cost = new long [x.n * w.n * u.n]{};
+    r_cost = new float [x.n * w.n * u.n]{};
     r_mask = new long [x.n * w.n * u.n]{};
     long ban_all_time = 0;
     for (int k = 1; k < N_total+1; ++k)
@@ -505,7 +525,7 @@ int DPModel::running_cost_init()
 }
 
 // long DPModel::terminal_cost(int dk0, int dk, int vk)
-long DPModel::terminal_cost(long xk, long wk)
+float DPModel::terminal_cost(long xk, long wk)
 {
     int dk = xk/v.n;
     int vk = xk%v.n;
@@ -535,7 +555,7 @@ long DPModel::terminal_cost(long xk, long wk)
         float term1 = 0.5*m*(v_target*v_target - vx*vx)*0.95;
         float term2 = (d_target - dx)*783;
         float term3 = m*g*0*0.95;// which is set to 0 for now
-        return long(round(term1 + term2 + term3));
+        return term1 + term2 + term3;
     }
 }
 

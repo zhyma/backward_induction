@@ -62,10 +62,10 @@ class DPModel
         Set w;
 
         // Save cost-to-go as a matrix
-        long *r_cost;
+        float *r_cost;
         long *r_mask;
         // Save terminal cost as a matrix
-        long *t_cost;
+        float *t_cost;
         
         // save <x,w> -u-> x'
         long *s_trans_table;
@@ -75,7 +75,7 @@ class DPModel
         ~DPModel();
         // int terminal_cost_init(float d0);
         // long terminal_cost(int dk0, int dk, int vk);
-        long terminal_cost(long xk, long wk);
+        float terminal_cost(long xk, long wk);
         int get_dist_idx(float dist);
         int get_velc_idx(float velc);
         int get_subset(int k0, int dk0, int dck0);

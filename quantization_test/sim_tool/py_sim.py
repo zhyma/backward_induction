@@ -64,7 +64,7 @@ class Vehicle():
         if v+a*dt > v_max:
             v_ = v_max
             t1 = (v_-v)/a
-            d_ = d + 0.5*(v+v_max)*t1 + v_max*(dt-t1)
+            d_ = d + 0.5*(v+v_)*t1 + v_max*(dt-t1)
         ## speed can't exceed upper bound
         elif v+a*dt < 0:
             v_ = 0
@@ -114,7 +114,7 @@ class Vehicle():
         g1 = 0
         if a != 0:
             g1 = c*(m*a*v0*t1+0.5*m*a*a*t1*t1+0.005*m*g*v0*t1+0.5*0.005*m*g*a*t1*t1+0.09*(v0+a*t1)**4/(4*a))
-        g2 = c*(m*a*v1 + 0.005*m*g*v1 + 0.09*v1**3)*t2
+        g2 = c*(m*a*v1 + 0.005*m*g*v1 + 0.09*(v1**3))*t2
         return g1+g2
 
     def dist_constraint(self, dc):
@@ -227,6 +227,7 @@ def find_all(name, path):
 
 class Load():
     def __init__(self, solver_type):
+        self.filename = solver_type
         action_filename = 'output/'+ solver_type +'_action.csv'
         print('load file %s'%(action_filename))
         f_action = open(action_filename, 'r')
@@ -234,15 +235,15 @@ class Load():
         var = np.fromstring(lines[0], sep=',')[:-1]
         lines = lines[1:]
         self.N   = int(var[0])
-        self.n_x = int(var[1])
-        self.n_w = int(var[2])
+        self.n_x_s = int(var[1])
+        self.n_w_s = int(var[2])
 
         action_list = []
         for i in range(self.N):
             action_list.append(lines[i].split(',')[:-1])
 
         self.action_mat = np.array(action_list)
-        self.action_mat = self.action_mat.reshape((self.N, self.n_x, self.n_w))
+        self.action_mat = self.action_mat.reshape((self.N, self.n_x_s, self.n_w_s))
         print(self.action_mat.shape)
 
         curr_dir = os.getcwd() + '/output/'
@@ -263,3 +264,23 @@ class Load():
             if (not line) or ('end' in line):
                 break
         return
+
+    def load_value(self):
+        value_file = 'output/'+ self.filename +'_value.csv'
+        print('load file %s'%(value_file))
+        f_value = open(value_file, 'r')
+        lines = f_value.readlines()
+        var = np.fromstring(lines[0], sep=',')[:-1]
+        lines = lines[1:]
+        self.N   = int(var[0])
+        self.n_x = int(var[1])
+        self.n_w = int(var[2])
+
+        value_list = []
+        for i in range(self.N):
+            str_list = lines[i].split(',')[:-1]
+            value_list.append([float(j) for j in str_list])
+
+        self.value_mat = np.array(value_list)
+        self.value_mat = self.value_mat.reshape((self.N, self.n_x, self.n_w))
+        print(self.value_mat.shape)
