@@ -81,11 +81,35 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
         int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
         int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk);
         sum += value_buffer[v_idx]*prob[p_idx];
+
+        // if (k==9 && prob[p_idx]>0 && xk==5373 && uk==20)
+        // {
+        //     std::cout << "xk': " << xk_;
+        //     std::cout << ", wk: " << wk;
+        //     std::cout << ", wk': " << wk+dwk;
+        //     std::cout << ", uk: " << uk << std::endl;
+        //     // std::cout << "p_idx: " << p_idx;
+        //     // std::cout << ", v_idx: " << v_idx << std::endl;
+        //     std::cout << "value: " << value_buffer[v_idx];
+        //     std::cout << ", sum: " << sum << std::endl;
+        //     std::cout << "====" << std::endl;
+        // }
     }
     float l = r_cost[xk*n_w_s*n_u + wk*n_u + uk];
 
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = PENALTY;
+
+    if (k==8 && xk==4606 && wk==455)
+    {
+        std::cout << "xk': " << xk_;
+        // std::cout << ", wk': " << wk+dwk;
+        std::cout << ", uk: " << uk << std::endl;
+        std::cout << "r: " << l;
+        std::cout << ", sum: " << sum;
+        std::cout << ", total: " << l+sum << std::endl;
+        std::cout << "====" << std::endl;
+    }
 
     return l + sum;
 }

@@ -14,7 +14,7 @@ from sim_tool.search import *
 
 if __name__ == "__main__":
 
-    n_d = 128
+    n_d = 512
     n_v = 32
     n_a = 32
 
@@ -53,9 +53,9 @@ if __name__ == "__main__":
 
     value_sum = 0
 
-    data.load_value()
+    # data.load_value()
 
-    for k in range(100):
+    for k in range(1):
         front_car_traj = []
         for i in range(N+1):
             traj_list = data.readstate().split(',')
@@ -78,6 +78,8 @@ if __name__ == "__main__":
             cost_sum += total
             cost_cnt += 1
 
+        # exam_value(N, mx5, front_car_traj, sto_ctrl, data.value_mat)
+
         dc0 = front_car_traj[0][0]
         i0 = front_car_traj[0][1]
         dck0, dc0_ = mx5.find_closest(dc0, mx5.d_list)
@@ -91,7 +93,7 @@ if __name__ == "__main__":
     print(cost_cnt)
     print(cost_sum/cost_cnt)
     print('====')
-    print(value_sum/100)
+    print(value_sum)
 
     
 

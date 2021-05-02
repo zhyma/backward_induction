@@ -75,7 +75,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 128;
+    n_d = 256;
     n_v = 32;
     n_a = 32;
 
@@ -131,6 +131,12 @@ DPModel::DPModel(int pred_steps, int running_steps)
     v.max = 18.0;
     v.n = n_v;
     discretize(&v);
+
+    for (int i = 0; i < n_v; ++i)
+    {
+        std::cout << v.list[i] << ", ";
+    }
+    std::cout << std::endl;
 
     a.min = -4.0;
     a.max = 2.0;
@@ -313,6 +319,19 @@ int DPModel::phy_model(int xk, int uk)
     int dk_ = val_to_idx(attr[0], &d);
     int vk_ = val_to_idx(attr[1], &v);
     long xk_ = dk_*v.n+ vk_;
+
+    if (xk == 2302 && uk == 20)
+    {
+        std::cout << "dk " << xk/v.n << std::endl;
+        std::cout << "vk " << xk%v.n << std::endl;
+        std::cout << "ak " << uk << std::endl;
+        std::cout << "d " << d.list[xk/v.n] << std::endl;
+        std::cout << "v " << v.list[xk%v.n] << std::endl;
+        std::cout << "a " << u.list[uk] << std::endl;
+        std::cout << "d_ " << attr[0] << std::endl;
+        std::cout << "v_ " << attr[1] << std::endl;
+        std::cout << "2302 to " << xk_ << std::endl;
+    }
     return xk_;
 }
 
@@ -326,6 +345,34 @@ int DPModel::val_to_idx(float val, struct Set *ref)
     // idx > ref->n - 1 ? idx = ref->n -1 : idx;
     idx < ref->min ? idx = -1 : idx;
     idx > ref->n - 1 ? idx = -1 : idx;
+
+    // if (val <= ref->list[0])
+    //     idx = 0;
+    // else if (val >= ref->list[ref->n-1])
+    //     idx = ref->n-1;
+    // else
+    // {
+    //     for (int i = 0; i < ref->n-1; ++i)
+    //     {
+    //         if (val > ref->list[i+1])
+    //             continue;
+    //         else
+    //         {
+    //             float sub1 = val - ref->list[i];
+    //             float sub2 = ref->list[i+1] - val;
+    //             if (sub1<=sub2)
+    //             {
+    //                 idx = i;
+    //                 break;
+    //             }
+    //             else
+    //             {
+    //                 idx = i+1;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
     
     return idx;
 }
@@ -732,6 +779,9 @@ int DPModel::check_driving_data()
                         
                     }
                 }
+
+                std::cout << "min dwk is: " << dwk_min << std::endl;
+                std::cout << "max dwk is: " << dwk_max << std::endl;
 
                 if(false)
                 {

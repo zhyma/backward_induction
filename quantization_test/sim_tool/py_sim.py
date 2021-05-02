@@ -48,11 +48,13 @@ class Vehicle():
         return
 
 
-    def physical(self, a):
+    def physical(self, a, d = -1, v = -1):
         # calculating the next state, but not to move one step forward
         dt = self.dt
-        d = self.d
-        v = self.v
+        if d < 0:
+            d = self.d
+        if v < 0:
+            v = self.v
         v_max = self.v_max
         if a > self.a_max:
             a = self.a_max
@@ -76,8 +78,11 @@ class Vehicle():
 
         return d_, v_
 
-    def running_cost(self, a):
-        v0 = self.v
+    def running_cost(self, a, v=-1):
+        if v < 0:
+            v0 = self.v
+        else:
+            v0 = v
         m = self.m
         g = self.g
         v1 = 0
@@ -165,9 +170,12 @@ class Vehicle():
         return penalty, stage1, stage2
             
 
-    def terminal_cost(self):
-        v = self.v
-        d = self.d
+    def terminal_cost(self, d=-1, v=-1):
+        if d < 0:
+            d = self.d
+        if v < 0:
+            v = self.v
+        
         v_max = self.v_max
         d_target = self.N_pred*self.dt*self.v_max
 
