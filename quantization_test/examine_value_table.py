@@ -14,17 +14,42 @@ from sim_tool.search import *
 
 if __name__ == "__main__":
 
-    n_d = 256
-    n_v = 32
-    n_a = 32
+    n_d = 241
+    n_v = 46
+    n_a = 31
 
-    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    # file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    file_name = '241_'+str(n_v)+'_'+str(n_a)+'_cpu'
     # file_name = 'gpu'
     data = Load(file_name)
 
     N = data.N
     n_d_total = 0
-    if n_d == 32:
+    if n_d == 121:
+        n_dc = 141
+        n_d_total = 334
+    elif n_d == 241:
+        n_dc = 281
+        n_d_total = 668
+    elif n_d == 361:
+        n_dc = 421
+        n_d_total = 1001
+    elif n_d == 481:
+        n_dc = 561
+        n_d_total = 1334
+    elif n_d == 601:
+        n_dc = 701
+        n_d_total = 1668
+    elif n_d == 721:
+        n_dc = 841
+        n_d_total = 2001
+    elif n_d == 31:
+        n_dc = 36
+        n_d_total = 84
+    elif n_d == 61:
+        n_dc = 71
+        n_d_total = 168
+    elif n_d == 32:
         n_dc = 37
         n_d_total = 87
     elif n_d == 64:
@@ -72,9 +97,9 @@ if __name__ == "__main__":
     #             #     print('find %d at k=%d, d=%f, v=%f, dc=%f, intention=%d'%(data.value_mat[k,i,j], k, d, v, dc, intention))
     
     
-    # dk = 168
-    # vk = 31
-    # ak = 20
+    # dk = 85
+    # vk = 40
+    # ak = 25
     # dx = mx5.d_list[dk]
     # vx = mx5.v_list[vk]
     # ax = mx5.a_list[ak]
@@ -89,12 +114,15 @@ if __name__ == "__main__":
     # r = mx5.running_cost(ax, v=vx)
     # print(r)
 
-    dk = 193
-    vk = 31
-    dx = mx5.d_list[dk]
-    vx = mx5.v_list[vk]
-    t = mx5.terminal_cost(d=dx, v=vx)
-    print(t)
+    # dk = 78
+    # vk = 25
+    # dx = mx5.d_list[dk]
+    # vx = mx5.v_list[vk]
+    # t = mx5.terminal_cost(d=dx, v=vx)
+    # print(t)
+
+    # idx, val = mx5.find_closest(197.31, mx5.d_list)
+    # print("%d, %f"%(idx, val))
 
     # dk, d = mx5.find_closest(350, mx5.d_list)
     # print("dk=%d, d=%f"%(dk, d))
@@ -107,26 +135,26 @@ if __name__ == "__main__":
     # r = mx5.running_cost(a, v=v)
     # print(r)
 
-    # for k in range(1):
-    #     front_car_traj = []
-    #     for i in range(N+1):
-    #         traj_list = data.readstate().split(',')
-    #         pos = int(float(traj_list[0]))
-    #         intention = int(traj_list[-1])
-    #         front_car_traj.append([pos, intention])
-    #     while True:
-    #         state = data.readstate()
-    #         if 'end' in state:
-    #             break
+    for k in range(1):
+        front_car_traj = []
+        for i in range(N+1):
+            traj_list = data.readstate().split(',')
+            pos = float(traj_list[0])
+            intention = int(traj_list[-1])
+            front_car_traj.append([pos, intention])
+        while True:
+            state = data.readstate()
+            if 'end' in state:
+                break
 
-    #     print([i[0] for i in front_car_traj])
+        print([i[0] for i in front_car_traj])
 
     #     # Getting the total cost for the physical system
     #     sto_ctrl = []
 
-    #     sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
-    #     print(sto_ctrl)
-    #     # new_sto = [31,31,31,29,28,20,20,20,20,20]
-    #     new_sto = [31,29,29,29,29,20,20,20,20,20]
-    #     total = exam_policy(N, mx5, front_car_traj, new_sto, loose = True, verbose = True)
-    #     print(total)
+        # sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
+        # print(sto_ctrl)
+        # new_sto = [31,31,31,29,28,20,20,20,20,20]
+        new_sto = [30,27,20,20,0,30,30,22,20,0]
+        total = exam_policy(N, mx5, front_car_traj, new_sto, loose = True, verbose = True)
+        print(total)

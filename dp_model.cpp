@@ -75,9 +75,12 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 256;
-    n_v = 32;
-    n_a = 32;
+    // n_d = 256;
+    // n_v = 32;
+    // n_a = 32;
+    n_d = 721;
+    n_v = 46;
+    n_a = 31;
 
     if (n_d == 32)
     {
@@ -85,37 +88,71 @@ DPModel::DPModel(int pred_steps, int running_steps)
         n_dc = 37;
         d.n = 87;
     }
-    if (n_d == 64)
+    else if (n_d == 31)
+    {
+        max_last_step = 3;
+        n_dc = 36;
+        d.n = 84;
+    }
+    else if (n_d == 61)
+    {
+        max_last_step = 6;
+        n_dc = 71;
+        d.n = 168;
+    }
+    else if (n_d == 64)
     {
         max_last_step = 6;
         n_dc = 75;
         d.n = 176;
     }
-    if (n_d == 128)
+    else if (n_d == 121)
     {
         // At prediction step 9, the farest position can be reach is 114 (count from 0)
         // There are 14 possible next steps: 0,1,2,...,13
-        max_last_step = 13;
-        n_dc = 149;
-        d.n = 353;
+        max_last_step = 12;
+        n_dc = 141;
+        d.n = 333;
     }
-    else if (n_d == 256)
+    else if (n_d == 241)
     {
-        max_last_step = 25;
-        n_dc = 299;
-        d.n = 709;
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 24;
+        n_dc = 281;
+        d.n = 668;
     }
-    if (n_d == 512)
+    else if (n_d == 361)
     {
-        max_last_step = 51;
-        n_dc = 597;
-        d.n = 1420;
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 36;
+        n_dc = 421;
+        d.n = 1001;
     }
-    if (n_d == 1024)
+    else if (n_d == 481)
     {
-        max_last_step = 102;
-        n_dc = 1195;
-        d.n = 2843;
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 48;
+        n_dc = 561;
+        d.n = 1334;
+    }
+    else if (n_d == 601)
+    {
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 60;
+        n_dc = 701;
+        d.n = 1668;
+    }
+    else if (n_d == 721)
+    {
+        // At prediction step 9, the farest position can be reach is 114 (count from 0)
+        // There are 14 possible next steps: 0,1,2,...,13
+        max_last_step = 72;
+        n_dc = 841;
+        d.n = 2001;
     }
     // max_last_step = (int)ceil(n_d/N_pred);//13
     // n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
@@ -132,11 +169,11 @@ DPModel::DPModel(int pred_steps, int running_steps)
     v.n = n_v;
     discretize(&v);
 
-    for (int i = 0; i < n_v; ++i)
-    {
-        std::cout << v.list[i] << ", ";
-    }
-    std::cout << std::endl;
+    // for (int i = 0; i < n_v; ++i)
+    // {
+    //     std::cout << v.list[i] << ", ";
+    // }
+    // std::cout << std::endl;
 
     a.min = -4.0;
     a.max = 2.0;
@@ -320,18 +357,18 @@ int DPModel::phy_model(int xk, int uk)
     int vk_ = val_to_idx(attr[1], &v);
     long xk_ = dk_*v.n+ vk_;
 
-    if (xk == 2302 && uk == 20)
-    {
-        std::cout << "dk " << xk/v.n << std::endl;
-        std::cout << "vk " << xk%v.n << std::endl;
-        std::cout << "ak " << uk << std::endl;
-        std::cout << "d " << d.list[xk/v.n] << std::endl;
-        std::cout << "v " << v.list[xk%v.n] << std::endl;
-        std::cout << "a " << u.list[uk] << std::endl;
-        std::cout << "d_ " << attr[0] << std::endl;
-        std::cout << "v_ " << attr[1] << std::endl;
-        std::cout << "2302 to " << xk_ << std::endl;
-    }
+    // if (xk == 2302 && uk == 20)
+    // {
+    //     std::cout << "dk " << xk/v.n << std::endl;
+    //     std::cout << "vk " << xk%v.n << std::endl;
+    //     std::cout << "ak " << uk << std::endl;
+    //     std::cout << "d " << d.list[xk/v.n] << std::endl;
+    //     std::cout << "v " << v.list[xk%v.n] << std::endl;
+    //     std::cout << "a " << u.list[uk] << std::endl;
+    //     std::cout << "d_ " << attr[0] << std::endl;
+    //     std::cout << "v_ " << attr[1] << std::endl;
+    //     std::cout << "2302 to " << xk_ << std::endl;
+    // }
     return xk_;
 }
 
@@ -770,7 +807,33 @@ int DPModel::check_driving_data()
                                 if (new_wk - old_wk < dwk_min)
                                     dwk_min = new_wk - old_wk;
 
-                                idx = (k-1)*w.n*n_p + old_wk*n_p + (new_wk-old_wk);
+                                // if (new_wk - old_wk < 0)
+                                // {
+                                //     std::cout << "-1! k: " << k;
+                                //     std::cout << ", old wk: " << old_wk;
+                                //     std::cout << ", new wk: " << new_wk;
+                                //     std::cout << ", value: " << arr[0];
+                                //     std::cout << ", value: " << arr[1];
+                                //     std::cout << ", value: " << arr[2];
+                                //     std::cout << ", value: " << arr[3] << std::endl;
+                                // }
+                                // if (new_wk - old_wk > 23)
+                                // {
+                                //     std::cout << "24! k: " << k;
+                                //     std::cout << ", old wk: " << old_wk;
+                                //     std::cout << ", new wk: " << new_wk;
+                                //     std::cout << ", value: " << arr[0];
+                                //     std::cout << ", value: " << arr[1];
+                                //     std::cout << ", value: " << arr[2];
+                                //     std::cout << ", value: " << arr[3] << std::endl;
+                                // }
+
+                                // idx = (k-1)*w.n*n_p + old_wk*n_p + (new_wk-old_wk);
+                                // dwk ranges from -1 to 25
+                                // -1: same position, intention 1->0
+                                // 25: maximum speed, intention 0->1
+                                // use 1 as offset to compensate the -1 case
+                                idx = (k-1)*w.n*n_p + old_wk*n_p + (new_wk-old_wk+1);
                                 cnt_mat[idx] += 1;
                                 old_wk = new_wk;
                             }
@@ -809,11 +872,7 @@ int DPModel::check_driving_data()
                             if (sum == 0)
                                 prob_table[idx] = 0;
                             else
-                            {
                                 prob_table[idx] = float(cnt_mat[idx])/float(sum);
-                                // if (prob_table[idx] > 0)
-                                //     ++valid_p;
-                            }
                         }
                     }
                 }

@@ -24,16 +24,42 @@ def acc_traj(gtr, idx_traj):
 
 if __name__ == "__main__":
 
-    n_d = 32
-    n_v = 32
-    n_a = 32
+    trials = 100
+    n_d = 721
+    n_v = 46
+    n_a = 31
 
     file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
     # file_name = 'gpu'
     data = Load(file_name)
 
     N = data.N
-    n_d_total = data.n_w//2
+
+    if n_d == 121:
+        n_dc = 141
+        n_d_total = 334
+    elif n_d == 241:
+        n_dc = 281
+        n_d_total = 668
+    elif n_d == 361:
+        n_dc = 421
+        n_d_total = 1001
+    elif n_d == 481:
+        n_dc = 561
+        n_d_total = 1334
+    elif n_d == 601:
+        n_dc = 701
+        n_d_total = 1668
+    elif n_d == 721:
+        n_dc = 841
+        n_d_total = 2001
+    elif n_d == 31:
+        n_dc = 36
+        n_d_total = 84
+    elif n_d == 61:
+        n_dc = 71
+        n_d_total = 168
+
     line = data.readstate()
     param = line.split(',')
     d2tl = float(param[0].split('=')[1])
@@ -49,11 +75,11 @@ if __name__ == "__main__":
 
     cnt = 0
     sum = 0
-    for k in range(100):
+    for k in range(trials):
         front_car_traj = []
         for i in range(N+1):
             traj_list = data.readstate().split(',')
-            pos = int(float(traj_list[0]))
+            pos = float(traj_list[0])
             intention = int(traj_list[-1])
             front_car_traj.append([pos, intention])
         while True:

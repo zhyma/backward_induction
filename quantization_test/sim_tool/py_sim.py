@@ -189,28 +189,34 @@ class Vehicle():
         
     def find_closest(self, val, val_list):
         idx = 0
-        find_val = 0
         if val <= val_list[0]:
             idx = 0
-            find_val = val_list[0]
         elif val >= val_list[-1]:
             idx = len(val_list)-1
-            find_val = val_list[-1]
+            
         else:
-            for i in range(len(val_list)-1):
-                if val > val_list[i+1]:
-                    continue
-                else:
-                    sub1 = val - val_list[i]
-                    sub2 = val_list[i+1] - val
-                    if sub1 <= sub2:
-                        idx = i
-                        find_val = val_list[i]
-                        break
-                    else:
-                        idx = i+1
-                        find_val = val_list[i+1]
-                        break
+            idx_f = val/(val_list[1]-val_list[0])
+            if (float(idx_f) % 1) >= 0.5:
+                idx = ceil(idx_f)
+            else:
+                idx = round(idx_f)
+
+        find_val = val_list[idx]
+                
+            # for i in range(len(val_list)-1):
+            #     if val > val_list[i+1]:
+            #         continue
+            #     else:
+            #         sub1 = val - val_list[i]
+            #         sub2 = val_list[i+1] - val
+            #         if sub1 <= sub2:
+            #             idx = i
+            #             find_val = val_list[i]
+            #             break
+            #         else:
+            #             idx = i+1
+            #             find_val = val_list[i+1]
+            #             break
         return idx, find_val
 
 
@@ -285,10 +291,13 @@ class Load():
         self.n_w = int(var[2])
 
         value_list = []
-        for i in range(self.N):
-            str_list = lines[i].split(',')[:-1]
-            value_list.append([float(j) for j in str_list])
+        # for i in range(self.N):
+        #     str_list = lines[i].split(',')[:-1]
+        #     value_list.append([float(j) for j in str_list])
+        str_list = lines[0].split(',')[:-1]
+        value_list.append([float(j) for j in str_list])
 
         self.value_mat = np.array(value_list)
-        self.value_mat = self.value_mat.reshape((self.N, self.n_x, self.n_w))
+        # self.value_mat = self.value_mat.reshape((self.N, self.n_x, self.n_w))
+        self.value_mat = self.value_mat.reshape((self.n_x, self.n_w))
         print(self.value_mat.shape)

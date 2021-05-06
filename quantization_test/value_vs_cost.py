@@ -14,9 +14,10 @@ from sim_tool.search import *
 
 if __name__ == "__main__":
 
-    n_d = 512
-    n_v = 32
-    n_a = 32
+    trials = 2
+    n_d = 241
+    n_v = 46
+    n_a = 31
 
     file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
     # file_name = 'gpu'
@@ -24,16 +25,25 @@ if __name__ == "__main__":
 
     N = data.N
     n_d_total = 0
-    if n_d == 32:
-        n_d_total = 87
-    elif n_d == 64:
-        n_d_total = 176
-    elif n_d == 128:
-        n_d_total = 709
-    elif n_d == 256:
-        n_d_total = 1420
-    elif n_d == 512:
-        n_d_total = 2843
+    if n_d == 121:
+        n_dc = 141
+        n_d_total = 334
+    elif n_d == 241:
+        n_dc = 281
+        n_d_total = 668
+    elif n_d == 361:
+        n_dc = 421
+        n_d_total = 1001
+    elif n_d == 481:
+        n_dc = 561
+        n_d_total = 1334
+    elif n_d == 601:
+        n_dc = 701
+        n_d_total = 1668
+    elif n_d == 721:
+        n_dc = 841
+        n_d_total = 2001
+
     line = data.readstate()
     param = line.split(',')
     d2tl = float(param[0].split('=')[1])
@@ -53,9 +63,9 @@ if __name__ == "__main__":
 
     value_sum = 0
 
-    # data.load_value()
+    data.load_value()
 
-    for k in range(1):
+    for k in range(trials):
         front_car_traj = []
         for i in range(N+1):
             traj_list = data.readstate().split(',')
@@ -78,14 +88,14 @@ if __name__ == "__main__":
             cost_sum += total
             cost_cnt += 1
 
-        # exam_value(N, mx5, front_car_traj, sto_ctrl, data.value_mat)
+            # exam_value(N, mx5, front_car_traj, sto_ctrl, data.value_mat)
 
-        dc0 = front_car_traj[0][0]
-        i0 = front_car_traj[0][1]
-        dck0, dc0_ = mx5.find_closest(dc0, mx5.d_list)
-        wk = dck0*2+i0
-        # print('dc0 = %d, intention = %d, dck0 = %d, dck0, dc0=%f'%(dc0, i0, dck0, dc0_))
-        value_sum += data.value_mat[0,0,wk]
+            dc0 = front_car_traj[0][0]
+            i0 = front_car_traj[0][1]
+            dck0, dc0_ = mx5.find_closest(dc0, mx5.d_list)
+            wk = dck0*2+i0
+            # print('dc0 = %d, intention = %d, dck0 = %d, dck0, dc0=%f'%(dc0, i0, dck0, dc0_))
+            value_sum += data.value_mat[0,wk]
         # print(total)
         # print(data.value_mat[0,0,wk])
         # print('----')
@@ -93,7 +103,7 @@ if __name__ == "__main__":
     print(cost_cnt)
     print(cost_sum/cost_cnt)
     print('====')
-    print(value_sum)
+    print(value_sum/cost_cnt)
 
     
 

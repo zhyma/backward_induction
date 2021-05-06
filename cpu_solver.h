@@ -28,6 +28,7 @@ class CPUSolver
         
         int solve(int k0, float d0, float v0, float dc0, int intention);
         float * value;
+        float * value_buffer;
         int * action;
         bool debug = true;
         
@@ -39,8 +40,6 @@ class CPUSolver
         int n_p;
         int n_d;
         int n_dc;
-
-        float * value_buffer;
 
         // subset
         long *r_cost = NULL;

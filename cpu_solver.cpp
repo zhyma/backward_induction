@@ -27,13 +27,13 @@ CPUSolver::CPUSolver(DPModel * ptr_in, bool save)
     // for (int i = 0; i < N*n_x_s*n_w_s; ++i)
     //     action[i] = -1;
 
-    if (save==true)
-    {
-        save_v = true;
-        value = new float[(N+1)*n_x*n_w];
-    }
-    else
-        save_v = false;
+    // if (save==true)
+    // {
+    //     save_v = true;
+    //     value = new float[(N+1)*n_x*n_w];
+    // }
+    // else
+    //     save_v = false;
     return;
 }
 
@@ -79,19 +79,20 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
     {
         // p*V_{k+1}
         int p_idx = k*n_w_s*n_p + wk*n_p + dwk;
-        int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk);
+        // apply the offset
+        int v_idx = ((k+1)%2)*(n_x*n_w) + xk_*n_w + (wk+dwk-1);
         sum += value_buffer[v_idx]*prob[p_idx];
 
-        // if (k==9 && prob[p_idx]>0 && xk==5373 && uk==20)
+        // if (k==1 && prob[p_idx]>0 && xk==148)
         // {
         //     std::cout << "xk': " << xk_;
         //     std::cout << ", wk: " << wk;
-        //     std::cout << ", wk': " << wk+dwk;
+        //     std::cout << ", wk': " << wk+dwk-1;
         //     std::cout << ", uk: " << uk << std::endl;
         //     // std::cout << "p_idx: " << p_idx;
         //     // std::cout << ", v_idx: " << v_idx << std::endl;
         //     std::cout << "value: " << value_buffer[v_idx];
-        //     std::cout << ", sum: " << sum << std::endl;
+        //     std::cout << ", v+1: " << sum << std::endl;
         //     std::cout << "====" << std::endl;
         // }
     }
@@ -100,16 +101,16 @@ long CPUSolver::calc_q(int k0, int k, long xk, long wk, int uk)
     if ( (r_mask[xk*n_w_s*n_u + wk*n_u + uk] & (1<<(k0+k))) > 0)
         l = PENALTY;
 
-    if (k==8 && xk==4606 && wk==455)
-    {
-        std::cout << "xk': " << xk_;
-        // std::cout << ", wk': " << wk+dwk;
-        std::cout << ", uk: " << uk << std::endl;
-        std::cout << "r: " << l;
-        std::cout << ", sum: " << sum;
-        std::cout << ", total: " << l+sum << std::endl;
-        std::cout << "====" << std::endl;
-    }
+    // if (k==0 && xk==0 && wk==77)
+    // {
+    //     std::cout << "xk': " << xk_;
+    //     // std::cout << ", wk': " << wk+dwk-1;
+    //     std::cout << ", uk: " << uk << std::endl;
+    //     std::cout << "r: " << l;
+    //     std::cout << ", v+1: " << sum;
+    //     std::cout << ", total: " << l+sum << std::endl;
+    //     std::cout << "====" << std::endl;
+    // }
 
     return l + sum;
 }
@@ -164,20 +165,28 @@ int CPUSolver::estimate_one_step(int k0, int k)
                 // find the minimium now.
                 int idx_min = find_min(q, n_u);
 
+                // if (k==0 && xk==0 && wk==77)
+                // {
+                //     std::cout << "====" << std::endl;
+                //     std::cout << "xk: " << xk;
+                //     std::cout << ", uk: " << idx_min << std::endl;
+                //     std::cout << "====" << std::endl;
+                // }
+
                 value_buffer[(k%2)*n_x*n_w + xk*n_w + wk] = q[idx_min];
                 action[k*n_x_s*n_w_s + xk*n_w_s + wk] = idx_min;
 
             }
         }
 
-        if (save_v==true)
-        {
-            for (long xk = 0; xk < n_x_s; ++xk)
-            {
-                for (long wk = 0; wk < n_w_s; ++wk)
-                    value[k*n_x*n_w + xk*n_w + wk] = value_buffer[(k%2)*n_x*n_w + xk*n_w + wk];
-            }
-        }
+        // if (save_v==true)
+        // {
+        //     for (long xk = 0; xk < n_x_s; ++xk)
+        //     {
+        //         for (long wk = 0; wk < n_w_s; ++wk)
+        //             value[k*n_x*n_w + xk*n_w + wk] = value_buffer[(k%2)*n_x*n_w + xk*n_w + wk];
+        //     }
+        // }
     }
     else
     {
