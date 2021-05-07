@@ -11,16 +11,16 @@ class BIData
 		T1 *cpu;
 		T1 *gpu;
 		int dimc; //count of dimensions
-		int *dimv; // value of dimensions
-		int size;
-		int size_b;
+		long *dimv; // value of dimensions
+		long size;
+		long size_b;
 
 		template <typename... T2>
 		int init(T2... args)
 		{    
 			dimc = sizeof...(args);
 			size = 1;
-			dimv = new int[dimc]{args...};
+			dimv = new long[dimc]{args...};
 			for (int i = 0; i < dimc; ++i)
 				size = size * dimv[i];
 		    // std::cout << size << std::endl;
@@ -46,8 +46,8 @@ class GPUSolver
 
         DPModel * model;
         int N;
-        int n_x, n_w, n_u;
-        int n_x_s, n_w_s;
+        long n_x, n_w, n_u;
+        long n_x_s, n_w_s;
 
         int solve(int k0, float d0, float v0, float dc0, int intention);
         // float * value;

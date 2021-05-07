@@ -6,7 +6,7 @@ import matplotlib.cm as cm
 import copy
 import sys
 
-def load(solver, out_type):
+def load(solver, out_type, n_w_cpu = -1):
     f = open('output/' + solver + '_' + out_type + '.csv','r') 
     lines = f.readlines()
 
@@ -24,44 +24,46 @@ def load(solver, out_type):
         # mat = mat.astype(int)
         mat = mat.reshape(n_x,n_w)
 
-        if solver == 'gpu':
-            mat = np.delete(mat, list(range(256, 260)), axis=1)
-
+        if not n_w_cpu == -1:
+            mat = np.delete(mat, list(range(n_w_cpu, n_w)), axis=1)
+        
         result.append(mat)
 
-    if solver == 'gpu':
-        n_w = n_w - 2*2
     return N, n_x, n_w, result
 
 def value(solver):
     if solver == 'cpu' or solver == 'gpu':
         print('solver type ' + solver)
-        N, n_x, n_w, mats = load(solver, 'value')
+        N, n_x, n_w, mats = load('121_46_31_' + solver, 'value')
     elif solver == 'compare':
         print('compare results')
-        N, n_x, n_w, mats1 = load('cpu', 'value')
-        _,   _,   _, mats2 = load('gpu', 'value')
+        N, n_x, n_w, mats1 = load('121_46_31_cpu', 'value')
+        _,   _,   _, mats2 = load('121_46_31_gpu', 'value', n_w)
         mats = []
+        # for k in range(N-1, N):
         for k in range(N):
+            print(k)
             diff_val = []
             max_val = -1
             mat = np.absolute(mats1[k] - mats2[k])
+
             mats.append(mat)
             for i in range(n_x):
                 for j in range(n_w):
-                    if (mats1[k][i,j] > 1e10) and (mats2[k][i,j] > 1e10):
+                    if (mats1[k][i,j] > 5e6) and (mats2[k][i,j] > 5e6):
                         mats[k][i,j] = 0
                     elif mats[k][i,j] < 1:
                         mats[k][i,j] = 0
                     else:
-                        if j < n_w-15*2:
-                            diff_val.append(mats[k][i,j])
-                            if mats[k][i,j] > max_val:
-                                max_val = mats[k][i,j]
+                        diff_val.append(mats[k][i,j])
+                        if mats[k][i,j] > max_val:
+                            max_val = mats[k][i,j]
 
-            print(diff_val)
+            # print(diff_val)
             print(len(diff_val))
             print(max_val)
+
+            print("====")
 
     for k in range(N):
         # k = 10 is the last step
@@ -118,7 +120,7 @@ def value(solver):
 def action(solver):
     if solver == 'cpu' or solver == 'gpu':
         print('solver type ' + solver)
-        N, n_x, n_w, mats = load(solver, 'action')
+        N, n_x, n_w, mats = load('121_46_31_' + solver, 'action')
 
     for k in range(N):
         # k = 10 is the last step

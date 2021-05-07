@@ -8,19 +8,36 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
 
     N = model->N_pred;
     n_v = model->v.n;
-    n_d = model->n_d; // 128
+    n_d = model->n_d;
     n_dc = model->n_dc;
 
+    // n_p_default = (max_last_step+1)*2
+    // this n_p is not optimizing the GPU process, need a new one instead
+    n_p_default = model->n_p; // for n_d=121, n_p=(12+1)*2
+
+    if (n_p_default < 32)
+        n_p = 32;
+    else if (n_p_default < 64)
+        n_p = 64;
+    else if (n_p_default < 128)
+        n_p = 128;
+
+    std::cout << "For GPU, n_p is: " << n_p << std::endl;
+
+    int n_d_s  = n_d  - model->max_last_step;
+    int n_dc_s = n_dc - model->max_last_step;
     // s stands for searching range
     n_x = n_d * n_v; // 128*32
-    n_x_s = (n_d-model->max_last_step) * n_v; // 115*32
-    n_w = (n_dc - model->max_last_step+15)*2; //130*2
-    n_w_s = (n_dc-model->max_last_step) * 2; //115*2
+    n_x_s = n_d_s  * n_v;
+    n_w_s = n_dc_s * 2;
+    n_w   = (n_dc_s + (n_p/2-1))*2;
+
     n_u = model->u.n;
-
-    n_p_default = model->n_p; // 28
-    n_p = 32;
-
+    std::cout << n_dc_s << std::endl;
+    std::cout << "n_x, " << n_x << std::endl;
+    std::cout << "n_w, " << n_w << std::endl;
+    std::cout << "n_u, " << n_u << std::endl;
+    
     //
     value.init(N+1, n_x, n_w);
     q.init(n_x_s, n_w_s, n_u);
@@ -74,11 +91,12 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     // Set up parameters for parallel computing
     // For calculating q-value
     dim3 q_grid(n_x_s, n_w_s, n_u);
-    int q_block = n_p; // which is 32
+    int q_block = n_p; // which is 32, 64   
 
     // For finding the minimum from a sort of q-value
     dim3 s_grid(n_x_s, n_w_s);
-    int s_block = n_u;
+    // int s_block = n_u;
+    int s_block = 32;
 
     // Here k = N, the last step
     // bi_terminal_kernel<<<n_x_s  , q_block>>>(n_w, N, t_cost_gpu, value_gpu);
@@ -149,11 +167,11 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "get subset" << std::endl;
 
     // long long int idx = 0;
-    int idx = 0;
-    int solver_idx = 0;
+    long idx = 0;
+    long solver_idx = 0;
 
     //slicing state transition (x,w,u)
-    for (int dxk = 0; dxk < n_x_s; ++dxk)
+    for (long dxk = 0; dxk < n_x_s; ++dxk)
     {
         for (int uk =0; uk < n_u; ++uk)
         {
@@ -181,19 +199,19 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     {
         for (int dwk = 0; dwk < n_w_s; ++dwk)
         {
-            
-            for (int dwk_ = 0; dwk_ < n_p; ++dwk_)
+            // i = ddwk+1, ddwk is [-1, n_p-1]
+            for (int i = 0; i < n_p; ++i)
             {
-                solver_idx = dk*n_w_s*n_p + dwk*n_p + dwk_;
-                if (dwk_ < n_p_default)
+                solver_idx = dk*n_w_s*n_p + dwk*n_p + i;
+                if (i < n_p_default)
                 {
                     // n_p_default = 28 accessible next states
-                    idx = (k0+dk) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + dwk_;
+                    idx = (k0+dk) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + i;
                     prob.cpu[solver_idx] = model->prob_table[idx];
                 }
                 else
                 {
-                    // No. 28, 29, 30, 31 are tiled for GPU
+                    // the rest are tiled for GPU
                     prob.cpu[solver_idx] = 0;
                 }
             }
@@ -211,10 +229,10 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     //slicing running_cost (k,x,w,u)
     // k = k0+dk
     // xk = xk0 + dxk = dk0*n_v + dxk
-    for (int dxk = 0; dxk < n_x_s; ++dxk)
+    for (long dxk = 0; dxk < n_x_s; ++dxk)
     {
         // wk = 
-        for (int dwk = 0; dwk < n_w_s; ++dwk)
+        for (long dwk = 0; dwk < n_w_s; ++dwk)
         {
             for (int uk =0; uk < n_u; ++uk)
             {
@@ -225,11 +243,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
                 int temp2 = (dck0*2 + dwk) * model->u.n;
                 int temp3 = uk;
                 idx =  temp1 + temp2 + temp3;
-                if (idx < 0)
-                {
-                    std::cout << "In CPU solver, running cost index out of range! idx=" << idx << std::endl;
-                    std::cout << "ERROR!" << std::endl;
-                }
+
                 solver_idx = dxk*n_w_s*n_u + dwk*n_u + uk;
                 r_cost.cpu[solver_idx] = model->r_cost[idx];
                 r_mask.cpu[solver_idx] = model->r_mask[idx];
@@ -239,7 +253,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     // std::cout << "extract subset from running cost" << std::endl;
 
     // generate terminal cost
-    for (int xk = 0; xk < n_x; ++xk)
+    for (long xk = 0; xk < n_x; ++xk)
     {
         for (int wk = 0; wk < n_dc*2; ++wk)
         {

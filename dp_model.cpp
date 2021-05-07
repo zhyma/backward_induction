@@ -75,20 +75,11 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    // n_d = 256;
-    // n_v = 32;
-    // n_a = 32;
-    n_d = 721;
+    n_d = 121;
     n_v = 46;
     n_a = 31;
 
-    if (n_d == 32)
-    {
-        max_last_step = 3;
-        n_dc = 37;
-        d.n = 87;
-    }
-    else if (n_d == 31)
+    if (n_d == 31)
     {
         max_last_step = 3;
         n_dc = 36;
@@ -100,56 +91,40 @@ DPModel::DPModel(int pred_steps, int running_steps)
         n_dc = 71;
         d.n = 168;
     }
-    else if (n_d == 64)
-    {
-        max_last_step = 6;
-        n_dc = 75;
-        d.n = 176;
-    }
     else if (n_d == 121)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
+        // At prediction step 9, the farest position can be reach is 121-12 (count from 0)
+        // There are 13 possible next steps: 0,1,2,...,12
         max_last_step = 12;
         n_dc = 141;
         d.n = 333;
     }
     else if (n_d == 241)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
         max_last_step = 24;
         n_dc = 281;
         d.n = 668;
     }
     else if (n_d == 361)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
         max_last_step = 36;
         n_dc = 421;
         d.n = 1001;
     }
     else if (n_d == 481)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
         max_last_step = 48;
         n_dc = 561;
         d.n = 1334;
     }
     else if (n_d == 601)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
         max_last_step = 60;
         n_dc = 701;
         d.n = 1668;
     }
     else if (n_d == 721)
     {
-        // At prediction step 9, the farest position can be reach is 114 (count from 0)
-        // There are 14 possible next steps: 0,1,2,...,13
         max_last_step = 72;
         n_dc = 841;
         d.n = 2001;
@@ -159,21 +134,14 @@ DPModel::DPModel(int pred_steps, int running_steps)
     // d.n = n_dc+5;
     std::cout << "max last step is: " << max_last_step << std::endl;
 
-    // maximum sample points of the next step (w->w'), for gpu
-    n_p = (max_last_step+1)*2; //28
-    // for gpu, at least 32.
-    n_p_gpu = 32;
+    // maximum sample points of the next step (w->w')
+    // starting from -1, need +1 as offset.
+    n_p = (max_last_step+1)*2;
 
     v.min = .0;
     v.max = 18.0;
     v.n = n_v;
     discretize(&v);
-
-    // for (int i = 0; i < n_v; ++i)
-    // {
-    //     std::cout << v.list[i] << ", ";
-    // }
-    // std::cout << std::endl;
 
     a.min = -4.0;
     a.max = 2.0;

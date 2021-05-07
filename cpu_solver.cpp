@@ -9,16 +9,16 @@ CPUSolver::CPUSolver(DPModel * ptr_in, bool save)
 
     N = model->N_pred;
     n_v = model->v.n;
-    n_d = model->n_d; // 128
-    n_dc = model->n_dc; // 185
+    n_d = model->n_d;
+    n_dc = model->n_dc;
 
-    n_x = n_d * n_v; // 128*32
-    n_x_s = (n_d-model->max_last_step) * n_v; // 115*32
-    n_w = n_dc * 2; // 185*2
-    n_w_s = (n_dc-model->max_last_step) * 2; // (185-13)*2
+    n_x = n_d * n_v;
+    n_x_s = (n_d  - model->max_last_step) * n_v;
+    n_w = n_dc * 2;
+    n_w_s = (n_dc - model->max_last_step) * 2;
     n_u = model->u.n;
 
-    n_p = model->n_p; // 28
+    n_p = model->n_p;
 
     value_buffer = new float[2*n_x*n_w]{};
     // for (int i = 0; i < (N+1)*n_x*n_w; ++i)
@@ -27,13 +27,13 @@ CPUSolver::CPUSolver(DPModel * ptr_in, bool save)
     // for (int i = 0; i < N*n_x_s*n_w_s; ++i)
     //     action[i] = -1;
 
-    // if (save==true)
-    // {
-    //     save_v = true;
-    //     value = new float[(N+1)*n_x*n_w];
-    // }
-    // else
-    //     save_v = false;
+    if (save==true)
+    {
+        save_v = true;
+        value = new float[(N+1)*n_x*n_w];
+    }
+    else
+        save_v = false;
     return;
 }
 
@@ -179,14 +179,14 @@ int CPUSolver::estimate_one_step(int k0, int k)
             }
         }
 
-        // if (save_v==true)
-        // {
-        //     for (long xk = 0; xk < n_x_s; ++xk)
-        //     {
-        //         for (long wk = 0; wk < n_w_s; ++wk)
-        //             value[k*n_x*n_w + xk*n_w + wk] = value_buffer[(k%2)*n_x*n_w + xk*n_w + wk];
-        //     }
-        // }
+        if (save_v==true)
+        {
+            for (long xk = 0; xk < n_x_s; ++xk)
+            {
+                for (long wk = 0; wk < n_w_s; ++wk)
+                    value[k*n_x*n_w + xk*n_w + wk] = value_buffer[(k%2)*n_x*n_w + xk*n_w + wk];
+            }
+        }
     }
     else
     {

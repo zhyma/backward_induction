@@ -35,31 +35,32 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
   int xk = blockIdx.x;
   int wk = blockIdx.y;
   int uk = blockIdx.z;
-  int n_x_s = gridDim.x;
-  int n_w_s = gridDim.y;
+  long n_x_s = gridDim.x;
+  long n_w_s = gridDim.y;
   int n_u = gridDim.z;
   int n_p = blockDim.x;
   int tid = threadIdx.x;
 
   // Not a magic number, just too lazy to pass the "model->max_last_step"
   // and the padded w next
-  int n_x = n_x_s + 13*n_v;
-  int n_w = n_w_s + 15*2;
+  long n_x = n_x_s + 12*n_v;
+  long n_w = n_w_s + 15*2;
 
   // STEP 1: find the following x_ by given k, x, w, u and the model
   // prepare transition matrix <xk, wk> -uk-> x'_idx
   // input k, xk, wk, uk, output x'_idx
 
-  int xk_ = t[xk*(n_u) + uk];
+  long xk_ = t[xk*(n_u) + uk];
 
   sdata_sum[tid] = 0;
   int i = 0;
-  int p_offset = k*n_w_s*n_p + wk * n_p;
-  int v_offset = (k+1)*(n_x*n_w) + xk_*n_w + wk; // dwk is your offset
+  long p_offset = k*n_w_s*n_p + wk * n_p;
+  // dwk is offseted by 1 (ref to dp_model)
+  long v_offset = (k+1)*(n_x*n_w) + xk_*n_w + (wk - 1); // dwk is your offset
 
   while (i < n_p)
   {
-    sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid] ;
+    sdata_sum[tid] += p[p_offset+i+tid]*v[v_offset+i+tid];
     i += blockSize;
   }
   __syncthreads();
@@ -78,7 +79,7 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
   if (tid == 0)
   {
     //indexes for q and running cost are accidentally the same
-    int idx = xk*n_w_s*n_u + wk*n_u + uk;
+    long idx = xk*n_w_s*n_u + wk*n_u + uk;
 
     if(r_mask[idx] & 1<<(k0+k))
       q[idx] = 1e15;
@@ -99,14 +100,15 @@ __global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *
   // block: 1D <u>, dimension is not N_u
   //  blockDim.x: 2^m, greater than N_u
   // threadIdx.x: uk
-  int xk = blockIdx.x;
-  int wk = blockIdx.y;
-  int n_x_s = gridDim.x;
-  int n_w_s = gridDim.y;
+  long xk = blockIdx.x;
+  long wk = blockIdx.y;
+  long n_x_s = gridDim.x;
+  long n_w_s = gridDim.y;
   int uk = threadIdx.x;
-  int n_x = n_x_s + 13*n_v;
-  int n_w = n_w_s + 15*2;
+  long n_x = n_x_s + 12*n_v;
+  long n_w = n_w_s + 15*2;
 
+  // uk, tid is the same
   int tid = threadIdx.x;
   // STEP 1: 
   // initialize each element with
@@ -118,8 +120,8 @@ __global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *
   }
   else
   {
-    sdata_q[tid].index = 0;
-    sdata_q[tid].value = q[xk*n_w_s*n_u + wk*n_u];
+    sdata_q[tid].index = n_u-1;
+    sdata_q[tid].value = q[xk*n_w_s*n_u + wk*n_u + n_u-1];
   }
   
 	__syncthreads();

@@ -25,11 +25,11 @@ def acc_traj(gtr, idx_traj):
 if __name__ == "__main__":
 
     trials = 100
-    n_d = 721
+    n_d = 121
     n_v = 46
     n_a = 31
 
-    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_gpu'
     # file_name = 'gpu'
     data = Load(file_name)
 
