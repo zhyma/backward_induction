@@ -23,7 +23,7 @@ template <unsigned int blockSize>
 __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_mask, int *t, float *p, float *v, float *q)
 {
   //max number of thread possible, some will not be used
-  __shared__ float sdata_sum[32];
+  __shared__ float sdata_sum[blockSize];
 
   // <x, w> -u-> <x2, w2>
   // grid: 3D, <x,w,u>
@@ -45,6 +45,12 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
   // and the padded w next
   long n_x = n_x_s + 12*n_v;
   long n_w = n_w_s + 15*2;
+
+  if (blockSize >= 64)
+  {
+    n_x += 12*n_v;
+    n_w += 16*2;
+  }
 
   // STEP 1: find the following x_ by given k, x, w, u and the model
   // prepare transition matrix <xk, wk> -uk-> x'_idx
@@ -89,7 +95,7 @@ __global__ void bi_q_kernel(int k0, int k, int n_v, float *r_cost, long int *r_m
 };
 
 // Kernel function to find the control/action with the lowest cost (q-value)
-__global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *a)
+__global__ void bi_min_kernel(int k, int n_d, int n_v, int n_u, float *v, float *q, int *a)
 {
   __shared__ q_info sdata_q[32];
 
@@ -107,6 +113,12 @@ __global__ void bi_min_kernel(int k, int n_v, int n_u, float *v, float *q, int *
   int uk = threadIdx.x;
   long n_x = n_x_s + 12*n_v;
   long n_w = n_w_s + 15*2;
+
+  if (n_d >= 241)
+  {
+    n_x += 12*n_v;
+    n_w += 16*2;
+  }
 
   // uk, tid is the same
   int tid = threadIdx.x;

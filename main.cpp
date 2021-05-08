@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
                 if (solverStr == "cpu")
                     one_step(CPU_SOLVER, true, &dp_model);
                 else if(solverStr == "gpu")
-                    one_step(GPU_SOLVER, true, &dp_model);
+                    one_step(GPU_SOLVER, false, &dp_model);
             }
             else
             {

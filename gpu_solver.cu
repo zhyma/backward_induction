@@ -152,7 +152,7 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
             (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
             break;
         }
-        bi_min_kernel<<<s_grid, s_block>>>(k, n_v, n_u, value.gpu, q.gpu, action.gpu);
+        bi_min_kernel<<<s_grid, s_block>>>(k, n_d, n_v, n_u, value.gpu, q.gpu, action.gpu);
     }
 
     // Backup data before it's too late
