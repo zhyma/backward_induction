@@ -7,8 +7,9 @@ struct q_info
     float val;
 };
 
+template <unsigned int n_d>
 __global__ void bi_kernel \
-(int k0, int k, int n_d, int n_v, int n_u, int *u_expand, \
+(int k0, int k, int n_v, int n_u, int max_last_step, int *u_expand, \
   float *r_cost, long int *r_mask, int *t, float *p, \
   float *v, int *a)
 {
@@ -31,16 +32,10 @@ __global__ void bi_kernel \
   int tid = threadIdx.x;
   int uk = u_expand[tid];
 
-  long n_x = n_x_s + 12*n_v;
-  long n_w = n_w_s + 15*2;
+  long n_x = n_x_s + max_last_step*n_v;
+  long n_w = n_w_s + max_last_step*2;
+  int n_p = (max_last_step+1)*2;
 
-  int n_p = 32;
-
-  if (n_d >= 241)
-  {
-    n_x += 12*n_v;
-    n_w += 16*2;
-  }
 
   long xk_ = t[xk*(n_u) + uk];
   long p_offset = k*n_w_s*n_p + wk * n_p;
@@ -64,6 +59,20 @@ __global__ void bi_kernel \
                   + p[p_offset+20]*v[v_offset+20] + p[p_offset+21]*v[v_offset+21] \
                   + p[p_offset+22]*v[v_offset+22] + p[p_offset+23]*v[v_offset+23] \
                   + p[p_offset+24]*v[v_offset+24] + p[p_offset+25]*v[v_offset+25];
+
+  if (n_d > 121)
+    sdata[tid].val += p[p_offset+26]*v[v_offset+26] + p[p_offset+27]*v[v_offset+27] \
+                    + p[p_offset+28]*v[v_offset+28] + p[p_offset+29]*v[v_offset+29] \
+                    + p[p_offset+30]*v[v_offset+30] + p[p_offset+31]*v[v_offset+31] \
+                    + p[p_offset+32]*v[v_offset+32] + p[p_offset+33]*v[v_offset+33] \
+                    + p[p_offset+34]*v[v_offset+34] + p[p_offset+35]*v[v_offset+35] \
+                    + p[p_offset+36]*v[v_offset+36] + p[p_offset+37]*v[v_offset+37] \
+                    + p[p_offset+38]*v[v_offset+38] + p[p_offset+39]*v[v_offset+39] \
+                    + p[p_offset+40]*v[v_offset+40] + p[p_offset+41]*v[v_offset+41] \
+                    + p[p_offset+42]*v[v_offset+42] + p[p_offset+43]*v[v_offset+43] \
+                    + p[p_offset+44]*v[v_offset+44] + p[p_offset+45]*v[v_offset+45] \
+                    + p[p_offset+46]*v[v_offset+46] + p[p_offset+47]*v[v_offset+47] \
+                    + p[p_offset+48]*v[v_offset+48] + p[p_offset+49]*v[v_offset+49];
 
 	__syncthreads();
 

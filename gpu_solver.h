@@ -62,13 +62,13 @@ class GPUSolver
 
         int n_p, n_p_default;
         int n_d, n_dc;
+        int max_last_step;
 
         BIData<int> u_expand;
         BIData<float> r_cost;
         BIData<long> r_mask;
         BIData<int> trans;
         BIData<float> prob;
-        BIData<float> q;
 
         // find_min and calc_q are provided by gpu_kernel.h
         // estimate_one_step is integrated into solve()

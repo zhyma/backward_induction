@@ -10,37 +10,20 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     n_v = model->v.n;
     n_d = model->n_d;
     n_dc = model->n_dc;
+    max_last_step = model->max_last_step;
 
-    // n_p_default = (max_last_step+1)*2
-    // this n_p is not optimizing the GPU process, need a new one instead
-    n_p_default = model->n_p; // for n_d=121, n_p=(12+1)*2
-
-    if (n_p_default < 32)
-        n_p = 32;
-    else if (n_p_default < 64)
-        n_p = 64;
-    else if (n_p_default < 128)
-        n_p = 128;
-
-    std::cout << "For GPU, n_p is: " << n_p << std::endl;
-
-    int n_d_s  = n_d  - model->max_last_step;
-    int n_dc_s = n_dc - model->max_last_step;
-    // s stands for searching range
-    n_x = n_d * n_v; // 128*32
-    n_x_s = n_d_s  * n_v;
-    n_w_s = n_dc_s * 2;
-    n_w   = (n_dc_s + (n_p/2-1))*2;
-
+    n_x = n_d * n_v;
+    n_x_s = (n_d  - max_last_step) * n_v;
+    n_w = n_dc * 2;
+    n_w_s = (n_dc - max_last_step) * 2;
     n_u = model->u.n;
+
+    n_p = model->n_p;
+
     if (n_u < 32)
         n_u_expand = 32;
     else if (n_u < 64)
         n_u_expand = 64;
-    std::cout << n_dc_s << std::endl;
-    std::cout << "n_x, " << n_x << std::endl;
-    std::cout << "n_w, " << n_w << std::endl;
-    std::cout << "n_u, " << n_u << std::endl;
     
     u_expand.init(n_u_expand);
     int i = 0;
@@ -50,7 +33,6 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
         u_expand.cpu[i] = n_u - 1;
 
     value.init(N+1, n_x, n_w);
-    q.init(n_x_s, n_w_s, n_u);
     action.init(N, n_x_s, n_w_s);
     trans.init(n_x_s, n_u);
     prob.init(N, n_w_s, n_p);
@@ -63,10 +45,7 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     // The whole value table size will be (N+1)*N_x*N_w
     // Ping-pong buffer type will be 2*N_x*N_w
     cudaMalloc(&value.gpu, value.size_b);
-    cudaMalloc(&q.gpu, q.size_b);
     cudaMalloc(&action.gpu, action.size_b);
-    // terminal cost NxNw
-    // cudaMalloc(&t_cost_gpu, t_cost_size);
     // state transition matrix Nx*Nw*Nu
     cudaMalloc(&trans.gpu, trans.size_b);
     // transition probability matrix size: N*Nw*Nw
@@ -85,7 +64,6 @@ GPUSolver::~GPUSolver()
     // Free memory
     cudaFree(u_expand.gpu);
     cudaFree(value.gpu);
-    cudaFree(q.gpu);
     cudaFree(action.gpu);
     cudaFree(trans.gpu);
     cudaFree(prob.gpu);
@@ -102,7 +80,6 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     get_subset(k0, dk0, dck0);
     // std::cout << "extract subset done." << std::endl;
 
-    // For finding the minimum from a sort of q-value
     dim3 grid(n_x_s, n_w_s);
     int block = 32;
 
@@ -111,10 +88,17 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
         switch(n_d)
         {
             case 121:
-                bi_kernel<<<grid, block>>> \
-                (k0, k, n_d, n_v, n_u, u_expand.gpu, \
-                 r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
-                 value.gpu, action.gpu);
+                bi_kernel<121><<<grid, block>>> \
+                (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
+                    r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
+                    value.gpu, action.gpu);
+                break;
+            case 241:
+                bi_kernel<241><<<grid, block>>> \
+                (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
+                    r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
+                    value.gpu, action.gpu);
+                break;
         }
     }
 
@@ -165,18 +149,9 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
             // i = ddwk+1, ddwk is [-1, n_p-1]
             for (int i = 0; i < n_p; ++i)
             {
+                idx = (k0+dk) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + i;
                 solver_idx = dk*n_w_s*n_p + dwk*n_p + i;
-                if (i < n_p_default)
-                {
-                    // n_p_default = 28 accessible next states
-                    idx = (k0+dk) * model->w.n * model->n_p + (dck0*2+dwk) * model->n_p + i;
-                    prob.cpu[solver_idx] = model->prob_table[idx];
-                }
-                else
-                {
-                    // the rest are tiled for GPU
-                    prob.cpu[solver_idx] = 0;
-                }
+                prob.cpu[solver_idx] = model->prob_table[idx];
             }
         }
     }
@@ -218,14 +193,10 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     // generate terminal cost
     for (long xk = 0; xk < n_x; ++xk)
     {
-        for (int wk = 0; wk < n_dc*2; ++wk)
+        for (int wk = 0; wk < n_w; ++wk)
         {
             idx = N*n_x*n_w + xk * n_w + wk;
-            float t_cost = model->terminal_cost(xk, wk);
-            // if (wk < n_w_s)
-            value.cpu[idx] = t_cost;
-            // else
-            //     value[idx] = 0;
+            value.cpu[idx] = model->terminal_cost(xk, wk);
         }
     }
     // std::cout << "place terminal cost into the value table" << std::endl;
