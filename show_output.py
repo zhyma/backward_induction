@@ -37,8 +37,8 @@ def value(solver):
         N, n_x, n_w, mats = load('121_46_31_' + solver, 'value')
     elif solver == 'compare':
         print('compare results')
-        N, n_x, n_w, mats1 = load('121_46_31_cpu', 'value')
-        _,   _,   _, mats2 = load('121_46_31_gpu', 'value', n_w)
+        N, n_x, n_w, mats1 = load('241_46_31_cpu', 'value')
+        _,   _,   _, mats2 = load('241_46_31_gpu', 'value', n_w)
         mats = []
         # for k in range(N-1, N):
         for k in range(N):
@@ -50,7 +50,7 @@ def value(solver):
             mats.append(mat)
             for i in range(n_x):
                 for j in range(n_w):
-                    if (mats1[k][i,j] > 5e6) and (mats2[k][i,j] > 5e6):
+                    if (mats1[k][i,j] > 1e10) and (mats2[k][i,j] > 1e10):
                         mats[k][i,j] = 0
                     elif mats[k][i,j] < 1:
                         mats[k][i,j] = 0
@@ -81,8 +81,9 @@ def value(solver):
 
         if solver == 'compare':
             my_cmap.set_under('w')
-            my_cmap.set_over('k')
-            c = ax1.pcolormesh(mat,cmap=my_cmap,vmin=0.5,vmax=max_val)
+            # my_cmap.set_over('k')
+            # c = ax1.pcolormesh(mat,cmap=my_cmap,vmin=0.5,vmax=max_val)
+            c = ax1.pcolormesh(mat,cmap=my_cmap,vmin=0.5)
         else:
             m = mat[0,0]
             for i in range(n_x):

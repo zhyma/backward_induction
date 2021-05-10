@@ -33,12 +33,22 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     n_w   = (n_dc_s + (n_p/2-1))*2;
 
     n_u = model->u.n;
+    if (n_u < 32)
+        n_u_expand = 32;
+    else if (n_u < 64)
+        n_u_expand = 64;
     std::cout << n_dc_s << std::endl;
     std::cout << "n_x, " << n_x << std::endl;
     std::cout << "n_w, " << n_w << std::endl;
     std::cout << "n_u, " << n_u << std::endl;
     
-    //
+    u_expand.init(n_u_expand);
+    int i = 0;
+    for (; i < n_u; ++i)
+        u_expand.cpu[i] = i;
+    for (; i < n_u_expand; ++i)
+        u_expand.cpu[i] = n_u - 1;
+
     value.init(N+1, n_x, n_w);
     q.init(n_x_s, n_w_s, n_u);
     action.init(N, n_x_s, n_w_s);
@@ -48,6 +58,7 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     r_mask.init(n_x_s, n_w_s, n_u);
 
     // Allocate memory
+    cudaMalloc(&u_expand.gpu, u_expand.size_b);
     // You can do (N+1) for the whole value table, or 2 as a ping-pong buffer
     // The whole value table size will be (N+1)*N_x*N_w
     // Ping-pong buffer type will be 2*N_x*N_w
@@ -64,12 +75,15 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
     cudaMalloc(&r_cost.gpu, r_cost.size_b);
     cudaMalloc(&r_mask.gpu, r_mask.size_b);
 
+    cudaMemcpy(u_expand.gpu, u_expand.cpu, u_expand.size_b, cudaMemcpyHostToDevice);
+
     return;
 }
 
 GPUSolver::~GPUSolver()
 {
     // Free memory
+    cudaFree(u_expand.gpu);
     cudaFree(value.gpu);
     cudaFree(q.gpu);
     cudaFree(action.gpu);
@@ -107,52 +121,14 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     {
         switch(q_block)
         {
-        case 1024:
-            bi_q_kernel<1024><<<q_grid, 1024>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 512:
-            bi_q_kernel< 512><<<q_grid,  512>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 256:
-            bi_q_kernel< 256><<<q_grid,  256>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 128:
-            bi_q_kernel< 128><<<q_grid,  128>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 64:
-            bi_q_kernel<  64><<<q_grid,   64>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 32:
-            bi_q_kernel<  32><<<q_grid,   32>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case 16:
-            bi_q_kernel<  16><<<q_grid,   16>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case  8:
-            bi_q_kernel<   8><<<q_grid,    8>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case  4:
-            bi_q_kernel<   4><<<q_grid,    4>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case  2:
-            bi_q_kernel<   2><<<q_grid,    2>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
-        case  1:
-            bi_q_kernel<   1><<<q_grid,    1>>> \
-            (k0, k, n_v, r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, value.gpu, q.gpu);
-            break;
+            case 32:
+                bi_min_kernel<<<s_grid, s_block>>> \
+                (k0, k, n_d, n_v, n_u, u_expand.gpu, \
+                 r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
+                 value.gpu, action.gpu);
+
         }
-        bi_min_kernel<<<s_grid, s_block>>>(k, n_d, n_v, n_u, value.gpu, q.gpu, action.gpu);
+        // bi_min_kernel<<<s_grid, s_block>>>(k, n_d, n_v, n_u, value.gpu, q.gpu, action.gpu);
     }
 
     // Backup data before it's too late

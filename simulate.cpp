@@ -85,6 +85,7 @@ float one_step(int solver, bool save_v, DPModel * dp_model)
             filename += "gpu_value";
             long v_dim[] = {gpu_solver.N+1, gpu_solver.n_x, gpu_solver.n_w};
             mat_to_file(filename, sizeof(v_dim)/sizeof(v_dim[0]), v_dim, gpu_solver.value.cpu);
+            std::cout << "save gpu value" << std::endl;
         }
         if (true)
         {

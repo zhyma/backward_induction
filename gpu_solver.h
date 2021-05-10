@@ -47,6 +47,7 @@ class GPUSolver
         DPModel * model;
         int N;
         long n_x, n_w, n_u;
+        long n_u_expand;
         long n_x_s, n_w_s;
 
         int solve(int k0, float d0, float v0, float dc0, int intention);
@@ -62,6 +63,7 @@ class GPUSolver
         int n_p, n_p_default;
         int n_d, n_dc;
 
+        BIData<int> u_expand;
         BIData<float> r_cost;
         BIData<long> r_mask;
         BIData<int> trans;

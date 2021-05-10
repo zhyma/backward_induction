@@ -25,7 +25,7 @@ def acc_traj(gtr, idx_traj):
 if __name__ == "__main__":
 
     trials = 100
-    n_d = 241
+    n_d = 121
     n_v = 46
     n_a = 31
 
