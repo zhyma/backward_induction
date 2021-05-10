@@ -102,33 +102,20 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
     get_subset(k0, dk0, dck0);
     // std::cout << "extract subset done." << std::endl;
 
-    // Set up parameters for parallel computing
-    // For calculating q-value
-    dim3 q_grid(n_x_s, n_w_s, n_u);
-    int q_block = n_p; // which is 32, 64   
-
     // For finding the minimum from a sort of q-value
-    dim3 s_grid(n_x_s, n_w_s);
-    // int s_block = n_u;
-    int s_block = 32;
-
-    // Here k = N, the last step
-    // bi_terminal_kernel<<<n_x_s  , q_block>>>(n_w, N, t_cost_gpu, value_gpu);
-    // Wait for GPU to finish before accessing on host
-    // cudaDeviceSynchronize();
+    dim3 grid(n_x_s, n_w_s);
+    int block = 32;
 
     for (int k = N-1; k >= 0; k--)
     {
-        switch(q_block)
+        switch(n_d)
         {
-            case 32:
-                bi_min_kernel<<<s_grid, s_block>>> \
+            case 121:
+                bi_kernel<<<grid, block>>> \
                 (k0, k, n_d, n_v, n_u, u_expand.gpu, \
                  r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
                  value.gpu, action.gpu);
-
         }
-        // bi_min_kernel<<<s_grid, s_block>>>(k, n_d, n_v, n_u, value.gpu, q.gpu, action.gpu);
     }
 
     // Backup data before it's too late
