@@ -1,0 +1,617 @@
+number of trials: 1000, d=30
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.0893 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     419793.00
+estimated difference is: -2.06%
+
+====
+number of trials: 1000, d=35
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9954 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     420982.00
+estimated difference is: -1.78%
+
+====
+number of trials: 1000, d=40
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.0162 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     420568.00
+estimated difference is: -1.88%
+
+====
+number of trials: 1000, d=45
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9788 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     422403.00
+estimated difference is: -1.45%
+
+====
+number of trials: 1000, d=50
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9504 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     423180.00
+estimated difference is: -1.27%
+
+====
+number of trials: 1000, d=55
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9569 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428653.00
+corresponding value:     422765.00
+estimated difference is: -1.37%
+
+====
+number of trials: 1000, d=60
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.0078 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+999
+average cost:            428628.52
+corresponding value:     423181.00
+estimated difference is: -1.27%
+
+====
+number of trials: 10000, d=30
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.0571 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     420198.00
+estimated difference is: -1.97%
+
+====
+number of trials: 10000, d=35
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.1078 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     420619.00
+estimated difference is: -1.87%
+
+====
+number of trials: 10000, d=40
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.7551 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     422159.00
+estimated difference is: -1.51%
+
+====
+number of trials: 10000, d=45
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.7657 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     422712.00
+estimated difference is: -1.38%
+
+====
+number of trials: 10000, d=50
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.1892 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     422831.00
+estimated difference is: -1.35%
+
+====
+number of trials: 10000, d=55
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9943 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     423141.00
+estimated difference is: -1.28%
+
+====
+number of trials: 10000, d=60
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9843 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+9999
+average cost:            428628.52
+corresponding value:     423180.00
+estimated difference is: -1.27%
+
+====
+number of trials: 20000, d=30
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.0256 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     420154.00
+estimated difference is: -1.98%
+
+====
+number of trials: 20000, d=35
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9549 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     420469.00
+estimated difference is: -1.90%
+
+====
+number of trials: 20000, d=40
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9251 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     422630.00
+estimated difference is: -1.40%
+
+====
+number of trials: 20000, d=45
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.7627 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     422615.00
+estimated difference is: -1.40%
+
+====
+number of trials: 20000, d=50
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.6459 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     423081.00
+estimated difference is: -1.29%
+
+====
+number of trials: 20000, d=55
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.6176 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     423159.00
+estimated difference is: -1.28%
+
+====
+number of trials: 20000, d=60
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.6053 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+19999
+average cost:            428628.52
+corresponding value:     423180.00
+estimated difference is: -1.27%
+
+====
+number of trials: 50000, d=30
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.6251 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     418772.00
+estimated difference is: -2.30%
+
+====
+number of trials: 50000, d=35
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.5298 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     420485.00
+estimated difference is: -1.90%
+
+====
+number of trials: 50000, d=40
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9727 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     422750.00
+estimated difference is: -1.37%
+
+====
+number of trials: 50000, d=45
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.2244 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     422585.00
+estimated difference is: -1.41%
+
+====
+number of trials: 50000, d=50
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.9651 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     423139.00
+estimated difference is: -1.28%
+
+====
+number of trials: 50000, d=55
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 10.7761 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     423171.00
+estimated difference is: -1.27%
+
+====
+number of trials: 50000, d=60
+00%...10%...20%...30%...40%...50%...60%...70%...80%...90%...
+
+prediction steps is set to 10
+./output/front_car_data.csv closed
+w to w' file does not exist, create a new one.
+loading ./output/front_car_data.csv
+generated a new transition probability matrix
+run simulation for one step
+CPU solver, one step
+CPU time: 11.1765 s
+saved value to: 121_46_31_cpu_value
+saved action to: 121_46_31_cpu_action
+
+load file output/121_46_31_cpu_action.csv
+load file output/121_46_31_cpu_value.csv
+49999
+average cost:            428628.52
+corresponding value:     423180.00
+estimated difference is: -1.27%
+
+====
+

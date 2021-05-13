@@ -10,6 +10,7 @@ import sys
 from sim_tool.py_sim import Vehicle, Load
 from sim_tool.search import *
 
+## in the folder quantization_test
 ## comparing the expectation (value) vs. total cost. Average
 
 if __name__ == "__main__":
@@ -43,27 +44,7 @@ if __name__ == "__main__":
     elif n_d == 721:
         n_dc = 841
         n_d_total = 2001
-    elif n_d == 31:
-        n_dc = 36
-        n_d_total = 84
-    elif n_d == 61:
-        n_dc = 71
-        n_d_total = 168
-    elif n_d == 32:
-        n_dc = 37
-        n_d_total = 87
-    elif n_d == 64:
-        n_dc = 75
-        n_d_total = 176
-    elif n_d == 128:
-        n_dc = 149
-        n_d_total = 709
-    elif n_d == 256:
-        n_dc = 299
-        n_d_total = 1420
-    elif n_d == 512:
-        n_dc = 597
-        n_d_total = 2843
+
     line = data.readstate()
     param = line.split(',')
     d2tl = float(param[0].split('=')[1])

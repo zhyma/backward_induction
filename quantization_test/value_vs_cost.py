@@ -14,12 +14,12 @@ from sim_tool.search import *
 
 if __name__ == "__main__":
 
-    trials = 2
+    trials = int(sys.argv[1])
     n_d = 241
     n_v = 46
     n_a = 31
 
-    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_gpu'
     # file_name = 'gpu'
     data = Load(file_name)
 
@@ -49,27 +49,47 @@ if __name__ == "__main__":
     d2tl = float(param[0].split('=')[1])
     rl_start = float(param[1].split('=')[1])
     rl_end = float(param[2].split('=')[1])
-    print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
+    # print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
 
     mx5=Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, n_d_total=n_d_total, n_d=n_d, n_v=n_v, n_a=n_a)
     
     # count how many trials
     
-    print("\n====\n")
+    # print("\n====\n")
 
     # Getting the average total cost for the physical system
     cost_cnt = 0
     cost_sum = 0
 
-    value_sum = 0
+    value = 0
 
     data.load_value()
 
-    for k in range(trials):
+    # get the first trajectory, and the value
+    front_car_traj = []
+    for i in range(N+1):
+        traj_list = data.readstate().split(',')
+        pos = float(traj_list[0])
+        intention = int(traj_list[-1])
+        front_car_traj.append([pos, intention])
+    while True:
+        state = data.readstate()
+        if 'end' in state:
+            break
+
+    dc0 = front_car_traj[0][0]
+    i0 = front_car_traj[0][1]
+    dck0, dc0_ = mx5.find_closest(dc0, mx5.d_list)
+    wk = dck0*2+i0
+    # print('dc0 = %d, intention = %d, dck0 = %d, dck0, dc0=%f'%(dc0, i0, dck0, dc0_))
+    value = data.value_mat[0,wk]
+
+    # do rest of the trajectory
+    for k in range(trials-1):
         front_car_traj = []
         for i in range(N+1):
             traj_list = data.readstate().split(',')
-            pos = int(float(traj_list[0]))
+            pos = float(traj_list[0])
             intention = int(traj_list[-1])
             front_car_traj.append([pos, intention])
         while True:
@@ -77,33 +97,25 @@ if __name__ == "__main__":
             if 'end' in state:
                 break
 
-        print([i[0] for i in front_car_traj])
+        # print([i[0] for i in front_car_traj])
 
         # Getting the total cost for the physical system
         sto_ctrl = []
 
         sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
-        total = exam_policy(N, mx5, front_car_traj, sto_ctrl, loose = True, verbose = True)
+        # print([x for x in sto_ctrl])
+        total = exam_policy(N, mx5, front_car_traj, sto_ctrl, loose = True, verbose = False)
+        # print(total)
         if total < 1e14:
             cost_sum += total
             cost_cnt += 1
 
-            # exam_value(N, mx5, front_car_traj, sto_ctrl, data.value_mat)
-
-            dc0 = front_car_traj[0][0]
-            i0 = front_car_traj[0][1]
-            dck0, dc0_ = mx5.find_closest(dc0, mx5.d_list)
-            wk = dck0*2+i0
-            # print('dc0 = %d, intention = %d, dck0 = %d, dck0, dc0=%f'%(dc0, i0, dck0, dc0_))
-            value_sum += data.value_mat[0,wk]
-        # print(total)
-        # print(data.value_mat[0,0,wk])
-        # print('----')
-
     print(cost_cnt)
-    print(cost_sum/cost_cnt)
-    print('====')
-    print(value_sum/cost_cnt)
+    cost_avg = cost_sum/cost_cnt
+    print('average cost:            %.2f'%(cost_avg))
+    print('corresponding value:     %.2f'%(value))
+    diff = (value-cost_avg)/cost_avg
+    print('estimated difference is: %.2f%%'%(diff*100))
 
     
 

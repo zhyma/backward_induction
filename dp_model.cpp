@@ -75,7 +75,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 121;
+    n_d = 241;
     n_v = 46;
     n_a = 31;
 
@@ -132,7 +132,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     // max_last_step = (int)ceil(n_d/N_pred);//13
     // n_dc = n_d + (int)ceil((t_ttc*v.max+3)/(v.max*dt*N_pred)/(n_d-1));//185
     // d.n = n_dc+5;
-    std::cout << "max last step is: " << max_last_step << std::endl;
+    // std::cout << "max last step is: " << max_last_step << std::endl;
 
     // maximum sample points of the next step (w->w')
     // starting from -1, need +1 as offset.
@@ -149,7 +149,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     discretize(&a);
 
     d.list = new float[d.n];
-    std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1)) << std::endl;
+    // std::cout << "distance interval: " << (v.max * N_pred * dt/(n_d-1)) << std::endl;
     for (int i = 0; i < d.n; ++i)
     {
         // d.list[i] = float(i * v.max * N_pred * dt/(n_d-1));
@@ -811,8 +811,8 @@ int DPModel::check_driving_data()
                     }
                 }
 
-                std::cout << "min dwk is: " << dwk_min << std::endl;
-                std::cout << "max dwk is: " << dwk_max << std::endl;
+                // std::cout << "min dwk is: " << dwk_min << std::endl;
+                // std::cout << "max dwk is: " << dwk_max << std::endl;
 
                 if(false)
                 {

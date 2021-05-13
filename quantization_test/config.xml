@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<config>
+    <!--An XML must have a single root -->
+
+    <!--240 -->
+    <prediction_steps>
+        10
+    </prediction_steps>
+
+    <v_max>
+        18
+    </v_max>
+
+    <!--12 -->
+    <a_max>
+        2
+    </a_max>
+
+    <!--42 -->
+    <a_min>
+        -4
+    </a_min>
+
+    <!--time to collision ()-->
+    <tcc>
+        3
+    </tcc>
+
+    <!--minimum safety distance (m)-->
+    <tcc>
+        3
+    </tcc>
+</config>

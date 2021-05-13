@@ -10,6 +10,7 @@ import sys
 from sim_tool.py_sim import Vehicle, Load
 from sim_tool.search import *
 
+## in the folder quantization_test
 ## comparing the expectation (value) vs. total cost. Average
 
 if __name__ == "__main__":

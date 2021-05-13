@@ -258,7 +258,7 @@ class Load():
 
         self.action_mat = np.array(action_list)
         self.action_mat = self.action_mat.reshape((self.N, self.n_x_s, self.n_w_s))
-        print(self.action_mat.shape)
+        # print(self.action_mat.shape)
 
         curr_dir = os.getcwd() + '/output/'
         files = find_all('front_car_data', curr_dir)
@@ -300,4 +300,4 @@ class Load():
         self.value_mat = np.array(value_list)
         # self.value_mat = self.value_mat.reshape((self.N, self.n_x, self.n_w))
         self.value_mat = self.value_mat.reshape((self.n_x, self.n_w))
-        print(self.value_mat.shape)
+        # print(self.value_mat.shape)
