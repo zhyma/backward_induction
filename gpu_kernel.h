@@ -11,7 +11,7 @@ template <unsigned int n_d>
 __global__ void bi_kernel \
 (int k0, int k, int n_v, int n_u, int max_last_step, int *u_expand, \
   float *r_cost, long int *r_mask, int *t, float *p, \
-  float *v, int *a)
+  float *v, int *a, long k_offset, long kn_offset)
 {
   // __shared__ int sdata_idx[32];
   // __shared__ float sdata_val[32];
@@ -41,6 +41,7 @@ __global__ void bi_kernel \
   long p_offset = k*n_w_s*n_p + wk * n_p;
   // dwk is offseted by 1 (ref to dp_model)
   long v_offset = (k+1)*(n_x*n_w) + xk_*n_w + (wk - 1); // dwk is your offset
+  // long v_offset = kn_offset + xk_*n_w + (wk - 1);
 
   long idx = xk*n_w_s*n_u + wk*n_u + uk;
 
@@ -74,6 +75,34 @@ __global__ void bi_kernel \
                     + p[p_offset+46]*v[v_offset+46] + p[p_offset+47]*v[v_offset+47] \
                     + p[p_offset+48]*v[v_offset+48] + p[p_offset+49]*v[v_offset+49];
 
+  // if (n_d > 241)
+  //   sdata[tid].val += p[p_offset+50]*v[v_offset+50] + p[p_offset+51]*v[v_offset+51] \
+  //                   + p[p_offset+52]*v[v_offset+52] + p[p_offset+53]*v[v_offset+53] \
+  //                   + p[p_offset+54]*v[v_offset+54] + p[p_offset+55]*v[v_offset+55] \
+  //                   + p[p_offset+56]*v[v_offset+56] + p[p_offset+57]*v[v_offset+57] \
+  //                   + p[p_offset+58]*v[v_offset+58] + p[p_offset+59]*v[v_offset+59] \
+  //                   + p[p_offset+60]*v[v_offset+60] + p[p_offset+61]*v[v_offset+61] \
+  //                   + p[p_offset+62]*v[v_offset+62] + p[p_offset+63]*v[v_offset+63] \
+  //                   + p[p_offset+64]*v[v_offset+64] + p[p_offset+65]*v[v_offset+65] \
+  //                   + p[p_offset+66]*v[v_offset+66] + p[p_offset+67]*v[v_offset+67] \
+  //                   + p[p_offset+68]*v[v_offset+68] + p[p_offset+69]*v[v_offset+69] \
+  //                   + p[p_offset+70]*v[v_offset+70] + p[p_offset+71]*v[v_offset+71] \
+  //                   + p[p_offset+72]*v[v_offset+72] + p[p_offset+73]*v[v_offset+73];
+
+  // if (n_d > 361)
+  //   sdata[tid].val += p[p_offset+74]*v[v_offset+74] + p[p_offset+75]*v[v_offset+75] \
+  //                   + p[p_offset+76]*v[v_offset+76] + p[p_offset+77]*v[v_offset+77] \
+  //                   + p[p_offset+78]*v[v_offset+78] + p[p_offset+79]*v[v_offset+79] \
+  //                   + p[p_offset+80]*v[v_offset+80] + p[p_offset+81]*v[v_offset+81] \
+  //                   + p[p_offset+82]*v[v_offset+82] + p[p_offset+83]*v[v_offset+83] \
+  //                   + p[p_offset+84]*v[v_offset+84] + p[p_offset+85]*v[v_offset+85] \
+  //                   + p[p_offset+86]*v[v_offset+86] + p[p_offset+87]*v[v_offset+87] \
+  //                   + p[p_offset+88]*v[v_offset+88] + p[p_offset+89]*v[v_offset+89] \
+  //                   + p[p_offset+90]*v[v_offset+90] + p[p_offset+91]*v[v_offset+91] \
+  //                   + p[p_offset+92]*v[v_offset+92] + p[p_offset+93]*v[v_offset+93] \
+  //                   + p[p_offset+94]*v[v_offset+94] + p[p_offset+95]*v[v_offset+95] \
+  //                   + p[p_offset+96]*v[v_offset+96] + p[p_offset+97]*v[v_offset+97];
+
 	__syncthreads();
 
 	for (unsigned int s = blockDim.x/2; s > 0; s >>=1)
@@ -96,6 +125,7 @@ __global__ void bi_kernel \
   if (tid == 0)
   {
     v[k*n_x*n_w + xk*n_w + wk] = sdata[0].val;
+    // v[k_offset + xk*n_w + wk] = sdata[0].val;
     a[k*n_x_s*n_w_s + xk*n_w_s + wk] = sdata[0].idx;
   }
 

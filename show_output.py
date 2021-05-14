@@ -37,8 +37,8 @@ def value(solver):
         N, n_x, n_w, mats = load('121_46_31_' + solver, 'value')
     elif solver == 'compare':
         print('compare results')
-        N, n_x, n_w, mats1 = load('241_46_31_cpu', 'value')
-        _,   _,   _, mats2 = load('241_46_31_gpu', 'value', n_w)
+        N, n_x, n_w, mats1 = load('121_46_31_cpu', 'value')
+        _,   _,   _, mats2 = load('121_46_31_gpu', 'value', n_w)
         mats = []
         # for k in range(N-1, N):
         for k in range(N):
