@@ -75,7 +75,7 @@ DPModel::DPModel(int pred_steps, int running_steps)
     m = 1500;
 
     // Maximum sample points could travel during 10-prediction-step
-    n_d = 241;
+    n_d = 361;
     n_v = 46;
     n_a = 31;
 

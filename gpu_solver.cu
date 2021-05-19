@@ -33,7 +33,6 @@ GPUSolver::GPUSolver(DPModel * ptr_in, int block_size_in)
         u_expand.cpu[i] = n_u - 1;
 
     value.init(N+1, n_x, n_w);
-    // value.init(2, n_x, n_w);
     action.init(N, n_x_s, n_w_s);
     trans.init(n_x_s, n_u);
     prob.init(N, n_w_s, n_p);
@@ -86,34 +85,28 @@ int GPUSolver::solve(int k0, float d0, float v0, float dc0, int intention)
 
     for (int k = N-1; k >= 0; k--)
     {
-        long k_offset = (k%2)*n_x*n_w;
-        // k next
-        long kn_offset = ((k+1)%2)*n_x*n_w;
         switch(n_d)
         {
             case 121:
                 bi_kernel<121><<<grid, block>>> \
                 (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
                     r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
-                    value.gpu, action.gpu, k_offset, kn_offset);
+                    value.gpu, action.gpu);
                 break;
             case 241:
                 bi_kernel<241><<<grid, block>>> \
                 (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
                     r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
-                    value.gpu, action.gpu, k_offset, kn_offset);
+                    value.gpu, action.gpu);
                 break;
             case 361:
                 bi_kernel<361><<<grid, block>>> \
                 (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
                     r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
-                    value.gpu, action.gpu, k_offset, kn_offset);
+                    value.gpu, action.gpu);
                 break;
             case 481:
-                bi_kernel<481><<<grid, block>>> \
-                (k0, k, n_v, n_u, max_last_step, u_expand.gpu, \
-                    r_cost.gpu, r_mask.gpu, trans.gpu, prob.gpu, \
-                    value.gpu, action.gpu, k_offset, kn_offset);
+                printf("Out of memory!\n");
                 break;
         }
     }
@@ -211,7 +204,7 @@ int GPUSolver::get_subset(int k0, int dk0, int dck0)
     {
         for (int wk = 0; wk < n_w; ++wk)
         {
-            idx = (N%2)*n_x*n_w + xk * n_w + wk;
+            idx = N*n_x*n_w + xk * n_w + wk;
             value.cpu[idx] = model->terminal_cost(xk, wk);
         }
     }

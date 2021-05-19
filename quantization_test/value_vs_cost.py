@@ -15,7 +15,7 @@ from sim_tool.search import *
 if __name__ == "__main__":
 
     trials = int(sys.argv[1])
-    n_d = 241
+    n_d = 361
     n_v = 46
     n_a = 31
 
