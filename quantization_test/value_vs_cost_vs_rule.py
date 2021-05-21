@@ -3,12 +3,12 @@ import numpy as numpy
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 import os
 import sys
 
 from sim_tool.py_sim import Vehicle, Load
 from sim_tool.search import *
+from rule_based_ctrl import *
 
 ## comparing the expectation (value) vs. total cost. Average
 
@@ -51,15 +51,20 @@ if __name__ == "__main__":
     rl_end = float(param[2].split('=')[1])
     # print("%.1f, %.1f, %.1f"%(d2tl, rl_start, rl_end))
 
+    # mx5 using sdp solved policy
     mx5=Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, n_d_total=n_d_total, n_d=n_d, n_v=n_v, n_a=n_a)
-    
+    # rx7 using 
+    rx7=Vehicle(N, d2tl, 2, rl_start, rl_end, 0, 18, -4, 2, n_d_total=n_d_total, n_d=n_d, n_v=n_v, n_a=n_a)
     # count how many trials
     
     # print("\n====\n")
 
     # Getting the average total cost for the physical system
-    cost_cnt = 0
-    cost_sum = 0
+    bi_cost_cnt = 0
+    bi_cost_sum = 0
+
+    rule_cost_cnt = 0
+    rule_cost_sum = 0
 
     value = 0
 
@@ -100,21 +105,33 @@ if __name__ == "__main__":
         # print([i[0] for i in front_car_traj])
 
         # Getting the total cost for the physical system
-        sto_ctrl = []
+        bi_ctrl = []
 
-        sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
+        bi_ctrl = search_sto(N, data.action_mat, mx5, front_car_traj)
         # print([x for x in sto_ctrl])
-        total = exam_policy(N, mx5, front_car_traj, sto_ctrl, loose = True, verbose = False)
+        total = exam_policy(N, mx5, front_car_traj, bi_ctrl, loose = True, verbose = False)
         # print(total)
         if total < 1e14:
-            cost_sum += total
-            cost_cnt += 1
+            bi_cost_sum += total
+            bi_cost_cnt += 1
 
-    print(cost_cnt)
-    cost_avg = cost_sum/cost_cnt
-    print('average cost:            %.2f'%(cost_avg))
+        rule_ctrl = ctrl_seq(front_car_traj, mx5)
+        total = exam_policy(N, mx5, front_car_traj, rule_ctrl, loose = True, verbose = False)
+        if total < 1e14:
+            rule_cost_sum += total
+            rule_cost_cnt += 1
+
+    print(bi_cost_cnt)
+    bi_cost_avg = bi_cost_sum/bi_cost_cnt
+    print('average bi_solver cost:            %.2f'%(bi_cost_avg))
     print('corresponding value:     %.2f'%(value))
-    diff = (cost_avg-value)/cost_avg
+    diff = (bi_cost_avg-value)/bi_cost_avg
+    print('estimated difference is: %.2f%%'%(diff*100))
+
+    print(rule_cost_cnt)
+    rule_cost_avg = rule_cost_sum/rule_cost_cnt
+    print('average rule based cost:            %.2f'%(rule_cost_avg))
+    diff = (rule_cost_avg-bi_cost_avg)/bi_cost_avg
     print('estimated difference is: %.2f%%'%(diff*100))
 
     

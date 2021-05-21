@@ -168,7 +168,6 @@ class Vehicle():
                 penalty = True
 
         return penalty, stage1, stage2
-            
 
     def terminal_cost(self, d=-1, v=-1):
         if d < 0:
