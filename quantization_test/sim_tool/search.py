@@ -127,6 +127,7 @@ def exam_policy(N, gtr, front_car_traj, policy, loose = False, verbose = True):
     valid_ctrl = True
     n_v = len(gtr.v_list)
     n_a = len(gtr.a_list)
+    ego_traj = [gtr.d]
 
     for k in range(N):
         # _, dc = gtr.find_closest(front_car_traj[k][0],gtr.d_list)
@@ -161,13 +162,16 @@ def exam_policy(N, gtr, front_car_traj, policy, loose = False, verbose = True):
         cost2go += r_cost
         if verbose:
             print('r_cost: %.2f'%(r_cost))
+
         # walk one step
         gtr.step_forward(a)
+        ego_traj.append(gtr.d)
 
     # examine the final state
     # _, dc = gtr.find_closest(front_car_traj[N][0],gtr.d_list)
     dc = front_car_traj[N][0]
-    penalty, stage1, stage2 = gtr.rl_constraint(k, dc, a)
+    penalty, stage1, stage2 = gtr.rl_constraint(k, dc, gtr.a_min)
+    # penalty, stage1, stage2 = gtr.rl_constraint(k, dc, a)
     if penalty:
         print('N, red light constraint')
         # print('dc=%.2f, d=%.2f, v=%.2f, a=%.2f, '%(dc, gtr.d, gtr.v, a))
@@ -202,4 +206,4 @@ def exam_policy(N, gtr, front_car_traj, policy, loose = False, verbose = True):
         cost2go = 1e15
         print('====')
 
-    return cost2go
+    return cost2go, ego_traj

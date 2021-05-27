@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
         sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
         # print([x for x in sto_ctrl])
-        total = exam_policy(N, mx5, front_car_traj, sto_ctrl, loose = True, verbose = False)
+        total, _ = exam_policy(N, mx5, front_car_traj, sto_ctrl, loose = True, verbose = False)
         # print(total)
         if total < 1e14:
             cost_sum += total

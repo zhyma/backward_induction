@@ -4,6 +4,7 @@ import sys
 with open('log.txt', 'w') as f:
     # for trials in [1000, 10000, 20000, 50000]:
     for trials in [50000]:
+    # for trials in [2000]:
         for d in [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]:
 
             title = "number of trials: " + str(trials) + ", d=" + str(d)

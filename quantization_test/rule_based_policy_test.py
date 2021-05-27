@@ -134,7 +134,7 @@ if __name__ == "__main__":
         # print(ctrl_seq)
         
         # print([x for x in sto_ctrl])
-        total = exam_policy(N, mx5, front_car_traj, ctrl_seq, loose = True, verbose = False)
+        total, _ = exam_policy(N, mx5, front_car_traj, ctrl_seq, loose = True, verbose = False)
         # print(total)
         if total < 1e14:
             cost_sum += total

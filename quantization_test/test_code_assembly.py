@@ -19,7 +19,7 @@ if __name__ == "__main__":
     n_a = 31
 
     # file_name = str(n_d)+'_'+str(n_v)+'_'+str(n_a)+'_cpu'
-    file_name = '241_'+str(n_v)+'_'+str(n_a)+'_cpu'
+    file_name = '361_'+str(n_v)+'_'+str(n_a)+'_gpu'
     # file_name = 'gpu'
     data = Load(file_name)
 
@@ -57,6 +57,15 @@ if __name__ == "__main__":
 
     nx = n_d*n_v
     nw = n_dc*2
+
+    # for i in mx5.a_list:
+    #     print(i, end=', ')
+    #     print(mx5.find_closest(i, mx5.a_list))
+
+    for i in mx5.d_list:
+        print(i, end=', ')
+        print(mx5.find_closest(i, mx5.d_list))
+
     
     # for k in range(N+1):
     #     for i in range(nx):
@@ -115,26 +124,26 @@ if __name__ == "__main__":
     # r = mx5.running_cost(a, v=v)
     # print(r)
 
-    for k in range(1):
-        front_car_traj = []
-        for i in range(N+1):
-            traj_list = data.readstate().split(',')
-            pos = float(traj_list[0])
-            intention = int(traj_list[-1])
-            front_car_traj.append([pos, intention])
-        while True:
-            state = data.readstate()
-            if 'end' in state:
-                break
+    # for k in range(1):
+    #     front_car_traj = []
+    #     for i in range(N+1):
+    #         traj_list = data.readstate().split(',')
+    #         pos = float(traj_list[0])
+    #         intention = int(traj_list[-1])
+    #         front_car_traj.append([pos, intention])
+    #     while True:
+    #         state = data.readstate()
+    #         if 'end' in state:
+    #             break
 
-        print([i[0] for i in front_car_traj])
+    #     print([i[0] for i in front_car_traj])
 
-    #     # Getting the total cost for the physical system
-    #     sto_ctrl = []
+    # #     # Getting the total cost for the physical system
+    # #     sto_ctrl = []
 
-        # sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
-        # print(sto_ctrl)
-        # new_sto = [31,31,31,29,28,20,20,20,20,20]
-        new_sto = [30,27,20,20,0,30,30,22,20,0]
-        total = exam_policy(N, mx5, front_car_traj, new_sto, loose = True, verbose = True)
-        print(total)
+    #     # sto_ctrl=search_sto(N, data.action_mat, mx5, front_car_traj)
+    #     # print(sto_ctrl)
+    #     # new_sto = [31,31,31,29,28,20,20,20,20,20]
+    #     new_sto = [30,27,20,20,0,30,30,22,20,0]
+    #     total, _ = exam_policy(N, mx5, front_car_traj, new_sto, loose = True, verbose = True)
+    #     print(total)

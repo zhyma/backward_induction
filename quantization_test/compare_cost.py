@@ -60,8 +60,8 @@ if __name__ == "__main__":
 
         sto_ctrl1=search_sto(N, data1.action_mat, mx128, front_car_traj)
         sto_ctrl2=search_sto(N, data2.action_mat, mx512, front_car_traj)
-        total1 = exam_policy(N, mx128, front_car_traj, sto_ctrl1, loose=True, verbose = False)
-        total2 = exam_policy(N, mx512, front_car_traj, sto_ctrl2, loose=True, verbose = False)
+        total1, _ = exam_policy(N, mx128, front_car_traj, sto_ctrl1, loose=True, verbose = False)
+        total2, _ = exam_policy(N, mx512, front_car_traj, sto_ctrl2, loose=True, verbose = False)
         if total1 > 1e14 and total2 > 1e14:
             print('all hits the constraint')
         elif total1 < 1e14 and total2 > 1e14:

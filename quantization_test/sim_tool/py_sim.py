@@ -194,7 +194,7 @@ class Vehicle():
             idx = len(val_list)-1
             
         else:
-            idx_f = val/(val_list[1]-val_list[0])
+            idx_f = (val-val_list[0])/(val_list[1]-val_list[0])
             if (float(idx_f) % 1) >= 0.5:
                 idx = ceil(idx_f)
             else:
