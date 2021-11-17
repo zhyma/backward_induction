@@ -10,7 +10,7 @@ from sim_tool.py_sim import Vehicle, Load
 from sim_tool.search import *
 from rule_based_ctrl import *
 
-## comparing the expectation (value) vs. total cost. Average
+## visualizing the front car, policy-based, rule-based trajectories.
 
 if __name__ == "__main__":
 
@@ -92,17 +92,23 @@ if __name__ == "__main__":
         # print(rule_ctrl)
         total, rule_traj = exam_policy(N, mx5, front_car_traj, rule_ctrl, loose = True, verbose = False)
 
-        fig, ax1 = plt.subplots()
-        ax1.plot(t, [i[0] for i in front_car_traj], color = 'crimson')
-        ax1.plot(t, bi_traj, color = 'dodgerblue')
-        ax1.plot(t, rule_traj, color = 'orange')
-        ax1.plot([0,20],[150,150], 'k--')
-        ax1.plot([10,10],[0,300], 'k--')
-        ax1.set_xlabel('t')
-        ax1.set_ylabel('distance')
-        ax1.set_ylim([0,300])
-        fig.tight_layout()
-        # plt.show()
+        if (k==0 or k==3 or k==4 or k==12):
+            fig, ax1 = plt.subplots()
+            ax1.plot(t, [i[0] for i in front_car_traj], color = 'crimson', marker='o', label='leading vehicle trajectory')
+            print([i[0] for i in front_car_traj])
+            ax1.plot(t, bi_traj, color = 'dodgerblue', marker='^', label='policy-based trajectory')
+            print(bi_traj)
+            ax1.plot(t, rule_traj, color = 'orange', marker='s', label='rule-based trajectory')
+            print(rule_traj)
+            ax1.plot([0,20],[150,150], 'k--')
+            ax1.plot([10,10],[0,360], 'k--')
+            ax1.set_xlabel('t(s)')
+            ax1.set_ylabel('distance(m)')
+            ax1.set_ylim([0,360])
+            fig.tight_layout()
+            ax1.legend(loc='upper left')
+            print('----')
+            # plt.show()
 
-        plt.savefig('fig/' + 'traj_'+str(k)+'.png')
+            # plt.savefig('fig/' + 'traj_'+str(k)+'.png')
         
