@@ -1,4 +1,4 @@
-- Source code repository for paper [Using GPU to Accelerate Backward Induction for Vehicle Speed Optimal Control](https://www.sae.org/publications/technical-papers/content/2022-01-0089/)
+- Supplementary code for paper [Using GPU to Accelerate Backward Induction for Vehicle Speed Optimal Control](https://www.sae.org/publications/technical-papers/content/2022-01-0089/)
 - Test under Ubuntu 18.04TLS + CUDA v11.1.74.
 
 - There are three main parts in this repo:
